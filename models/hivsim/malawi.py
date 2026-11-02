@@ -54,11 +54,12 @@ def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, pars=None, **kwargs
     hiv = sti.HIV(
         beta_m2f=0.01, # To calibrate
         init_prev_data=read('init_prev_hiv.csv'),
+        age_bins=[0, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 100], # The surveys' age groups
     )
 
     n_art = read('n_art.csv', index_col='year')
     n_vmmc = read('n_vmmc.csv', index_col='year')
-    vls = read('vls.csv')
+    vls = read('vls.csv', index_col='year')
     intvs = make_testing() + [sti.ART(coverage=n_art, vls_coverage=vls)]
     if n_vmmc is not None:
         intvs.append(sti.VMMC(coverage=n_vmmc))

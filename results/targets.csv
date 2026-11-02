@@ -1,0 +1,330 @@
+target,year,sex,age_lo,age_hi,group,value,lower,upper,n,source,role
+prevalence,2015.9,m,15,20,all,0.01,0.00570105,0.015472415,1575.878906,DHS 2015-16,primary
+prevalence,2015.9,m,20,25,all,0.011,0.004695608,0.019903764,707.0792458,DHS 2015-16,primary
+prevalence,2015.9,m,25,30,all,0.064,0.043699019,0.087813994,470.3315735,DHS 2015-16,primary
+prevalence,2015.9,m,30,35,all,0.092,0.06718227,0.120222712,454.4433594,DHS 2015-16,primary
+prevalence,2015.9,m,35,40,all,0.118,0.087542239,0.152269813,380.2982654,DHS 2015-16,primary
+prevalence,2015.9,m,40,45,all,0.14,0.102217463,0.182575191,285.3219169,DHS 2015-16,primary
+prevalence,2015.9,m,45,50,all,0.192,0.14101396,0.248712045,204.6630859,DHS 2015-16,primary
+prevalence,2010.7,m,15,20,all,0.013,0.005797528,0.023012681,652.0005446,DHS 2010,primary
+prevalence,2010.7,m,20,25,all,0.028,0.015822488,0.043476272,540.7156808,DHS 2010,primary
+prevalence,2010.7,m,25,30,all,0.069,0.047625416,0.093944316,457.6369134,DHS 2010,primary
+prevalence,2010.7,m,30,35,all,0.107,0.078390908,0.139404902,392.8391501,DHS 2010,primary
+prevalence,2010.7,m,35,40,all,0.182,0.138498925,0.229932448,272.7317726,DHS 2010,primary
+prevalence,2010.7,m,40,45,all,0.208,0.153259012,0.268608168,189.455003,DHS 2010,primary
+prevalence,2010.7,m,45,50,all,0.15,0.107479551,0.198125846,237.3331706,DHS 2010,primary
+prevalence,2004.9,m,15,20,all,0.004,0.000680478,0.010183137,636.2159729,DHS 2004,primary
+prevalence,2004.9,m,20,25,all,0.039,0.020602576,0.062882267,317.788618,DHS 2004,primary
+prevalence,2004.9,m,25,30,all,0.098,0.066261282,0.135092622,284.98722,DHS 2004,primary
+prevalence,2004.9,m,30,35,all,0.204,0.143569588,0.271918356,150.6579829,DHS 2004,primary
+prevalence,2004.9,m,35,40,all,0.184,0.116970189,0.262144091,108.5688052,DHS 2004,primary
+prevalence,2004.9,m,40,45,all,0.165,0.103752369,0.237067048,118.1137547,DHS 2004,primary
+prevalence,2004.9,m,45,50,all,0.095,0.046743154,0.157917763,105.1243832,DHS 2004,primary
+prevalence,2015.9,f,15,20,all,0.033,0.021548354,0.046757423,766.3786917,DHS 2015-16,primary
+prevalence,2015.9,f,20,25,all,0.064,0.047646485,0.08254749,753.0303955,DHS 2015-16,primary
+prevalence,2015.9,f,25,30,all,0.092,0.07215436,0.113956551,732.7477497,DHS 2015-16,primary
+prevalence,2015.9,f,30,35,all,0.162,0.128169084,0.198917065,415.7467689,DHS 2015-16,primary
+prevalence,2015.9,f,35,40,all,0.181,0.148042132,0.216449808,485.8482066,DHS 2015-16,primary
+prevalence,2015.9,f,40,45,all,0.198,0.15630517,0.243259238,321.8846177,DHS 2015-16,primary
+prevalence,2015.9,f,45,50,all,0.169,0.126962721,0.215636835,273.4689927,DHS 2015-16,primary
+prevalence,2010.7,f,15,20,all,0.042,0.029468213,0.056607928,835.3097098,DHS 2010,primary
+prevalence,2010.7,f,20,25,all,0.064,0.047646485,0.08254749,753.0303955,DHS 2010,primary
+prevalence,2010.7,f,25,30,all,0.135,0.108769746,0.163550542,596.7054579,DHS 2010,primary
+prevalence,2010.7,f,30,35,all,0.207,0.168548741,0.248259547,396.185745,DHS 2010,primary
+prevalence,2010.7,f,35,40,all,0.238,0.190019307,0.289528437,280.7333041,DHS 2010,primary
+prevalence,2010.7,f,40,45,all,0.204,0.157978793,0.254209661,268.6408548,DHS 2010,primary
+prevalence,2010.7,f,45,50,all,0.161,0.121341514,0.205017916,295.4189514,DHS 2010,primary
+prevalence,2004.9,f,15,20,all,0.037,0.021174484,0.056968008,422.7167903,DHS 2004,primary
+prevalence,2004.9,f,20,25,all,0.132,0.100605003,0.166891764,399.4258996,DHS 2004,primary
+prevalence,2004.9,f,25,30,all,0.155,0.117429301,0.196672732,319.4304435,DHS 2004,primary
+prevalence,2004.9,f,30,35,all,0.181,0.133617164,0.233743648,226.2983291,DHS 2004,primary
+prevalence,2004.9,f,35,40,all,0.17,0.119801858,0.226872238,188.1541533,DHS 2004,primary
+prevalence,2004.9,f,40,45,all,0.179,0.118831476,0.248318432,133.7569423,DHS 2004,primary
+prevalence,2004.9,f,45,50,all,0.133,0.082970453,0.192584717,146.2193539,DHS 2004,primary
+prevalence,2016.2,m,15,20,all,0.0089,0.004701643,0.014401006,1421.220827,MPHIA 2015-16,primary
+prevalence,2016.2,m,20,25,all,0.0231,0.014445875,0.033696704,928.1921122,MPHIA 2015-16,primary
+prevalence,2016.2,m,25,30,all,0.0472,0.033908988,0.062533112,839.7874735,MPHIA 2015-16,primary
+prevalence,2016.2,m,30,35,all,0.1207,0.094039025,0.150145842,516.6732674,MPHIA 2015-16,primary
+prevalence,2016.2,m,35,40,all,0.145,0.113255309,0.179893849,427.8455011,MPHIA 2015-16,primary
+prevalence,2016.2,m,40,45,all,0.1862,0.149310903,0.226114399,393.8420706,MPHIA 2015-16,primary
+prevalence,2016.2,m,45,50,all,0.2211,0.173561005,0.272578245,269.1584193,MPHIA 2015-16,primary
+prevalence,2016.2,m,50,55,all,0.1749,0.127015358,0.228559842,214.1096391,MPHIA 2015-16,primary
+prevalence,2016.2,m,55,60,all,0.1453,0.100938095,0.196096461,209.6004646,MPHIA 2015-16,primary
+prevalence,2016.2,m,60,65,all,0.1058,0.065288544,0.154604469,180.6530093,MPHIA 2015-16,primary
+prevalence,2016.2,f,15,20,all,0.0201,0.012735942,0.029077141,1124.754037,MPHIA 2015-16,primary
+prevalence,2016.2,f,20,25,all,0.0517,0.039985298,0.064807407,1219.390763,MPHIA 2015-16,primary
+prevalence,2016.2,f,25,30,all,0.1361,0.112976517,0.160986804,782.5944776,MPHIA 2015-16,primary
+prevalence,2016.2,f,30,35,all,0.1746,0.148264388,0.20258206,749.6170096,MPHIA 2015-16,primary
+prevalence,2016.2,f,35,40,all,0.2211,0.190090183,0.253731199,652.6199348,MPHIA 2015-16,primary
+prevalence,2016.2,f,40,45,all,0.2456,0.20290207,0.290933092,366.709557,MPHIA 2015-16,primary
+prevalence,2016.2,f,45,50,all,0.2026,0.159963359,0.248841631,313.4446049,MPHIA 2015-16,primary
+prevalence,2016.2,f,50,55,all,0.1642,0.12572331,0.206650187,320.9916035,MPHIA 2015-16,primary
+prevalence,2016.2,f,55,60,all,0.161,0.11442791,0.213726871,209.4777362,MPHIA 2015-16,primary
+prevalence,2016.2,f,60,65,all,0.1388,0.088222692,0.198565578,149.6620024,MPHIA 2015-16,primary
+prevalence,2020.5,m,15,20,all,0.014,0.00935446831456164,0.0201787895885261,1830.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,20,25,all,0.013,0.008268180193048745,0.019508067718438826,1582.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,25,30,all,0.032,0.02290664539951777,0.043482418013433895,1131.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,30,35,all,0.065,0.05068028164915655,0.08194486130178316,957.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,35,40,all,0.094,0.0762724861356406,0.11432157953995552,904.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,40,45,all,0.157,0.1327155110345257,0.18383396544448669,777.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,45,50,all,0.194,0.1653111864382286,0.22534553203922061,665.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,50,55,all,0.2,0.16542938538933485,0.23832356906558816,461.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,55,60,all,0.175,0.13790139466148263,0.21746214274132258,349.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,60,65,all,0.132,0.0971250702858831,0.17400312474333204,297.0,MPHIA 2020-21,primary
+prevalence,2020.5,m,65,100,all,0.07,0.05217603732625475,0.09168811349202997,642.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,15,20,all,0.017,0.01194558475228532,0.023490980419028924,1942.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,20,25,all,0.04,0.03250857187751328,0.04866566456885738,2265.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,25,30,all,0.076,0.06457249613072961,0.08875555602246311,1846.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,30,35,all,0.141,0.12375769955691328,0.1596826156922689,1441.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,35,40,all,0.2,0.18002830362167646,0.22116709554721867,1451.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,40,45,all,0.212,0.188036272802054,0.23755645036140333,1045.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,45,50,all,0.221,0.19408462673067606,0.24981160200401856,850.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,50,55,all,0.206,0.17412424457000888,0.24089473532041472,562.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,55,60,all,0.126,0.09761649063279401,0.1592283168728683,445.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,60,65,all,0.115,0.08678294400996799,0.1486541183187995,408.0,MPHIA 2020-21,primary
+prevalence,2020.5,f,65,100,all,0.085,0.0672883239120167,0.10566274744172459,812.0,MPHIA 2020-21,primary
+incidence,2016.2,m,15,50,all,0.0026,0.00099367,0.004962757,,MPHIA 2015-16,secondary
+incidence,2016.2,f,15,50,all,0.0046,0.00226193,0.007749183,,MPHIA 2015-16,secondary
+incidence,2020.5,m,15,50,all,0.0015,0.0,0.0029,,MPHIA 2020-21,secondary
+incidence,2020.5,f,15,50,all,0.0031,0.0013,0.005,,MPHIA 2020-21,secondary
+plhiv,1990.5,all,0,100,all,440000.0,,,,UNAIDS 2025,secondary
+plhiv,1991.5,all,0,100,all,530000.0,,,,UNAIDS 2025,secondary
+plhiv,1992.5,all,0,100,all,620000.0,,,,UNAIDS 2025,secondary
+plhiv,1993.5,all,0,100,all,690000.0,,,,UNAIDS 2025,secondary
+plhiv,1994.5,all,0,100,all,720000.0,,,,UNAIDS 2025,secondary
+plhiv,1995.5,all,0,100,all,780000.0,,,,UNAIDS 2025,secondary
+plhiv,1996.5,all,0,100,all,830000.0,,,,UNAIDS 2025,secondary
+plhiv,1997.5,all,0,100,all,860000.0,,,,UNAIDS 2025,secondary
+plhiv,1998.5,all,0,100,all,890000.0,,,,UNAIDS 2025,secondary
+plhiv,1999.5,all,0,100,all,900000.0,,,,UNAIDS 2025,secondary
+plhiv,2000.5,all,0,100,all,910000.0,,,,UNAIDS 2025,secondary
+plhiv,2001.5,all,0,100,all,900000.0,,,,UNAIDS 2025,secondary
+plhiv,2002.5,all,0,100,all,900000.0,,,,UNAIDS 2025,secondary
+plhiv,2003.5,all,0,100,all,890000.0,,,,UNAIDS 2025,secondary
+plhiv,2004.5,all,0,100,all,880000.0,,,,UNAIDS 2025,secondary
+plhiv,2005.5,all,0,100,all,860000.0,,,,UNAIDS 2025,secondary
+plhiv,2006.5,all,0,100,all,860000.0,,,,UNAIDS 2025,secondary
+plhiv,2007.5,all,0,100,all,860000.0,,,,UNAIDS 2025,secondary
+plhiv,2008.5,all,0,100,all,870000.0,,,,UNAIDS 2025,secondary
+plhiv,2009.5,all,0,100,all,890000.0,,,,UNAIDS 2025,secondary
+plhiv,2010.5,all,0,100,all,910000.0,,,,UNAIDS 2025,secondary
+plhiv,2011.5,all,0,100,all,930000.0,,,,UNAIDS 2025,secondary
+plhiv,2012.5,all,0,100,all,950000.0,,,,UNAIDS 2025,secondary
+plhiv,2013.5,all,0,100,all,970000.0,,,,UNAIDS 2025,secondary
+plhiv,2014.5,all,0,100,all,990000.0,,,,UNAIDS 2025,secondary
+plhiv,2015.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+plhiv,2016.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+plhiv,2017.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+plhiv,2018.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+plhiv,2019.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+plhiv,2020.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+plhiv,2021.5,all,0,100,all,1000000.0,,,,UNAIDS 2025,secondary
+new_infections,1990.5,all,0,100,all,110000.0,,,,UNAIDS 2025,secondary
+new_infections,1991.5,all,0,100,all,120000.0,,,,UNAIDS 2025,secondary
+new_infections,1992.5,all,0,100,all,130000.0,,,,UNAIDS 2025,secondary
+new_infections,1993.5,all,0,100,all,130000.0,,,,UNAIDS 2025,secondary
+new_infections,1994.5,all,0,100,all,120000.0,,,,UNAIDS 2025,secondary
+new_infections,1995.5,all,0,100,all,110000.0,,,,UNAIDS 2025,secondary
+new_infections,1996.5,all,0,100,all,110000.0,,,,UNAIDS 2025,secondary
+new_infections,1997.5,all,0,100,all,100000.0,,,,UNAIDS 2025,secondary
+new_infections,1998.5,all,0,100,all,100000.0,,,,UNAIDS 2025,secondary
+new_infections,1999.5,all,0,100,all,91000.0,,,,UNAIDS 2025,secondary
+new_infections,2000.5,all,0,100,all,92000.0,,,,UNAIDS 2025,secondary
+new_infections,2001.5,all,0,100,all,87000.0,,,,UNAIDS 2025,secondary
+new_infections,2002.5,all,0,100,all,83000.0,,,,UNAIDS 2025,secondary
+new_infections,2003.5,all,0,100,all,79000.0,,,,UNAIDS 2025,secondary
+new_infections,2004.5,all,0,100,all,77000.0,,,,UNAIDS 2025,secondary
+new_infections,2005.5,all,0,100,all,73000.0,,,,UNAIDS 2025,secondary
+new_infections,2006.5,all,0,100,all,70000.0,,,,UNAIDS 2025,secondary
+new_infections,2007.5,all,0,100,all,68000.0,,,,UNAIDS 2025,secondary
+new_infections,2008.5,all,0,100,all,66000.0,,,,UNAIDS 2025,secondary
+new_infections,2009.5,all,0,100,all,60000.0,,,,UNAIDS 2025,secondary
+new_infections,2010.5,all,0,100,all,60000.0,,,,UNAIDS 2025,secondary
+new_infections,2011.5,all,0,100,all,57000.0,,,,UNAIDS 2025,secondary
+new_infections,2012.5,all,0,100,all,54000.0,,,,UNAIDS 2025,secondary
+new_infections,2013.5,all,0,100,all,50000.0,,,,UNAIDS 2025,secondary
+new_infections,2014.5,all,0,100,all,47000.0,,,,UNAIDS 2025,secondary
+new_infections,2015.5,all,0,100,all,43000.0,,,,UNAIDS 2025,secondary
+new_infections,2016.5,all,0,100,all,38000.0,,,,UNAIDS 2025,secondary
+new_infections,2017.5,all,0,100,all,32000.0,,,,UNAIDS 2025,secondary
+new_infections,2018.5,all,0,100,all,27000.0,,,,UNAIDS 2025,secondary
+new_infections,2019.5,all,0,100,all,24000.0,,,,UNAIDS 2025,secondary
+new_infections,2020.5,all,0,100,all,21000.0,,,,UNAIDS 2025,secondary
+new_infections,2021.5,all,0,100,all,19000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1990.5,all,0,100,all,20000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1991.5,all,0,100,all,25000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1992.5,all,0,100,all,32000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1993.5,all,0,100,all,38000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1994.5,all,0,100,all,43000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1995.5,all,0,100,all,47000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1996.5,all,0,100,all,53000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1997.5,all,0,100,all,58000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1998.5,all,0,100,all,63000.0,,,,UNAIDS 2025,secondary
+aids_deaths,1999.5,all,0,100,all,68000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2000.5,all,0,100,all,71000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2001.5,all,0,100,all,73000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2002.5,all,0,100,all,75000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2003.5,all,0,100,all,76000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2004.5,all,0,100,all,75000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2005.5,all,0,100,all,71000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2006.5,all,0,100,all,65000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2007.5,all,0,100,all,57000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2008.5,all,0,100,all,48000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2009.5,all,0,100,all,41000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2010.5,all,0,100,all,36000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2011.5,all,0,100,all,31000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2012.5,all,0,100,all,28000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2013.5,all,0,100,all,24000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2014.5,all,0,100,all,23000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2015.5,all,0,100,all,21000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2016.5,all,0,100,all,21000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2017.5,all,0,100,all,20000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2018.5,all,0,100,all,18000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2019.5,all,0,100,all,16000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2020.5,all,0,100,all,16000.0,,,,UNAIDS 2025,secondary
+aids_deaths,2021.5,all,0,100,all,15000.0,,,,UNAIDS 2025,secondary
+prevalence,2006.5,f,15,50,fsw,0.707,,,,FSW surveys (Optima data),secondary
+prevalence,2014.5,f,15,50,fsw,0.627,,,,FSW surveys (Optima data),secondary
+prevalence,2018.5,f,15,50,fsw,0.55,,,,FSW surveys (Optima data),secondary
+prevalence,2019.5,f,15,50,fsw,0.495168,0.39551815,0.57978706,,FSW surveys (Optima data),secondary
+on_art,2004.5,m,15,65,all,3127.0,2502.0,3752.0,,Programme data via Spectrum (EMOD),check
+on_art,2005.5,m,15,65,all,8794.0,7035.0,10553.0,,Programme data via Spectrum (EMOD),check
+on_art,2006.5,m,15,65,all,18592.0,14874.0,22310.0,,Programme data via Spectrum (EMOD),check
+on_art,2007.5,m,15,65,all,31969.0,25575.0,38363.0,,Programme data via Spectrum (EMOD),check
+on_art,2008.5,m,15,65,all,49194.0,39355.0,59033.0,,Programme data via Spectrum (EMOD),check
+on_art,2009.5,m,15,65,all,101852.0,81482.0,122222.0,,Programme data via Spectrum (EMOD),check
+on_art,2010.5,m,15,65,all,126064.0,100851.0,151277.0,,Programme data via Spectrum (EMOD),check
+on_art,2011.5,m,15,65,all,118970.0,95176.0,142764.0,,Programme data via Spectrum (EMOD),check
+on_art,2012.5,m,15,65,all,148576.0,118861.0,178291.0,,Programme data via Spectrum (EMOD),check
+on_art,2013.5,m,15,65,all,235089.0,188071.0,282107.0,,Programme data via Spectrum (EMOD),check
+on_art,2014.5,m,15,65,all,219716.0,175773.0,263659.0,,Programme data via Spectrum (EMOD),check
+on_art,2015.9,m,15,65,all,225908.0,180726.0,271090.0,,Programme data via Spectrum (EMOD),check
+on_art,2004.5,f,15,65,all,5549.0,4439.0,6659.0,,Programme data via Spectrum (EMOD),check
+on_art,2005.5,f,15,65,all,15639.0,12511.0,18767.0,,Programme data via Spectrum (EMOD),check
+on_art,2006.5,f,15,65,all,33571.0,26857.0,40285.0,,Programme data via Spectrum (EMOD),check
+on_art,2007.5,f,15,65,all,57906.0,46325.0,69487.0,,Programme data via Spectrum (EMOD),check
+on_art,2008.5,f,15,65,all,87483.0,69986.0,104980.0,,Programme data via Spectrum (EMOD),check
+on_art,2009.5,f,15,65,all,176310.0,141048.0,211572.0,,Programme data via Spectrum (EMOD),check
+on_art,2010.5,f,15,65,all,217860.0,174288.0,261432.0,,Programme data via Spectrum (EMOD),check
+on_art,2011.5,f,15,65,all,207407.0,165926.0,248888.0,,Programme data via Spectrum (EMOD),check
+on_art,2012.5,f,15,65,all,245459.0,196367.0,294551.0,,Programme data via Spectrum (EMOD),check
+on_art,2013.5,f,15,65,all,383514.0,306811.0,460217.0,,Programme data via Spectrum (EMOD),check
+on_art,2014.5,f,15,65,all,368094.0,294475.0,441713.0,,Programme data via Spectrum (EMOD),check
+on_art,2015.9,f,15,65,all,406130.0,324904.0,487356.0,,Programme data via Spectrum (EMOD),check
+diagnosed,2020.5,m,15,100,all,0.85,,,768.0,MPHIA 2020-21,check
+diagnosed,2020.5,f,15,100,all,0.904,,,1693.0,MPHIA 2020-21,check
+on_ART_among_diagnosed,2020.5,m,15,100,all,0.974,,,662.0,MPHIA 2020-21,check
+on_ART_among_diagnosed,2020.5,f,15,100,all,0.982,,,1546.0,MPHIA 2020-21,check
+suppressed_among_on_ART,2020.5,all,15,100,all,0.969,,,2167.0,MPHIA 2020-21,check
+population,1990.5,f,0,5,all,892782.0,,,,WPP,check
+population,1990.5,f,5,10,all,708497.0,,,,WPP,check
+population,1990.5,f,10,15,all,579594.5,,,,WPP,check
+population,1990.5,f,15,20,all,502028.0,,,,WPP,check
+population,1990.5,f,20,25,all,464548.0,,,,WPP,check
+population,1990.5,f,25,30,all,382351.0,,,,WPP,check
+population,1990.5,f,30,35,all,275252.0,,,,WPP,check
+population,1990.5,f,35,40,all,204516.0,,,,WPP,check
+population,1990.5,f,40,45,all,192710.0,,,,WPP,check
+population,1990.5,f,45,50,all,170537.0,,,,WPP,check
+population,1990.5,f,50,55,all,138701.0,,,,WPP,check
+population,1990.5,f,55,60,all,109976.0,,,,WPP,check
+population,1990.5,f,60,65,all,92257.5,,,,WPP,check
+population,1990.5,f,65,100,all,202696.5,,,,WPP,check
+population,1990.5,m,0,5,all,887384.0,,,,WPP,check
+population,1990.5,m,5,10,all,698871.0,,,,WPP,check
+population,1990.5,m,10,15,all,567853.5,,,,WPP,check
+population,1990.5,m,15,20,all,452925.5,,,,WPP,check
+population,1990.5,m,20,25,all,381986.5,,,,WPP,check
+population,1990.5,m,25,30,all,333028.0,,,,WPP,check
+population,1990.5,m,30,35,all,274864.0,,,,WPP,check
+population,1990.5,m,35,40,all,212568.0,,,,WPP,check
+population,1990.5,m,40,45,all,185869.5,,,,WPP,check
+population,1990.5,m,45,50,all,161293.0,,,,WPP,check
+population,1990.5,m,50,55,all,127622.5,,,,WPP,check
+population,1990.5,m,55,60,all,98578.0,,,,WPP,check
+population,1990.5,m,60,65,all,79520.0,,,,WPP,check
+population,1990.5,m,65,100,all,167042.0,,,,WPP,check
+population,2000.5,f,0,5,all,1039575.5,,,,WPP,check
+population,2000.5,f,5,10,all,863669.5,,,,WPP,check
+population,2000.5,f,10,15,all,728874.5,,,,WPP,check
+population,2000.5,f,15,20,all,628138.5,,,,WPP,check
+population,2000.5,f,20,25,all,510620.5,,,,WPP,check
+population,2000.5,f,25,30,all,415590.0,,,,WPP,check
+population,2000.5,f,30,35,all,368795.0,,,,WPP,check
+population,2000.5,f,35,40,all,299057.0,,,,WPP,check
+population,2000.5,f,40,45,all,212863.5,,,,WPP,check
+population,2000.5,f,45,50,all,156669.0,,,,WPP,check
+population,2000.5,f,50,55,all,147413.5,,,,WPP,check
+population,2000.5,f,55,60,all,128540.0,,,,WPP,check
+population,2000.5,f,60,65,all,99864.5,,,,WPP,check
+population,2000.5,f,65,100,all,210701.0,,,,WPP,check
+population,2000.5,m,0,5,all,1031178.5,,,,WPP,check
+population,2000.5,m,5,10,all,851884.5,,,,WPP,check
+population,2000.5,m,10,15,all,709331.0,,,,WPP,check
+population,2000.5,m,15,20,all,601582.0,,,,WPP,check
+population,2000.5,m,20,25,all,493738.0,,,,WPP,check
+population,2000.5,m,25,30,all,383675.5,,,,WPP,check
+population,2000.5,m,30,35,all,308139.5,,,,WPP,check
+population,2000.5,m,35,40,all,257865.0,,,,WPP,check
+population,2000.5,m,40,45,all,208066.5,,,,WPP,check
+population,2000.5,m,45,50,all,158020.5,,,,WPP,check
+population,2000.5,m,50,55,all,135950.5,,,,WPP,check
+population,2000.5,m,55,60,all,115449.0,,,,WPP,check
+population,2000.5,m,60,65,all,86746.5,,,,WPP,check
+population,2000.5,m,65,100,all,163943.0,,,,WPP,check
+population,2010.5,f,0,5,all,1363463.5,,,,WPP,check
+population,2010.5,f,5,10,all,1133784.5,,,,WPP,check
+population,2010.5,f,10,15,all,952166.5,,,,WPP,check
+population,2010.5,f,15,20,all,831306.5,,,,WPP,check
+population,2010.5,f,20,25,all,741966.0,,,,WPP,check
+population,2010.5,f,25,30,all,632765.0,,,,WPP,check
+population,2010.5,f,30,35,all,443565.5,,,,WPP,check
+population,2010.5,f,35,40,all,311026.5,,,,WPP,check
+population,2010.5,f,40,45,all,272305.5,,,,WPP,check
+population,2010.5,f,45,50,all,225329.0,,,,WPP,check
+population,2010.5,f,50,55,all,162848.0,,,,WPP,check
+population,2010.5,f,55,60,all,125797.5,,,,WPP,check
+population,2010.5,f,60,65,all,122402.5,,,,WPP,check
+population,2010.5,f,65,100,all,310666.0,,,,WPP,check
+population,2010.5,m,0,5,all,1350469.5,,,,WPP,check
+population,2010.5,m,5,10,all,1118695.5,,,,WPP,check
+population,2010.5,m,10,15,all,934985.0,,,,WPP,check
+population,2010.5,m,15,20,all,779762.5,,,,WPP,check
+population,2010.5,m,20,25,all,650216.5,,,,WPP,check
+population,2010.5,m,25,30,all,573923.5,,,,WPP,check
+population,2010.5,m,30,35,all,465047.5,,,,WPP,check
+population,2010.5,m,35,40,all,323955.0,,,,WPP,check
+population,2010.5,m,40,45,all,228282.0,,,,WPP,check
+population,2010.5,m,45,50,all,182900.5,,,,WPP,check
+population,2010.5,m,50,55,all,148652.5,,,,WPP,check
+population,2010.5,m,55,60,all,115736.0,,,,WPP,check
+population,2010.5,m,60,65,all,101533.5,,,,WPP,check
+population,2010.5,m,65,100,all,222911.0,,,,WPP,check
+population,2020.5,f,0,5,all,1468432.5,,,,WPP,check
+population,2020.5,f,5,10,all,1417615.0,,,,WPP,check
+population,2020.5,f,10,15,all,1334600.5,,,,WPP,check
+population,2020.5,f,15,20,all,1121232.5,,,,WPP,check
+population,2020.5,f,20,25,all,936380.5,,,,WPP,check
+population,2020.5,f,25,30,all,808763.0,,,,WPP,check
+population,2020.5,f,30,35,all,714938.5,,,,WPP,check
+population,2020.5,f,35,40,all,604276.0,,,,WPP,check
+population,2020.5,f,40,45,all,418682.5,,,,WPP,check
+population,2020.5,f,45,50,all,289202.5,,,,WPP,check
+population,2020.5,f,50,55,all,248516.5,,,,WPP,check
+population,2020.5,f,55,60,all,199993.5,,,,WPP,check
+population,2020.5,f,60,65,all,138442.5,,,,WPP,check
+population,2020.5,f,65,100,all,310536.0,,,,WPP,check
+population,2020.5,m,0,5,all,1474099.0,,,,WPP,check
+population,2020.5,m,5,10,all,1411325.0,,,,WPP,check
+population,2020.5,m,10,15,all,1316563.0,,,,WPP,check
+population,2020.5,m,15,20,all,1102717.0,,,,WPP,check
+population,2020.5,m,20,25,all,913488.0,,,,WPP,check
+population,2020.5,m,25,30,all,749894.0,,,,WPP,check
+population,2020.5,m,30,35,all,616391.5,,,,WPP,check
+population,2020.5,m,35,40,all,536682.0,,,,WPP,check
+population,2020.5,m,40,45,all,427096.5,,,,WPP,check
+population,2020.5,m,45,50,all,290286.5,,,,WPP,check
+population,2020.5,m,50,55,all,197899.5,,,,WPP,check
+population,2020.5,m,55,60,all,151648.0,,,,WPP,check
+population,2020.5,m,60,65,all,115812.0,,,,WPP,check
+population,2020.5,m,65,100,all,218373.5,,,,WPP,check

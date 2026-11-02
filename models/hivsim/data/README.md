@@ -22,8 +22,8 @@ The STIsim repo has examples of the first three in `tests/test_data/zimbabwe_*.c
 |---|---|---|
 | `condom_use.csv` | `partnership,<year>,<year>,...`: condom use by partnership type `"(i,j)"` (risk groups of the two partners), per year | the sexual network; default is STIsim's |
 | `n_vmmc.csv` | `year,n_vmmc`: number of men circumcised (VMMC) per year | VMMC; none if absent |
-| `vls.csv` | `year,value`: share of people on ART who are virally suppressed | ART suppression target; none if absent |
+| `vls.csv` | `year,p_vls`: share of people on ART who are virally suppressed (from MPHIA; see `docs/targets.md`) | ART suppression target; none if absent |
 
 ## Calibration targets (P3)
 
-Not read by `malawi.py`. The target set is to be agreed first. It will probably include adult (15-49) prevalence, PLHIV, new infections, HIV deaths and people on ART, from the data that Optima and EMOD were fitted to.
+Not read by `malawi.py`. `../make_targets.py` makes `results/targets.csv` from the files in `sources/` (described in its README), `malawi_hiv_calib.csv` and `malawi_population.csv`. The target set is described in `docs/targets.md`.

@@ -1,69 +1,57 @@
-# P3 target set for HIVsim Malawi (draft for review)
+# P3 target set for HIVsim Malawi
 
-**Status:** draft, 2 Nov 2026. Robyn approves this before calibrating (plan, P3). Once approved, the numbers go in `results/targets.csv`, and the same set is used to score EMOD and Optima.
+**Status:** agreed with Robyn, 2 Nov 2026. The values are in `results/targets.csv`, made by `models/hivsim/make_targets.py` from `models/hivsim/data/sources/`. The same set is used to score EMOD and Optima.
 
-**What it is for:** HIVsim is the third model of the comparison, so it has to fit the evidence that EMOD and Optima were fitted to. It doesn't need to fit better than they do. The decomposition is about outputs the data don't pin down (transmissions by cascade stage of the source, deaths on ART), so the targets cover what the data do pin down: population, prevalence by age and sex, the epidemic curve, and the cascade.
+**What it is for:** HIVsim is the third model of the comparison, so it has to fit the evidence that EMOD and Optima were fitted to. It doesn't need to fit better than they do. The decomposition is about outputs the data don't pin down (transmissions by cascade stage of the source, deaths on ART), so the targets cover what the data do pin down: prevalence by age and sex, the size of the epidemic over time, and prevalence among sex workers.
 
-## Sources
+## Targets
 
-| Source | What it gives | Kind | Notes |
-|---|---|---|---|
-| DHS 2004, 2010, 2015-16 | HIV prevalence by sex and 5-year age group, 15-49 | survey | In Optima's data (`hivprev`, years 2004, 2010, 2015), some age groups pooled |
-| MPHIA 2015-16 | prevalence by sex and age, 15-64; share of PLHIV diagnosed, on ART, suppressed | survey | In Optima's data as 2016 (`hivprev`, and the cascade in `optpropdx`, `optproptx`, `optpropsupp`) |
-| MPHIA 2020-21 | the same as MPHIA 2015-16 | survey | Not in Optima's data (the project's data ends in 2019-20). To add from the MPHIA 2020-21 report |
-| FSW surveys (2006, 2014, 2018, 2019) | prevalence among female sex workers | survey | In Optima's data |
-| UNAIDS estimates, 2025 round | PLHIV, new infections, AIDS deaths, 1990-2025; number on ART, 2010-2025 | model (Spectrum) | `models/hivsim/data/malawi_hiv_calib.csv` |
-| Spectrum estimates in Optima's project | PLHIV, new infections, AIDS deaths with bounds, 1990-2019 | model (Spectrum) | An earlier round: PLHIV in 1990 is 406,000 here against 440,000 in the 2025 round |
-| WPP | population by age and sex | estimate | Already an input (demography), so a check rather than a target |
+| Target | Population | Years | Source | Role |
+|---|---|---|---|---|
+| HIV prevalence by sex and 5-year age group | 15-49 (DHS); 15-64 (MPHIA 2015-16); 15-64 and 65+ (MPHIA 2020-21) | DHS 2004, 2010, 2015-16; MPHIA 2015-16, 2020-21 | EMOD's targets (DHS, MPHIA 2015-16); MPHIA 2020-21 report, Table 6.3 | primary |
+| PLHIV | all ages | 1990-2021 | UNAIDS, 2025 round | secondary |
+| New infections | all ages | 1990-2021 | UNAIDS, 2025 round | secondary, and the main check on the early epidemic (EMOD and Optima both peak too low before 2000) |
+| AIDS deaths | all ages | 1990-2021 | UNAIDS, 2025 round | secondary |
+| HIV incidence | 15-49, by sex | MPHIA 2015-16, 2020-21 | EMOD's targets; MPHIA 2020-21 report, Table 5.1 | secondary (wide intervals). One of EMOD's targets |
+| Prevalence among female sex workers | FSW | 2006, 2014, 2018, 2019 | Optima's data | secondary |
 
-## Proposed targets
+**Checks, not fitted:**
+- **Number on ART by sex,** 2004-2015 (programme data via Spectrum, one of EMOD's targets). ART is an input only as a total, so the split by sex is a check.
+- **MPHIA 2020-21 cascade:** share diagnosed, share of those on ART, and share suppressed. HIVsim matches the number on ART to its input, so these shares follow from PLHIV and can't be fitted separately (Robyn). The way to get them right is to get PLHIV right.
+- **Population** by sex and 5-year age group, 1990-2020 (WPP). Demography is an input.
 
-Primary targets carry most of the weight. Secondary ones are model estimates, or they cover groups that are small or poorly measured.
+**Inputs, not targets:** the number on ART (UNAIDS from 2010, Optima's data before); viral suppression among people on ART (`data/vls.csv`, from MPHIA, see below); circumcision coverage, once there is an `n_vmmc.csv`.
 
-| # | Target | Population | Years | Source | Role |
-|---|---|---|---|---|---|
-| 1 | HIV prevalence by sex and 5-year age group | 15-49 (DHS); 15-64 (MPHIA) | 2004, 2010, 2015-16 (DHS and MPHIA), 2020-21 | DHS, MPHIA | primary |
-| 2 | Share of PLHIV who know their status | 15-64, by sex | 2015-16, 2020-21 | MPHIA | primary |
-| 3 | Share of PLHIV on ART | 15-64, by sex | 2015-16, 2020-21 | MPHIA | check: ART is an input, so this mostly tests the size of the PLHIV denominator |
-| 4 | Share of people on ART who are virally suppressed | 15-64 | 2015-16, 2020-21 | MPHIA | primary for suppression, if HIVsim's suppression isn't set from data instead (see question 5) |
-| 5 | PLHIV | all ages | 1990-2021 | UNAIDS | secondary |
-| 6 | New infections | all ages | 1990-2021 | UNAIDS | secondary, and the main check on the early epidemic (both originals peak too low before 2000) |
-| 7 | AIDS deaths | all ages | 1990-2021 | UNAIDS | secondary |
-| 8 | FSW prevalence | female sex workers | 2006, 2014, 2018, 2019 | FSW surveys | secondary, low weight (definitions and sampling differ between surveys) |
-| 9 | Population | by age and sex | 1990-2021 | WPP | check only (an input) |
-
-**Not targets:** the number on ART (an input: UNAIDS from 2010, Optima's data before); circumcision coverage (an input, once there is an `n_vmmc.csv`); anything after 2021, which is projection; the Optima and EMOD model outputs themselves, which are what the scorecard compares, not what HIVsim fits.
-
-**Excluded from Optima's prevalence data until we know their source:** the 2018 points (one value shared by all ages 15-24, 25-34 and so on, and 1.09% at every age under 15, so probably a model estimate); 20% for every female group aged 50 and over in 2007; and the 2000 values for children.
+**Left out:** anything after 2021 (projection); the earlier Spectrum round in Optima's project, which is out of date; and Optima's prevalence points of unknown source (2018, one value shared by all ages 15-24, 25-34 and so on; 20% for every female group aged 50 and over in 2007; children in 2000). Rowan hasn't confirmed their source.
 
 ## How the model is compared with them
 
-- Prevalence by age and sex is compared in the survey's own age groups. Where Optima's data pools groups (DHS 2004 gives one value for 15-24), the model's prevalence is pooled the same way. HIVsim's `age_bins` will be set to 5-year groups from 15 to 65.
-- Survey targets are proportions with known sample sizes, so their uncertainty comes from the survey's confidence intervals. UNAIDS series come with bounds; the 2025 round's bounds are in the UNAIDS downloads in `raw_data/`.
-- The likelihood and weights are set with `calib:likelihood-design` once the set is approved. The weighting proposed here (surveys primary, UNAIDS secondary) is an input to that, not a final choice.
+- **Prevalence: the shape matters more than the exact level** (Robyn). The age and sex pattern and the trend between surveys should fit; a survey's level can be missed by a little. The likelihood should reflect that, for example by widening the survey intervals or giving the age pattern more weight than the level.
+- Prevalence is compared in the survey's own groups. HIVsim records results in 5-year age groups from 15 to 65 (`age_bins` in `malawi.py`).
+- **Uncertainty:** the DHS and MPHIA 2015-16 values carry EMOD's effective sample sizes and 95% intervals. For MPHIA 2020-21 the intervals come from the number tested (Jeffreys), so they leave out the survey design effect and are narrower than the survey's own. UNAIDS bounds aren't in the file yet (they're in the UNAIDS downloads in `raw_data/`).
+- **Dates:** each survey is dated at the middle of its fieldwork: DHS 2004 2004.9, DHS 2010 2010.7, DHS 2015-16 2015.9, MPHIA 2015-16 2016.2, MPHIA 2020-21 2020.5 (fieldwork January-March 2020 and March-April 2021). EMOD's files label these 2004, 2010, 2015.5 and 2015.
+- **Weights:** surveys primary, UNAIDS secondary, sex workers secondary. The likelihood and the numbers are set with `calib:likelihood-design`.
+
+## Viral suppression (input)
+
+`data/vls.csv` sets the share of people on ART who are suppressed: 91.3% in 2015-16 and 96.9% in 2020-21 (MPHIA 2020-21 report, Table 9.1.B), interpolated between. Before 2016 it holds at 91.3% back to the start of ART, since there is no national measurement earlier.
+
+The 2015-16 value is from Optima's data (`optpropsupp`, 2016). Its three values (94.6%, 91.3%, 88.0%) are in the order high, best, low rather than Optima's best, low, high; 91.3% is the middle one and agrees with MPHIA 2015-16. Optima's share diagnosed for 2016 has the same order (81.0%, 76.8%, 72.6%).
 
 ## The other two models
 
-- **Optima** was fitted to the prevalence data above (in `hivprev`), with the Spectrum estimates and the 2016 cascade available for comparison. Its fit: PLHIV and population close; early new infections and AIDS deaths too low (see `optima_inventory.md`).
-- **EMOD** was fitted to prevalence by age and sex, incidence, ART coverage and circumcision coverage (Bansi-Matharu 2025, Table 1), but we don't yet have its target files. **Needed from Daniel:** EMOD's Malawi calibration targets (sources, years, age groups) and the weights. If they include targets not listed here (incidence from MPHIA, ART by sex, ANC prevalence), they are added to this set.
+- **Optima** was fitted to prevalence by population (its `hivprev` data), with the Spectrum estimates and the 2016 cascade for comparison. Its fit: PLHIV and population close; early new infections and AIDS deaths too low (see `optima_inventory.md`).
+- **EMOD**'s targets are in its calibration files (PR #1, `EMOD_MWI/calib_targets_data/`): prevalence by sex and age (DHS 2004, 2010, 2015-16; MPHIA 2015-16), incidence (MPHIA 2015-16 and 2020-21), numbers on ART by sex (2004-2015), ART coverage by sex and age (MPHIA 2015-16), and population (WPP). Prevalence and incidence are targets here, numbers on ART by sex and population are checks, and ART coverage by sex and age isn't used, for the same reason as the MPHIA cascade. EMOD also has prevalence by region (`ARTCoverage.csv`, despite its name), which this national set leaves out. Its weights are in its calibration form (`EMOD_MWI/Data/calibration_ingest_form_Malawi_3_node_DTC.xlsm`), not yet read.
 
 ## Calibration knobs (provisional, for the second half of P3)
 
-Listed so the targets can be checked for coverage. Each target above should be moved by at least one knob, and every knob should move at least one target.
+Each target should be moved by at least one knob, and every knob should move at least one target.
 
 | Knob | Mechanism | Main targets |
 |---|---|---|
 | `beta_m2f` (with `rel_beta_f2m`, female to male relative to male to female, fixed at 0.5) | per-act transmission | prevalence level, new infections |
 | `rel_init_prev` | size of the epidemic in 1985 | early PLHIV, new infections before 2000 |
 | risk-group shares and concurrency (`prop_f0`, `prop_m0`, `f1_conc`, `m1_conc`) | sexual network | prevalence by age and sex, FSW prevalence |
-| testing levels (general population and low CD4) | diagnosis, which ART needs | share diagnosed; the number on ART being reachable |
+| testing levels (general population and low CD4) | diagnosis, which ART needs | the number on ART being reachable |
 
-The ART input can only be reached if enough people are diagnosed, so testing is calibrated together with the epidemic, not separately.
-
-## Questions for Robyn
-
-1. **Which UNAIDS round?** The 2025 round (already in the repo) or the earlier Spectrum round in Optima's project? HIVsim would fit the 2025 round, but the models would then be scored against data from different rounds. Proposed: 2025 round for targets, and both rounds shown in the scorecard.
-2. **Weights:** surveys primary, UNAIDS secondary, FSW low. Agree?
-3. **MPHIA 2020-21:** I can't download it from this machine. Can you add the prevalence by age and sex and the cascade (to `raw_data/`)?
-4. **The excluded Optima prevalence points** (2018, 2007 50+, 2000 children): leave out, or does Rowan know their source?
-5. **Viral suppression:** set it from MPHIA as an input (`vls.csv`), or fit to it? Proposed: fit, since the share suppressed matters for transmissions on ART, one of the outputs the paper decomposes.
+Testing has no target of its own now that the cascade shares are checks. It has to diagnose enough people for the ART input to be reached, so it is fitted with the epidemic, not separately.
