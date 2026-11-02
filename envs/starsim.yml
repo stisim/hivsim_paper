@@ -8,3 +8,5 @@ dependencies:
   - pip:
     - starsim==4.0.0rc1 # From PyPI, with its kernels already built
     - stisim @ git+https://github.com/starsimhub/stisim@c815b0a96ed22e52fd10c79bdceafb1d28b90d6f # rs-art-split (STIsim PR #607), on v4
+variables:
+  PYTHONNOUSERSITE: 1 # Ignore packages in ~/.local, which can shadow these

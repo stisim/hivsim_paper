@@ -9,3 +9,5 @@ dependencies:
     - sciris==3.6.2
     - six # Optima uses it but does not declare it
     - optima @ git+https://github.com/optimamodel/optima@f5e577fa8636266e543d198fb50eb2f79fdc4d7b # 2.12.2
+variables:
+  PYTHONNOUSERSITE: 1 # Ignore packages in ~/.local, which can shadow these
