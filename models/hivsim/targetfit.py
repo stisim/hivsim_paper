@@ -135,6 +135,25 @@ def coverage_table(vals, targets):
     return pd.DataFrame(dict(points=g.size(), in_range=g.in_range.sum(), in_90=g.in_90.sum(), data_below_all_runs=g.below.sum()))
 
 
+def trajectory_check(vals, targets, factor=1.5):
+    """
+    Whole trajectories, not points: for each UNAIDS series, the share of runs within `factor` of the data in every
+    year; and the shape of the epidemic curve, new infections in 2020 over their 1990-95 peak, in the data and the runs
+    """
+    rows = []
+    for target in ['plhiv', 'new_infections', 'aids_deaths']:
+        t = targets[targets.target == target].sort_values('year')
+        ratio = vals[t.index].div(t.value.values, axis=1)
+        within = ((ratio >= 1/factor) & (ratio <= factor)).all(axis=1)
+        rows.append(dict(check=f'{target}: within x{factor} of the data every year', data=np.nan, runs_median=np.nan, share_of_runs=within.mean()))
+    t = targets[targets.target == 'new_infections'].sort_values('year')
+    early, late = t[t.year < 1996], t[np.floor(t.year) == 2020]
+    data = late.value.item() / early.value.max()
+    runs = vals[late.index[0]] / vals[early.index].max(axis=1)
+    rows.append(dict(check='new infections 2020 / peak 1990-95', data=data, runs_median=runs.median(), share_of_runs=((runs > data/factor) & (runs < data*factor)).mean()))
+    return pd.DataFrame(rows).set_index('check')
+
+
 def style(ax, title=None, ylabel=None):
     ax.spines[['top', 'right']].set_visible(False)
     for s in ['left', 'bottom']:
@@ -219,6 +238,9 @@ def plot(expdir):
     table.to_csv(expdir / 'outputs' / 'coverage_table.csv')
     summary = dict(n_runs=nruns, best_run=int(ib), best_score=float(scores[ib]), median_score=float(np.nanmedian(scores)),
                    best_pars=pars.iloc[ib].to_dict())
+    traj = trajectory_check(vals, targets)
+    traj.to_csv(expdir / 'outputs' / 'trajectory_check.csv')
+    print('\nWhole trajectories:\n' + traj.round(3).to_string())
 
     # Noise: spread across seeds of one parameter set, against the spread across parameter sets
     central = [r for r in load_runs(expdir)[2] if r.get('kind') == 'central' and 'values' in r]

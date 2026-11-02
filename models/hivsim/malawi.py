@@ -18,7 +18,7 @@ location = 'malawi'
 start = 1985 # Optima starts in 1990; the comparison is 2000-2020
 
 required = [f'{location}_age_{start}.csv', f'{location}_asfr.csv', f'{location}_deaths.csv', 'init_prev_hiv.csv', 'n_art.csv']
-optional = ['condom_use.csv', 'n_vmmc.csv', 'vls.csv']
+optional = ['condom_use.csv', 'vmmc.csv', 'vls.csv']
 
 
 def check_data():
@@ -46,11 +46,14 @@ def make_testing(test_scale=1):
     return [general, low_cd4, anc]
 
 
-def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_pars=None, test_scale=1, **kwargs):
-    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual """
+def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_pars=None, test_scale=1, condom_scale=1, **kwargs):
+    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual; condom_scale multiplies condom use (at most 1) """
     check_data()
 
-    nw = sti.StructuredSexual(condom_data=read('condom_use.csv'), **(nw_pars or {}))
+    condoms = read('condom_use.csv')
+    if condoms is not None:
+        condoms = condoms.set_index('partnership').mul(condom_scale).clip(upper=1).reset_index()
+    nw = sti.StructuredSexual(condom_data=condoms, **(nw_pars or {}))
     hiv = sti.HIV(**{
         'beta_m2f': 0.01, # To calibrate
         'init_prev_data': read('init_prev_hiv.csv'),
@@ -58,11 +61,11 @@ def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_p
     } | (hiv_pars or {}))
 
     n_art = read('n_art.csv', index_col='year')
-    n_vmmc = read('n_vmmc.csv', index_col='year')
+    vmmc = read('vmmc.csv') # Share of men circumcised, by age
     vls = read('vls.csv', index_col='year')
     intvs = make_testing(test_scale) + [sti.ART(coverage=n_art, vls_coverage=vls)]
-    if n_vmmc is not None:
-        intvs.append(sti.VMMC(coverage=n_vmmc))
+    if vmmc is not None:
+        intvs.append(sti.VMMC(coverage=vmmc))
 
     sim = sti.Sim(
         n_agents=n_agents,

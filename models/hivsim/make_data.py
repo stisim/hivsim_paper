@@ -5,10 +5,13 @@ Make the Malawi data that is derived rather than downloaded:
 - n_art.csv, from the UNAIDS number on ART (2010 on) and Optima's before 2010;
 - malawi_deaths.csv, the WPP all-cause death rates (malawi_deaths_all_cause.csv) with AIDS deaths removed:
   at ages 15 and over by dedup_deaths, and at 0-14 by the share of child deaths that UNAIDS estimates were AIDS
-  (needs malawi_population.csv, the WPP population by sex and single year of age).
+  (needs malawi_population.csv, the WPP population by sex and single year of age);
+- condom_use.csv, condom use by partnership type and year: the pattern of STIsim's Zimbabwe file (from the
+  sti_notification project), scaled to MPHIA 2020-21's condom use at last sex with a nonmarital partner;
+- vmmc.csv, the share of men circumcised by age and year, from MPHIA 2020-21.
 
-    python make_data.py            # all three
-    python make_data.py n_art      # without raw_data/
+    python make_data.py                        # all
+    python make_data.py n_art condoms vmmc     # without raw_data/
 """
 import sys
 from pathlib import Path
@@ -38,6 +41,12 @@ optima_n_art = {1990: 0, 1991: 769, 1992: 1537, 1993: 2306, 1994: 3075, 1995: 38
 death_anchors = dict(base_year=1985, end_year=2025)
 child_aids = 'AIDS-related deaths_AIDS-related deaths - Children (0-14)' # UNAIDS file prefix
 child_ages = 15 # Ages below this use the UNAIDS share
+
+# Condom use: Zimbabwe's file reaches 0.8 in 2020 for partnerships not between two low-risk people; MPHIA 2020-21 has
+# 49.6% condom use at last sex with a nonmarital partner, so every value is scaled by 0.496/0.8. Only the pattern
+# (by year and partnership type) is meant to carry over: the level is uncertain, and is varied in calibration
+condom_ref = ('(0,1)', '2020')
+vmmc_start = 2010 # Before the VMMC programme, the circumcised are those circumcised traditionally (MPHIA's nonmedical)
 
 
 def to_number(val):
@@ -101,7 +110,27 @@ def make_deaths():
     print('Largest share of adult deaths removed as AIDS:\n', peak.round(2).to_string(index=False))
 
 
+def make_condoms():
+    zim = pd.read_csv(datadir/'sources'/'condom_use_zimbabwe_sti_notification.csv', index_col='partnership')
+    mphia = pd.read_csv(datadir/'sources'/'mphia_2020_21.csv').query('table == "12.4 condom at last nonmarital sex" and sex == "all"').value.item()
+    scale = mphia / zim.loc[condom_ref]
+    (zim * scale).round(3).to_csv(datadir/'condom_use.csv')
+    print(f'Condom use: Zimbabwe pattern x {scale:.3f}')
+
+
+def make_vmmc():
+    """ Share of men circumcised by age (AgeBin, p_vmmc): MPHIA's nonmedical share up to vmmc_start, rising linearly to its total in 2020.5 """
+    m = pd.read_csv(datadir/'sources'/'mphia_2020_21.csv')
+    circ = m[m.table.str.startswith('12.5')].pivot_table(index=['age_lo', 'age_hi'], columns='table', values='value')
+    nonmed, total = circ['12.5 circumcision nonmedical'], circ.sum(axis=1)
+    rows = []
+    for (lo, hi) in circ.index:
+        for year, p in [(1985, nonmed[lo, hi]), (vmmc_start, nonmed[lo, hi]), (2020.5, total[lo, hi])]:
+            rows.append(dict(Year=year, AgeBin=f'[{lo},{hi})', p_vmmc=round(p, 3)))
+    pd.DataFrame(rows).to_csv(datadir/'vmmc.csv', index=False)
+
+
 if __name__ == '__main__':
-    steps = sys.argv[1:] or ['targets', 'n_art', 'deaths']
+    steps = sys.argv[1:] or ['targets', 'n_art', 'deaths', 'condoms', 'vmmc']
     for step in steps:
-        dict(targets=make_targets, n_art=make_n_art, deaths=make_deaths)[step]()
+        dict(targets=make_targets, n_art=make_n_art, deaths=make_deaths, condoms=make_condoms, vmmc=make_vmmc)[step]()
