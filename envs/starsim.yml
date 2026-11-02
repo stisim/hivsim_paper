@@ -1,0 +1,11 @@
+# HIVsim (models/hivsim) and Optima′ (models/optima), on Starsim v4
+#   conda env create -f envs/starsim.yml
+name: starsim
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - sciris==3.6.2 # 3.7.0 breaks importing Starsim; Starsim v4 needs >=3.5
+    - starsim @ git+https://github.com/starsimhub/starsim@23c49d45a4f2fb707c47daa04a8598026c3716a3 # On v4
+    - stisim @ git+https://github.com/starsimhub/stisim@fb0f0dff9b91cfe6f5427601cfdf15df81e571be # rs-art-split (STIsim PR #607)

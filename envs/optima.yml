@@ -1,0 +1,11 @@
+# Optima HIV 2.12.2, only to regenerate the references in optima_ref/ (they are committed)
+#   conda env create -f envs/optima.yml
+name: optima
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - sciris==3.6.2
+    - six # Optima uses it but does not declare it
+    - optima @ git+https://github.com/optimamodel/optima@f5e577fa8636266e543d198fb50eb2f79fdc4d7b # 2.12.2
