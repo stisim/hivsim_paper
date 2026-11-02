@@ -328,3 +328,19 @@ population,2020.5,m,50,55,all,197899.5,,,,WPP,check
 population,2020.5,m,55,60,all,151648.0,,,,WPP,check
 population,2020.5,m,60,65,all,115812.0,,,,WPP,check
 population,2020.5,m,65,100,all,218373.5,,,,WPP,check
+art_coverage,2010.5,all,0,100,all,0.28,,,,UNAIDS 2025,primary
+art_coverage,2011.5,all,0,100,all,0.35,,,,UNAIDS 2025,primary
+art_coverage,2012.5,all,0,100,all,0.43,,,,UNAIDS 2025,primary
+art_coverage,2013.5,all,0,100,all,0.49,,,,UNAIDS 2025,primary
+art_coverage,2014.5,all,0,100,all,0.55,,,,UNAIDS 2025,primary
+art_coverage,2015.5,all,0,100,all,0.59,,,,UNAIDS 2025,primary
+art_coverage,2016.5,all,0,100,all,0.67,,,,UNAIDS 2025,primary
+art_coverage,2017.5,all,0,100,all,0.73,,,,UNAIDS 2025,primary
+art_coverage,2018.5,all,0,100,all,0.79,,,,UNAIDS 2025,primary
+art_coverage,2019.5,all,0,100,all,0.81,,,,UNAIDS 2025,primary
+art_coverage,2020.5,all,0,100,all,0.84,,,,UNAIDS 2025,primary
+art_coverage,2021.5,all,0,100,all,0.86,,,,UNAIDS 2025,primary
+art_coverage,2020.5,m,15,100,all,0.828,0.8001017975566639,0.8534316346663685,768.0,MPHIA 2020-21,primary
+art_coverage,2020.5,f,15,100,all,0.887,0.8712606045886317,0.9014176682950213,1693.0,MPHIA 2020-21,primary
+vls_among_plhiv,2020.5,m,15,100,all,0.801,0.7716626059384334,0.828073763241398,768.0,MPHIA 2020-21,primary
+vls_among_plhiv,2020.5,f,15,100,all,0.86,0.8428617275531038,0.8759087017716363,1693.0,MPHIA 2020-21,primary

@@ -20,7 +20,7 @@ targetfile = here.parents[1] / 'results' / 'targets.csv'
 # Colours (reference palette: categorical slots 1 and 2, blue ramp, text inks)
 c_run, c_runs, c_band, c_best, c_data, c_muted = '#2a78d6', '#9ec5f4', '#cde2fb', '#eb6834', '#0b0b0b', '#52514e'
 
-stocks = ['prevalence', 'plhiv', 'on_art', 'population', 'diagnosed', 'on_ART_among_diagnosed', 'suppressed_among_on_ART']
+stocks = ['prevalence', 'plhiv', 'on_art', 'population', 'diagnosed', 'on_ART_among_diagnosed', 'suppressed_among_on_ART', 'art_coverage', 'vls_among_plhiv']
 flows = ['new_infections', 'aids_deaths', 'incidence']
 
 
@@ -66,6 +66,8 @@ class TargetRecorder(ss.Analyzer):
         if row.target == 'diagnosed': return share(hiv.diagnosed, inf)
         if row.target == 'on_ART_among_diagnosed': return share(hiv.on_art, inf & hiv.diagnosed)
         if row.target == 'suppressed_among_on_ART': return share(art.on_effective_art, inf & hiv.on_art)
+        if row.target == 'art_coverage': return share(hiv.on_art, inf)
+        if row.target == 'vls_among_plhiv': return share(art.on_effective_art, inf)
         if row.target == 'incidence': return n(m & ~hiv.infected) # Susceptible people, the denominator
         raise ValueError(row.target)
 
@@ -135,17 +137,22 @@ def coverage_table(vals, targets):
     return pd.DataFrame(dict(points=g.size(), in_range=g.in_range.sum(), in_90=g.in_90.sum(), data_below_all_runs=g.below.sum()))
 
 
-def trajectory_check(vals, targets, factor=1.5):
+def trajectory_check(vals, targets, factor=1.5, start=2000, art_tol=0.1):
     """
-    Whole trajectories, not points: for each UNAIDS series, the share of runs within `factor` of the data in every
-    year; and the shape of the epidemic curve, new infections in 2020 over their 1990-95 peak, in the data and the runs
+    Whole trajectories, not points, from `start` (Robyn: the later epidemic matters most): for each UNAIDS count,
+    the share of runs within `factor` of the data in every year; for UNAIDS ART coverage, within `art_tol` (absolute)
+    every year; and the shape of the epidemic curve, new infections in 2020 over their 1990-95 peak
     """
     rows = []
     for target in ['plhiv', 'new_infections', 'aids_deaths']:
-        t = targets[targets.target == target].sort_values('year')
+        t = targets[(targets.target == target) & (targets.year >= start)].sort_values('year')
         ratio = vals[t.index].div(t.value.values, axis=1)
         within = ((ratio >= 1/factor) & (ratio <= factor)).all(axis=1)
-        rows.append(dict(check=f'{target}: within x{factor} of the data every year', data=np.nan, runs_median=np.nan, share_of_runs=within.mean()))
+        rows.append(dict(check=f'{target}: within x{factor} of the data every year from {start}', data=np.nan, runs_median=np.nan, share_of_runs=within.mean()))
+    t = targets[(targets.target == 'art_coverage') & (targets.source == 'UNAIDS 2025')]
+    if len(t) and set(t.index) <= set(vals.columns):
+        within = (vals[t.index] - t.value.values).abs().le(art_tol).all(axis=1)
+        rows.append(dict(check=f'art_coverage: within {art_tol:.0%} of the data every year', data=np.nan, runs_median=np.nan, share_of_runs=within.mean()))
     t = targets[targets.target == 'new_infections'].sort_values('year')
     early, late = t[t.year < 1996], t[np.floor(t.year) == 2020]
     data = late.value.item() / early.value.max()
@@ -232,6 +239,33 @@ def plot(expdir):
     fig.suptitle(f'Epidemic over time: data and {nruns} runs', fontsize=10, x=0.01, ha='left')
     fig.savefig(figdir / 'coverage_time_series.png', dpi=150)
     plt.close(fig)
+
+    # ART and suppression: UNAIDS ART coverage over time, and the MPHIA 2020-21 cascade by sex
+    cas = targets[targets.target.isin(['art_coverage', 'vls_among_plhiv', 'diagnosed'])]
+    cas = cas[cas.index.isin(vals.columns)]
+    if len(cas):
+        fig, axes = plt.subplots(1, 2, figsize=(10, 3.6), constrained_layout=True, gridspec_kw=dict(width_ratios=[1.3, 1]))
+        t = cas[(cas.target == 'art_coverage') & (cas.source == 'UNAIDS 2025')].sort_values('year')
+        if len(t):
+            draw(axes[0], t.year.values, vals[t.index].values, best[t.index].values, t.value.values, t.lower.values, t.upper.values)
+        style(axes[0], 'ART coverage, share of PLHIV on ART (UNAIDS, all ages)')
+        axes[0].yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1, decimals=0))
+        axes[0].legend(fontsize=7, frameon=False, loc='upper left')
+        m = cas[cas.source == 'MPHIA 2020-21'].sort_values(['target', 'sex'])
+        names = {'diagnosed': 'Diagnosed', 'art_coverage': 'On ART', 'vls_among_plhiv': 'Suppressed'}
+        ax = axes[1]
+        for k, (tid, r) in enumerate(m.iterrows()):
+            q = vals[tid].quantile([0.05, 0.95]).values
+            ax.plot([k, k], q, color=c_band, lw=10, solid_capstyle='butt', label='Runs, 5-95%' if k == 0 else None)
+            ax.plot(k, best[tid], 'o', color=c_best, ms=7, label='Best run' if k == 0 else None)
+            err = None if np.isnan(r.lower) else [[r.value - r.lower], [r.upper - r.value]]
+            ax.errorbar(k, r.value, yerr=err, fmt='o', ms=4, color=c_data, capsize=2, label='Data' if k == 0 else None, zorder=5)
+        ax.set_xticks(range(len(m)), [f'{names[r.target]}\n{"women" if r.sex == "f" else "men"}' for _, r in m.iterrows()], fontsize=7)
+        style(ax, 'Share of PLHIV 15+ (MPHIA 2020-21)')
+        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1, decimals=0))
+        fig.suptitle(f'ART and viral suppression: data and {nruns} runs', fontsize=10, x=0.01, ha='left')
+        fig.savefig(figdir / 'coverage_art_suppression.png', dpi=150)
+        plt.close(fig)
 
     # Coverage table and best run
     table = coverage_table(vals, targets)

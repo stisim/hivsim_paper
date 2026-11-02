@@ -34,20 +34,31 @@ def read(filename, **kwargs):
     return pd.read_csv(path, **kwargs) if path.exists() else None
 
 
-def make_testing(test_scale=1):
-    """ HIV testing: general population, people with low CD4, and ANC; test_scale multiplies the first two """
-    years = np.arange(1990, 2031)
-    scaleup = np.clip((years - 2004) / (2020 - 2004), 0, 1) # Testing scales up from 2004 to 2020; to calibrate
+def make_testing(test_scale=1, test_rel_m=1, test_start=2004):
+    """
+    HIV testing: general population, people with low CD4, and ANC. General and low-CD4 testing scale up linearly
+    from test_start to 2020, to levels multiplied by test_scale; men's general testing is test_rel_m times women's
+    """
+    def scaleup(sim):
+        return np.clip((sim.t.now('year') - test_start) / (2020 - test_start), 0, 1)
+
+    def general_prob(sim, uids):
+        rel = np.where(sim.people.female[uids], 1.0, test_rel_m)
+        return np.minimum(0.1 * test_scale * scaleup(sim) * rel, 1)
+
+    def low_cd4_prob(sim, uids):
+        return np.full(len(uids), min(0.8 * test_scale * scaleup(sim), 1))
+
     undiagnosed = lambda sim: ~sim.diseases.hiv.diagnosed & ~sim.diseases.hiv.on_art
-    general = sti.HIVTest(name='general_testing', years=years, test_prob_data=np.minimum(0.1*test_scale*scaleup, 1), eligibility=undiagnosed)
-    low_cd4 = sti.HIVTest(name='low_cd4_testing', years=years, test_prob_data=np.minimum(0.8*test_scale*scaleup, 1),
+    general = sti.HIVTest(name='general_testing', test_prob_data=general_prob, start=1990, eligibility=undiagnosed)
+    low_cd4 = sti.HIVTest(name='low_cd4_testing', test_prob_data=low_cd4_prob, start=1990,
                           eligibility=lambda sim: undiagnosed(sim) & (sim.diseases.hiv.cd4 < 200))
     anc = sti.ANCTest(visit_prob=0.9, start=2004) # Malawi's PMTCT programme; to calibrate
     return [general, low_cd4, anc]
 
 
-def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_pars=None, test_scale=1, condom_scale=1, **kwargs):
-    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual; condom_scale multiplies condom use (at most 1) """
+def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_pars=None, test_scale=1, test_rel_m=1, test_start=2004, condom_scale=1, **kwargs):
+    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual; condom_scale multiplies condom use (at most 1); see make_testing for the others """
     check_data()
 
     condoms = read('condom_use.csv')
@@ -63,7 +74,7 @@ def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_p
     n_art = read('n_art.csv', index_col='year')
     vmmc = read('vmmc.csv') # Share of men circumcised, by age
     vls = read('vls.csv', index_col='year')
-    intvs = make_testing(test_scale) + [sti.ART(coverage=n_art, vls_coverage=vls)]
+    intvs = make_testing(test_scale, test_rel_m, test_start) + [sti.ART(coverage=n_art, vls_coverage=vls)]
     if vmmc is not None:
         intvs.append(sti.VMMC(coverage=vmmc))
 

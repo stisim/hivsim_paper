@@ -53,3 +53,7 @@ table,sex,age_lo,age_hi,value,n,lower,upper
 12.4 condom at last nonmarital sex,m,15,100,0.550,,,
 12.4 condom at last nonmarital sex,f,15,100,0.396,,,
 12.4 condom at last nonmarital sex,all,15,100,0.496,,,
+9.1.A on ART among PLHIV,m,15,100,0.828,768,,
+9.1.A on ART among PLHIV,f,15,100,0.887,1693,,
+9.1.A suppressed among PLHIV,m,15,100,0.801,768,,
+9.1.A suppressed among PLHIV,f,15,100,0.860,1693,,

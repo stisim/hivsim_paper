@@ -70,12 +70,26 @@ def incidence():
 
 
 def unaids():
-    """ UNAIDS estimates (2025 round), all ages, 1990-2021 """
+    """ UNAIDS estimates (2025 round), all ages, 1990-2021; ART coverage (share of PLHIV on ART) is primary """
+    return unaids_series({'hiv.infected': 'plhiv', 'hiv.new_infections': 'new_infections', 'hiv.new_deaths': 'aids_deaths'})
+
+
+def unaids_series(names):
     df = pd.read_csv(here/'data'/'malawi_hiv_calib.csv', index_col='year').loc[1990:2021]
-    names = {'hiv.infected': 'plhiv', 'hiv.new_infections': 'new_infections', 'hiv.new_deaths': 'aids_deaths'}
-    rows = [dict(target=name, year=year + 0.5, sex='all', age_lo=0, age_hi=100, group='all', value=v, source='UNAIDS 2025', role='secondary')
-            for col, name in names.items() for year, v in df[col].items()] # Annual flows and mid-year stocks
+    rows = [dict(target=name, year=year + 0.5, sex='all', age_lo=0, age_hi=100, group='all', value=v, source='UNAIDS 2025',
+                 role='primary' if name == 'art_coverage' else 'secondary')
+            for col, name in names.items() for year, v in df[col].dropna().items()] # Annual flows and mid-year stocks
     return pd.DataFrame(rows)
+
+
+def mphia_cascade():
+    """ MPHIA 2020-21 Table 9.1.A, ages 15+ by sex: shares of all PLHIV on ART and virally suppressed """
+    m = pd.read_csv(srcdir/'mphia_2020_21.csv')
+    m = m[m.table.str.startswith('9.1.A')]
+    lower, upper = jeffreys(m.value.values, m.n.values)
+    names = {'9.1.A on ART among PLHIV': 'art_coverage', '9.1.A suppressed among PLHIV': 'vls_among_plhiv'}
+    return pd.DataFrame(dict(target=m.table.map(names).values, year=mphia2[1], sex=m.sex.values, age_lo=m.age_lo.values, age_hi=m.age_hi.values,
+                             group='all', value=m.value.values, lower=lower, upper=upper, n=m.n.values, source=mphia2[0], role='primary'))
 
 
 def fsw():
@@ -103,7 +117,8 @@ def checks():
 
 
 if __name__ == '__main__':
-    targets = pd.concat([prevalence(), incidence(), unaids(), fsw(), checks()], ignore_index=True)[columns]
+    art = pd.concat([unaids_series({'hiv.p_on_art': 'art_coverage'}), mphia_cascade()]) # Added 2 Nov (exp 03)
+    targets = pd.concat([prevalence(), incidence(), unaids(), fsw(), checks(), art], ignore_index=True)[columns] # New rows go last, so earlier rows keep their numbers (tid)
     outfile.parent.mkdir(exist_ok=True)
     targets.to_csv(outfile, index=False)
     print(targets.groupby(['role', 'target', 'source'], sort=False).size().to_string())
