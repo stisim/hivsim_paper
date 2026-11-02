@@ -8,9 +8,9 @@
 |---|---|---|
 | `malawi_age_1985.csv` | `Time,Sex,AgeStart,Value`: population by single year of age in 1985, `Sex` = `Both sexes` | UN WPP |
 | `malawi_asfr.csv` | `Time,AgeStart,Value`: births per 1,000 women by single year of age, per year | UN WPP |
-| `malawi_deaths.csv` | `Time,Sex,AgeStart,Value`: annual death probability by sex (`Male`/`Female`) and age, per year. Should exclude HIV deaths, which HIVsim models itself (`sti.data.data_utils` has a helper for removing them) | UN WPP, minus HIV deaths |
+| `malawi_deaths.csv` | `Time,Sex,AgeStart,Value`: annual death probability by sex (`Male`/`Female`) and age, per year, excluding AIDS deaths, which HIVsim models itself | `make_data.py`: UN WPP all-cause rates (`malawi_deaths_all_cause.csv`) with AIDS deaths removed by `sti.data.data_utils.dedup_deaths`, anchored at 1985 and 2025 |
 | `init_prev_hiv.csv` | `risk_group,sex,sw,init_prev`: HIV prevalence at the start, by risk group (0-2), sex (`female`/`male`) and sex work (0/1) | Set to give prevalence near 1% in 1985; adjusted in calibration |
-| `n_art.csv` | `year,n_art`: number of people on ART, per year | Same series as Optima and EMOD (Optima's is in `files/Malawi_20220912.prj`) |
+| `n_art.csv` | `year,n_art`: number of people on ART, per year | `make_data.py`: UNAIDS from 2010, Optima's data (`files/Malawi_20220912.prj`) before |
 
 The STIsim repo has examples of the first three in `tests/test_data/zimbabwe_*.csv`.
 
