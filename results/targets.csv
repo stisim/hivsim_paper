@@ -198,7 +198,7 @@ on_art,2011.5,m,15,65,all,118970.0,95176.0,142764.0,,Programme data via Spectrum
 on_art,2012.5,m,15,65,all,148576.0,118861.0,178291.0,,Programme data via Spectrum (EMOD),check
 on_art,2013.5,m,15,65,all,235089.0,188071.0,282107.0,,Programme data via Spectrum (EMOD),check
 on_art,2014.5,m,15,65,all,219716.0,175773.0,263659.0,,Programme data via Spectrum (EMOD),check
-on_art,2015.9,m,15,65,all,225908.0,180726.0,271090.0,,Programme data via Spectrum (EMOD),check
+on_art,2015.5,m,15,65,all,225908.0,180726.0,271090.0,,Programme data via Spectrum (EMOD),check
 on_art,2004.5,f,15,65,all,5549.0,4439.0,6659.0,,Programme data via Spectrum (EMOD),check
 on_art,2005.5,f,15,65,all,15639.0,12511.0,18767.0,,Programme data via Spectrum (EMOD),check
 on_art,2006.5,f,15,65,all,33571.0,26857.0,40285.0,,Programme data via Spectrum (EMOD),check
@@ -210,7 +210,7 @@ on_art,2011.5,f,15,65,all,207407.0,165926.0,248888.0,,Programme data via Spectru
 on_art,2012.5,f,15,65,all,245459.0,196367.0,294551.0,,Programme data via Spectrum (EMOD),check
 on_art,2013.5,f,15,65,all,383514.0,306811.0,460217.0,,Programme data via Spectrum (EMOD),check
 on_art,2014.5,f,15,65,all,368094.0,294475.0,441713.0,,Programme data via Spectrum (EMOD),check
-on_art,2015.9,f,15,65,all,406130.0,324904.0,487356.0,,Programme data via Spectrum (EMOD),check
+on_art,2015.5,f,15,65,all,406130.0,324904.0,487356.0,,Programme data via Spectrum (EMOD),check
 diagnosed,2020.5,m,15,100,all,0.85,,,768.0,MPHIA 2020-21,check
 diagnosed,2020.5,f,15,100,all,0.904,,,1693.0,MPHIA 2020-21,check
 on_ART_among_diagnosed,2020.5,m,15,100,all,0.974,,,662.0,MPHIA 2020-21,check

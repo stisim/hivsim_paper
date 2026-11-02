@@ -34,33 +34,33 @@ def read(filename, **kwargs):
     return pd.read_csv(path, **kwargs) if path.exists() else None
 
 
-def make_testing():
-    """ HIV testing: general population, people with low CD4, and ANC """
+def make_testing(test_scale=1):
+    """ HIV testing: general population, people with low CD4, and ANC; test_scale multiplies the first two """
     years = np.arange(1990, 2031)
     scaleup = np.clip((years - 2004) / (2020 - 2004), 0, 1) # Testing scales up from 2004 to 2020; to calibrate
     undiagnosed = lambda sim: ~sim.diseases.hiv.diagnosed & ~sim.diseases.hiv.on_art
-    general = sti.HIVTest(name='general_testing', years=years, test_prob_data=0.1*scaleup, eligibility=undiagnosed)
-    low_cd4 = sti.HIVTest(name='low_cd4_testing', years=years, test_prob_data=0.8*scaleup,
+    general = sti.HIVTest(name='general_testing', years=years, test_prob_data=np.minimum(0.1*test_scale*scaleup, 1), eligibility=undiagnosed)
+    low_cd4 = sti.HIVTest(name='low_cd4_testing', years=years, test_prob_data=np.minimum(0.8*test_scale*scaleup, 1),
                           eligibility=lambda sim: undiagnosed(sim) & (sim.diseases.hiv.cd4 < 200))
     anc = sti.ANCTest(visit_prob=0.9, start=2004) # Malawi's PMTCT programme; to calibrate
     return [general, low_cd4, anc]
 
 
-def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, pars=None, **kwargs):
-    """ Make the Malawi sim; pars is a dict of calibration parameters for sti.default_build_fn """
+def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_pars=None, test_scale=1, **kwargs):
+    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual """
     check_data()
 
-    nw = sti.StructuredSexual(condom_data=read('condom_use.csv'))
-    hiv = sti.HIV(
-        beta_m2f=0.01, # To calibrate
-        init_prev_data=read('init_prev_hiv.csv'),
-        age_bins=[0, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 100], # The surveys' age groups
-    )
+    nw = sti.StructuredSexual(condom_data=read('condom_use.csv'), **(nw_pars or {}))
+    hiv = sti.HIV(**{
+        'beta_m2f': 0.01, # To calibrate
+        'init_prev_data': read('init_prev_hiv.csv'),
+        'age_bins': [0, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 100], # The surveys' age groups
+    } | (hiv_pars or {}))
 
     n_art = read('n_art.csv', index_col='year')
     n_vmmc = read('n_vmmc.csv', index_col='year')
     vls = read('vls.csv', index_col='year')
-    intvs = make_testing() + [sti.ART(coverage=n_art, vls_coverage=vls)]
+    intvs = make_testing(test_scale) + [sti.ART(coverage=n_art, vls_coverage=vls)]
     if n_vmmc is not None:
         intvs.append(sti.VMMC(coverage=n_vmmc))
 
@@ -77,8 +77,6 @@ def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, pars=None, **kwargs
         verbose=verbose,
         **kwargs,
     )
-    if pars is not None:
-        sim = sti.default_build_fn(sim, pars)
     return sim
 
 

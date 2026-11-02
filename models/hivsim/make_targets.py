@@ -36,12 +36,13 @@ def jeffreys(p, n):
     return stats.beta.ppf(0.025, x + 0.5, n - x + 0.5), stats.beta.ppf(0.975, x + 0.5, n - x + 0.5)
 
 
-def emod_rows(filename, target, valcol, lowcol='lower', highcol='upper', role='primary'):
+def emod_rows(filename, target, valcol, lowcol='lower', highcol='upper', role='primary', surveys=None):
+    """ Rows from one of EMOD's target files; surveys maps EMOD's year labels to (survey, fieldwork midpoint) """
     df = pd.read_csv(srcdir/filename)
     rows = []
     for _, r in df.iterrows():
         lo, hi = agebin(r.AgeBin)
-        survey, year = emod_surveys.get(r.Year, (None, r.Year))
+        survey, year = (surveys or {}).get(r.Year, (None, r.Year))
         rows.append(dict(target=target, year=year, sex=r.Gender[0].lower(), age_lo=lo, age_hi=hi, group='all', value=r[valcol],
                          lower=r[lowcol], upper=r[highcol], n=r.get('effective_count', np.nan), source=survey, role=role))
     return pd.DataFrame(rows)
@@ -49,7 +50,7 @@ def emod_rows(filename, target, valcol, lowcol='lower', highcol='upper', role='p
 
 def prevalence():
     """ DHS 2004, 2010, 2015-16 and MPHIA 2015-16 (EMOD's targets), and MPHIA 2020-21, by sex and 5-year age group """
-    emod = emod_rows('emod_MalawiNationalPrevalence.csv', 'prevalence', 'NationalPrevalence')
+    emod = emod_rows('emod_MalawiNationalPrevalence.csv', 'prevalence', 'NationalPrevalence', surveys=emod_surveys)
     emod = emod[emod.age_hi - emod.age_lo == 5] # The 5-year groups, not the 15-49 totals
     m = pd.read_csv(srcdir/'mphia_2020_21.csv').query('table == "6.3 prevalence"')
     lower, upper = jeffreys(m.value.values, m.n.values) # From the number tested: no design effect, so narrower than the survey's own intervals
@@ -62,7 +63,7 @@ def incidence():
     """ MPHIA 2015-16 and 2020-21, ages 15-49, by sex """
     df = emod_rows('emod_Malawi_Incidence_new.csv', 'incidence', 'Incidence', 'lb', 'ub', role='secondary')
     df = df[(df.age_lo == 15) & (df.age_hi == 50)].copy()
-    df['year'] = df.year.map({emod_surveys[2015.5][1]: 2016.2, 2020: mphia2[1]}) # EMOD labels MPHIA 2015-16 incidence 2015.5, like DHS 2015-16
+    df['year'] = df.year.map({2015.5: 2016.2, 2020: mphia2[1]}) # EMOD labels MPHIA 2015-16 incidence 2015.5
     df['source'] = df.year.map({2016.2: 'MPHIA 2015-16', mphia2[1]: mphia2[0]})
     df['n'] = np.nan # EMOD's effective counts for incidence aren't sample sizes
     return df
