@@ -3,9 +3,8 @@
 name: starsim
 channels: [conda-forge]
 dependencies:
-  - python=3.11
+  - python=3.12 # Starsim 4 needs >=3.12
   - pip
   - pip:
-    - sciris==3.6.2 # 3.7.0 breaks importing Starsim; Starsim v4 needs >=3.5
-    - starsim @ git+https://github.com/starsimhub/starsim@23c49d45a4f2fb707c47daa04a8598026c3716a3 # On v4
-    - stisim @ git+https://github.com/starsimhub/stisim@fb0f0dff9b91cfe6f5427601cfdf15df81e571be # rs-art-split (STIsim PR #607)
+    - starsim==4.0.0rc1 # From PyPI, with its kernels already built
+    - stisim @ git+https://github.com/starsimhub/stisim@c815b0a96ed22e52fd10c79bdceafb1d28b90d6f # rs-art-split (STIsim PR #607), on v4
