@@ -1,0 +1,288 @@
+{
+  "Metadata":{
+      "DateCreated": "Tues March 24, 2015",
+      "Tool": "Notepad++",
+      "Author": "Daniel J. Klein",
+      "RegionName": "Malawi",
+      "IdReference": "0",
+      "NodeCount": 3
+  },
+  "Nodes": [
+    {
+      "NodeID": 1,
+      "NodeName": "Southern",
+      "IndividualProperties":[
+        {
+          "Property": "Accessibility",
+          "Comment": "80% Healthcare Accessible",
+          "Values": [ "Yes", "No" ],
+          "Initial_Distribution": [ 1.0, 0.0],
+          "Transitions": []
+        },
+        {
+          "Property": "OnDrug",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 1, 0],
+          "Transitions": []
+        },
+        {
+          "Property": "PrEPWilling",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 0, 1],
+          "Transitions": []
+        },
+        {
+          "Property": "OnPrEP",
+          "Values": ["False", "True"],
+          "Initial_Distribution": [1, 0],
+          "Transitions": []
+        },
+        {
+          "Property": "OnPrEP_CAB",
+          "Values": ["False", "True"],
+          "Initial_Distribution": [1, 0],
+          "Transitions": []
+        },
+        {
+          "Property": "WillingToStartARTFromPrEPCampaign",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 0, 1],
+          "Transitions": []
+        },
+        {
+          "Property": "Uptake",
+          "Comment": "75% Maximum Uptake of an Intervention",
+          "Values": [ "Yes", "No" ],
+          "Initial_Distribution": [ 0.75, 0.25 ],
+          "Transitions": []
+        },
+        {
+          "Property": "Risk",
+          "Values": [ "LOW","MEDIUM", "HIGH" ],
+          "Initial_Distribution__KP_Risk_Southern": "<-- MARKER",
+          "Initial_Distribution": [ 0.85, 0.15, 0 ],
+          "Transitions": []
+        },
+        {
+          "Property": "InterventionStatus",
+          "Transitions": [],
+          "Values": [
+              "None",
+              "ARTStaging",
+              "ARTStagingDiagnosticTest",
+              "LinkingToART",
+              "LinkingToPreART",
+              "OnART",
+              "OnEffectiveART",
+              "OnNonSuppressiveART",
+              "OnPreART",
+              "HCTTestingLoop",
+              "HCTUptakeAtDebut",
+              "HCTUptakePostDebut",
+              "TestingOnANC",
+              "TestingOnChild6w",
+              "TestingOnSymptomatic",
+              "LostForever",
+              "LostForever_PEPFAR_cancelled"
+          ], 
+          "Initial_Distribution": [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        {
+          "Property": "ARTStatus",
+          "Transitions": [],
+          "Values": [
+            "ARTNaive",
+            "OffART",
+            "OnEffectiveART",
+            "OnNonSuppressiveART"
+          ],
+          "Initial_Distribution": [ 1, 0, 0, 0 ]
+        }
+      ]
+    },
+    {
+      "NodeID": 2,
+      "NOTE": "Northern",
+      "IndividualProperties":[
+        {
+          "Comment": "80% Healthcare Accessible",
+          "Property": "Accessibility",
+          "Values": [ "Yes", "No" ],
+          "Initial_Distribution": [ 1.0, 0.0],
+          "Transitions": []
+        },
+        {
+          "Property": "OnDrug",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 1, 0],
+          "Transitions": []
+        },
+        {
+            "Property": "PrEPWilling",
+            "Values": [ "NO", "YES" ],
+            "Initial_Distribution": [ 0, 1],
+            "Transitions": []
+        },
+        {
+          "Property": "OnPrEP",
+          "Values": ["False", "True"],
+          "Initial_Distribution": [1, 0],
+          "Transitions": []
+        },
+        {
+          "Property": "OnPrEP_CAB",
+          "Values": ["False", "True"],
+          "Initial_Distribution": [1, 0],
+          "Transitions": []
+        },
+        {
+            "Property": "WillingToStartARTFromPrEPCampaign",
+            "Values": [ "NO", "YES" ],
+            "Initial_Distribution": [ 0, 1],
+            "Transitions": []
+        },
+        {
+          "Property": "Uptake",
+          "Comment": "75% Maximum Uptake of an Intervention",
+          "Values": [ "Yes", "No" ],
+          "Initial_Distribution": [ 0.75, 0.25 ],
+          "Transitions": []
+        },
+        {
+          "Property": "Risk",
+          "Values": [ "LOW","MEDIUM","HIGH" ],
+          "Initial_Distribution__KP_Risk_Northern": "<-- MARKER",
+          "Initial_Distribution": [ 0.85, 0.15, 0 ],
+          "Transitions": []
+        },
+        {
+          "Property": "InterventionStatus",
+          "Transitions": [],
+          "Values": [
+            "None",
+            "ARTStaging",
+            "ARTStagingDiagnosticTest",
+            "LinkingToART",
+            "LinkingToPreART",
+            "OnART",
+            "OnEffectiveART",
+            "OnNonSuppressiveART",
+            "OnPreART",
+            "HCTTestingLoop",
+            "HCTUptakeAtDebut",
+            "HCTUptakePostDebut",
+            "TestingOnANC",
+            "TestingOnChild6w",
+            "TestingOnSymptomatic",
+            "LostForever",
+            "LostForever_PEPFAR_cancelled"
+          ], 
+          "Initial_Distribution": [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        {
+          "Property": "ARTStatus",
+          "Transitions": [],
+          "Values": [
+            "ARTNaive",
+            "OffART",
+            "OnEffectiveART",
+            "OnNonSuppressiveART"
+          ],
+          "Initial_Distribution": [ 1, 0, 0, 0 ]
+        }
+      ]
+    },
+    {
+      "NodeID": 3,
+      "NOTE": "Central",
+      "IndividualProperties":[
+        {
+          "Comment": "80% Healthcare Accessible",
+          "Property": "Accessibility",
+          "Values": [ "Yes", "No" ],
+          "Initial_Distribution": [ 1.0, 0.0],
+          "Transitions": []
+        },
+        {
+          "Property": "OnDrug",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 1, 0],
+          "Transitions": []
+        },
+        {
+          "Property": "PrEPWilling",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 0, 1],
+          "Transitions": []
+        },
+        {
+          "Property": "OnPrEP",
+          "Values": ["False", "True"],
+          "Initial_Distribution": [1, 0],
+          "Transitions": []
+        },
+                {
+          "Property": "OnPrEP_CAB",
+          "Values": ["False", "True"],
+          "Initial_Distribution": [1, 0],
+          "Transitions": []
+        },
+        {
+          "Property": "WillingToStartARTFromPrEPCampaign",
+          "Values": [ "NO", "YES" ],
+          "Initial_Distribution": [ 0, 1],
+          "Transitions": []
+        },
+        {
+          "Property": "Uptake",
+          "Comment": "75% Maximum Uptake of an Intervention",
+          "Values": [ "Yes", "No" ],
+          "Initial_Distribution": [ 0.75, 0.25 ],
+          "Transitions": []
+        },
+        {
+          "Property": "Risk",
+          "Values": [ "LOW","MEDIUM","HIGH" ],
+          "Initial_Distribution__KP_Risk_Central": "<-- MARKER",
+          "Initial_Distribution": [ 0.85, 0.15, 0 ],
+          "Transitions": []
+        },
+        {
+          "Property": "InterventionStatus",
+          "Transitions": [],
+          "Values": [
+              "None",
+              "ARTStaging",
+              "ARTStagingDiagnosticTest",
+              "LinkingToART",
+              "LinkingToPreART",
+              "OnART",
+              "OnEffectiveART",
+              "OnNonSuppressiveART",
+              "OnPreART",
+              "HCTTestingLoop",
+              "HCTUptakeAtDebut",
+              "HCTUptakePostDebut",
+              "TestingOnANC",
+              "TestingOnChild6w",
+              "TestingOnSymptomatic",
+              "LostForever",
+              "LostForever_PEPFAR_cancelled"
+          ], 
+          "Initial_Distribution": [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        {
+          "Property": "ARTStatus",
+          "Transitions": [],
+          "Values": [
+            "ARTNaive",
+            "OffART",
+            "OnEffectiveART",
+            "OnNonSuppressiveART"
+          ],
+          "Initial_Distribution": [ 1, 0, 0, 0 ]
+        }
+      ]
+    }
+  ]
+}

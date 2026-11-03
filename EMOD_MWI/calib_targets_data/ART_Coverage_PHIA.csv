@@ -1,0 +1,21 @@
+﻿id,country_year,survey,estimatetype,year,table_number,indicator,gender_code,gender,stratification_category,AgeBin,ARTCoverage,denominator,standard_deviation,confidence_lower,confidence_upper
+29495,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[15:20),37.2,15,13.2,10,64.4
+29498,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[20:25),23.1,29,8.4,5.8,40.4
+29501,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[25:30),31.7,49,8,15.2,48.2
+29504,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[30:35),48.6,110,5.4,37.5,59.8
+29507,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[35:40),59.6,121,5,49.3,70
+29510,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[40:45),67.4,126,5.1,56.9,77.9
+29513,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[45:50),71.1,106,5.4,60,82.1
+29516,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[50:55),73.8,70,5.9,61.6,86
+29519,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[55:60),70.7,50,7.2,55.9,85.6
+29522,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_a,Hiv Treatment,0,Male,Age Groups (5-year),[60:65),75,35,9.7,55.1,94.8
+29654,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[15:20),37.4,37,8.3,20.3,54.4
+29657,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[20:25),51.2,132,5.1,40.7,61.8
+29660,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[25:30),60.5,217,3.5,53.3,67.6
+29663,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[30:35),69.1,293,3.2,62.5,75.7
+29666,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[35:40),74,293,3.1,67.5,80.4
+29669,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[40:45),79.9,215,3.3,73,86.8
+29672,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[45:50),78.6,132,4.4,69.5,87.7
+29675,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[50:55),68.5,91,5.7,56.9,80.2
+29678,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[55:60),77.2,58,5.3,66.4,88.1
+29681,Malawi 2015-2016,MPHIA,PERCENTAGE,2015-2016,table7_2_b,Hiv Treatment,1,Female,Age Groups (5-year),[60:65),78.6,35,7.2,63.8,93.3
