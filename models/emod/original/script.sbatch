@@ -11,14 +11,14 @@
 #SBATCH --mem=8GB
 
 #SBATCH --job-name=MWI_HIVControl
-#SBATCH --chdir=/gpfs/data/bershteynlab/EMOD/citrod01/MWI_calib_20220422
+#SBATCH --chdir=/gpfs/data/bershteynlab/EMOD/citrod01/hivsim_paper/models/emod/original
 
 #SBATCH --mail-type=END
 
 #SBATCH --mail-user=daniel.citron@nyulangone.org
 
-#SBATCH --output=/gpfs/data/bershteynlab/EMOD/citrod01/MWI_calib_20220422/slurm_%j.out
+#SBATCH --output=/gpfs/data/bershteynlab/EMOD/citrod01/hivsim_paper/models/emod/original/slurm_%j.out
 
 #python run_scenarios.py -c optim_script_transmission.py --resample-method provided --samples resampled_parameter_sets_20230424.csv --output-dir MWI_transmission --suite-name MWI_transmission --table scenarios_transmission.csv
 
-python run_scenarios.py -c optim_script.py --resample-method provided --samples resampled_parameter_sets_20230424.csv --output-dir hivcontrol --suite-name hivcontrol --table scenarios_ai.csv
+python run_scenarios.py -c optim_script.py --resample-method provided --samples resampled_parameter_sets_20230424.csv --output-dir hivcontrol --suite-name hivcontrol --table scenarios.csv
