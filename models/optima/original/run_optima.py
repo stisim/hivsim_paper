@@ -3,7 +3,7 @@ import sys, time
 import numpy as np, pandas as pd, sciris as sc
 import optima as op
 
-P = op.loadproj('../files/Malawi_20220912.prj', verbose=0)
+P = op.loadproj('Malawi_20220912.prj', verbose=0)
 T = sc.timer()
 res = P.runsim(name='20220912', end=2030, verbose=0)
 print(f'runsim: {T.toc(output=True):.1f} s')

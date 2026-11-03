@@ -9,13 +9,13 @@
 Planned: both originals rerun with reference outputs, and draft prompts P1–P4. What happened:
 
 - **Optima (Robyn), ahead of plan.**
-  - P0 done: Malawi project rerun on Optima HIV 2.12.2, reference outputs in `optima_ref/`, component inventory in `optima_inventory.md`.
+  - P0 done: Malawi project rerun on Optima HIV 2.12.2, reference outputs in `models/optima/original/`, component inventory in `optima_inventory.md`.
   - P2's first pass also done: Optima′ (`models/optima/`) is within 2% of Optima overall each year 2000–2020, except new infections in 2017 (2.2%) and 2020 (2.4%). By population, about half the 39 groups are 2–4% off somewhere, the worst 6–7% (85+ and 0–4 on ART). Not yet signed off.
   - Optima's ~6 components (demography, population forcing, natural history, transmission, cascade, treatment rules) agreed as a starting point for P4.
 - **HIVsim (Robyn), ahead of plan.**
   - Re-ported onto Starsim 4.0.0rc1 (pinned; `envs/starsim.yml`), with ART split from HIV and an optional care module (STIsim PR #607, open). Its Optima-style options (care, loss and return, ART priority, failure and regain) default to HIVsim's behaviour, so the cascade swap is a change of settings.
   - P3, first half done: target set agreed (`targets.md`, `results/targets.csv`). Second half started: experiments 01–03 (`experiments/`). ART coverage and viral suppression can be matched, but only with late testing, and AIDS deaths on ART are too low.
-- **EMOD (Daniel):** the Malawi calibrated model is in `EMOD_MWI/` (PR #1, merged 3 Nov): config, campaign, demographics and overlays, 250 resampled parameter sets, calibration targets and form, and the dtk-tools scripts that ran it on NYU's cluster. No outputs yet, so no rerun or reference outputs. Rerunning needs the EMOD binary it names (`EradicationMalaria-Ongoing_2023_01_05`), dtk-tools and a cluster.
+- **EMOD (Daniel):** the Malawi calibrated model is in `models/emod/original/` (PR #1, merged 3 Nov): config, campaign, demographics and overlays, 250 resampled parameter sets, calibration targets and form, and the dtk-tools scripts that ran it on NYU's cluster. No outputs yet, so no rerun or reference outputs. Rerunning needs the EMOD binary it names (`EradicationMalaria-Ongoing_2023_01_05`), dtk-tools and a cluster.
 - **Starsim (Cliff):** 4.0.0rc1 released (the pin). STIsim pinned to Starsim v3 on main (#608). Upstream fixes from the Optima′ build merged (Starsim #1492, #1498).
 - **Not done:** P4 (component map and interfaces), the CRN test, and the prompt drafts (P1–P4 are still one-liners).
 

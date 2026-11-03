@@ -21,13 +21,29 @@ There are two conda environments:
 
 ```bash
 conda env create -f envs/starsim.yml  # HIVsim (models/hivsim) and Optima′ (models/optima)
-conda env create -f envs/optima.yml   # Optima HIV 2.12.2, only for regenerating the references in optima_ref/
+conda env create -f envs/optima.yml   # Optima HIV 2.12.2, only for regenerating the references in models/optima/original/
 ```
 
 - `starsim` pins Starsim to its first v4 release candidate (4.0.0rc1, on PyPI, Python 3.12 or later) and STIsim to a commit on `rs-art-split` (PR #607, which adds the ART split and HIV care). Change a pin on purpose and rerun the checks: `models/optima/acceptance.py` (about 3 minutes) and `models/hivsim/malawi.py`.
-- Optima's references (`optima_ref/*.obj`) are committed, so the Optima′ checks run in `starsim` alone.
+- Optima's references (`models/optima/original/*.obj`) are committed, so the Optima′ checks run in `starsim` alone.
 - The Starsim wheel on PyPI comes with its kernels built. Installing Starsim from a git clone instead means compiling them (Numba and Rust); see Starsim's docs.
 - HIVsim's Malawi data is in `models/hivsim/data/` (described in its README). `models/hivsim/make_data.py` makes the calibration targets and `n_art.csv` from UNAIDS estimates in `raw_data/`, which isn't committed.
+
+## Layout
+
+| Folder | What it holds |
+|---|---|
+| `models/<model>/` | One folder per model: the Starsim v4 version, with the original model's files in `original/` |
+| `models/hivsim/` | HIVsim Malawi (`malawi.py`), its data (`data/`), and the scripts that make the data and targets and score runs against them |
+| `models/optima/` | Optima′ (`optima_prime.py`) and its checks against Optima (`compare.py`, `acceptance.py`) |
+| `models/optima/original/` | The Optima HIV Malawi project (`Malawi_20220912.prj`), the scripts that rerun it on Optima 2.12.2, and its reference outputs |
+| `models/emod/original/` | Daniel's calibrated EMOD-HIV Malawi model: inputs, parameter sets, calibration targets, run scripts (see its README) |
+| `experiments/NN_slug/` | HIVsim calibration experiments: README before running, SUMMARY after, outputs and figures |
+| `spikes/` | Short technical tests, kept for the record |
+| `docs/` | Proposal, plan, prompts, target set, Optima notes |
+| `results/` | Committed results shared across the project (now `targets.csv`) |
+| `resources/` | Source documents, such as survey reports |
+| `envs/` | Conda environments |
 
 ## Conventions
 

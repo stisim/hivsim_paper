@@ -32,7 +32,7 @@ series = {
     'Treatment cascade_People living with HIV receiving ART (%)': 'hiv.p_on_art',
 }
 
-# Number on ART before 2010, when the UNAIDS series starts: Optima's data (numtx in files/Malawi_20220912.prj).
+# Number on ART before 2010, when the UNAIDS series starts: Optima's data (numtx in models/optima/original/Malawi_20220912.prj).
 # 1990-2004 is a straight line from 0 to the 2004 value
 optima_n_art = {1990: 0, 1991: 769, 1992: 1537, 1993: 2306, 1994: 3075, 1995: 3843, 1996: 4612, 1997: 5380, 1998: 6149, 1999: 6918,
                 2000: 7686, 2001: 8455, 2002: 9224, 2003: 9992, 2004: 10761, 2005: 28110, 2006: 57354, 2007: 96710, 2008: 152298, 2009: 198844}

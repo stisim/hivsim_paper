@@ -7,7 +7,7 @@ import optima as op
 import model_dt
 
 op.project.model = model_dt.model
-P = op.loadproj('../files/Malawi_20220912.prj', verbose=0)
+P = op.loadproj('Malawi_20220912.prj', verbose=0)
 keys = ['numplhiv', 'numinci', 'numdeath', 'numdiag', 'numtreat', 'numsuppressed']
 START, END = 2000, 2020
 

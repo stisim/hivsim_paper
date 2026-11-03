@@ -2,7 +2,7 @@
 import numpy as np, sciris as sc
 import optima as op
 
-P = op.loadproj('../files/Malawi_20220912.prj', verbose=0)
+P = op.loadproj('Malawi_20220912.prj', verbose=0)
 keys = ['numplhiv', 'numinci', 'numdeath', 'numdiag', 'numtreat', 'popsize']
 out = {}
 for dt in [0.2, 0.1, 0.05, 0.02]:

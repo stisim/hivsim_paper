@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np, sciris as sc, starsim as ss
 
 REF_DT = 0.2 # The step Optima's Malawi project was calibrated at
-REFFILE = Path(__file__).resolve().parents[2] / 'optima_ref' / 'optima_malawi_ref.obj'
+REFFILE = Path(__file__).resolve().parent / 'original' / 'optima_malawi_ref.obj'
 CD4 = ['acute', 'gt500', 'gt350', 'gt200', 'gt50', 'lt50']
 UNTREATED = ['undx', 'dx', 'care', 'lost'] # Cascade states not on ART
 OPTIONS = sc.objdict(age_skip=True, age_scale=1.0, risk=True, skip_scale=1.0) # For checks: Optima's ageing band-skip, and a factor on ageing rates

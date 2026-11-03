@@ -1,10 +1,10 @@
-"""Compare Optima′ with Optima, one component test at a time (references from optima_ref/component_ref.py)"""
+"""Compare Optima′ with Optima, one component test at a time (references from original/component_ref.py)"""
 import sys
 from pathlib import Path
 import numpy as np, sciris as sc
 import optima_prime as opp
 
-REFS = Path(__file__).resolve().parents[2] / 'optima_ref' / 'component_refs.obj'
+REFS = Path(__file__).resolve().parent / 'original' / 'component_refs.obj'
 COMPONENTS = dict(A=('demography', 'natural_history'), B=('demography', 'natural_history', 'transmission'), C=('demography', 'natural_history', 'transmission', 'cascade'), D=('demography', 'natural_history', 'transmission', 'cascade', 'treatment'), E=('demography', 'natural_history', 'transmission', 'cascade', 'treatment', 'mtct'))
 WINDOWS = dict(A=(1991, 2000), B=(1991, 2020), C=(1991, 2020), D=(1991, 2020), E=(1991, 2020)) # Without transmission (A), people with HIV die out: compare while there are some
 

@@ -1,4 +1,4 @@
-# Optima HIV 2.12.2, only to regenerate the references in optima_ref/ (they are committed)
+# Optima HIV 2.12.2, only to regenerate the references in models/optima/original/ (they are committed)
 #   conda env create -f envs/optima.yml
 name: optima
 channels: [conda-forge]

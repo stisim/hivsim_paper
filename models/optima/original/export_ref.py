@@ -2,7 +2,7 @@
 import numpy as np, sciris as sc
 import optima as op
 
-P = op.loadproj('../files/Malawi_20220912.prj', verbose=0)
+P = op.loadproj('Malawi_20220912.prj', verbose=0)
 END = 2030  # Run past the comparison window (2000-2020) so the window is not at the end of the run
 kw = dict(projectversion=P.version, start=P.settings.start, end=END, dt=0.2, settings=P.settings, name='20220912')
 simpars = op.makesimpars(P.parsets['20220912'].pars, **kw)
