@@ -8,8 +8,11 @@ This repository holds the work for decomposing disagreement between HIV models. 
 |---|---|
 | [docs/vision.md](docs/vision.md) | The proposal: motivation, goals and methods |
 | [docs/narrative_draft.md](docs/narrative_draft.md) | Draft introduction, with references |
-| [docs/plan.md](docs/plan.md) | Weekly sprint plan to 15 Dec 2026 |
+| [docs/plan.md](docs/plan.md) | Weekly sprint plan to 15 Dec 2026, with the sprint 2 review |
 | [docs/targets.md](docs/targets.md) | Calibration target set for HIVsim Malawi (P3) |
+| [docs/optima_inventory.md](docs/optima_inventory.md) | Optima HIV Malawi: components, inputs, and its dependence on the time step |
+| [docs/optima_prime_plan.md](docs/optima_prime_plan.md) | Optima′ build plan and acceptance |
+| [experiments/](experiments/) | HIVsim Malawi calibration experiments, each with a README (before running) and a SUMMARY (after) |
 | [docs/prompts.md](docs/prompts.md) | Agent prompt plan (P0–P5), human checkpoints, decisions, notes on Starsim v4, and a record of prompts run |
 
 ## Setup

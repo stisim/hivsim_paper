@@ -1,6 +1,6 @@
 # P3 target set for HIVsim Malawi
 
-**Status:** agreed with Robyn, 2 Nov 2026. The values are in `results/targets.csv`, made by `models/hivsim/make_targets.py` from `models/hivsim/data/sources/`. The same set is used to score EMOD and Optima.
+**Status:** agreed with Robyn, 2 Nov 2026; ART coverage and viral suppression added as primary targets in experiment 03 (2 Nov). The values are in `results/targets.csv`, made by `models/hivsim/make_targets.py` from `models/hivsim/data/sources/`. The same set is used to score EMOD and Optima.
 
 **What it is for:** HIVsim is the third model of the comparison, so it has to fit the evidence that EMOD and Optima were fitted to. It doesn't need to fit better than they do. The decomposition is about outputs the data don't pin down (transmissions by cascade stage of the source, deaths on ART), so the targets cover what the data do pin down: prevalence by age and sex, the size of the epidemic over time, and prevalence among sex workers.
 
@@ -10,14 +10,16 @@
 |---|---|---|---|---|
 | HIV prevalence by sex and 5-year age group | 15-49 (DHS); 15-64 (MPHIA 2015-16); 15-64 and 65+ (MPHIA 2020-21) | DHS 2004, 2010, 2015-16; MPHIA 2015-16, 2020-21 | EMOD's targets (DHS, MPHIA 2015-16); MPHIA 2020-21 report, Table 6.3 | primary |
 | PLHIV | all ages | 1990-2021 | UNAIDS, 2025 round | secondary |
-| New infections | all ages | 1990-2021 | UNAIDS, 2025 round | secondary, and the main check on the early epidemic (EMOD and Optima both peak too low before 2000) |
+| New infections | all ages | 1990-2021 | UNAIDS, 2025 round | secondary. Checked from 2000: the early epidemic is set aside (Robyn, 2 Nov) |
 | AIDS deaths | all ages | 1990-2021 | UNAIDS, 2025 round | secondary |
 | HIV incidence | 15-49, by sex | MPHIA 2015-16, 2020-21 | EMOD's targets; MPHIA 2020-21 report, Table 5.1 | secondary (wide intervals). One of EMOD's targets |
 | Prevalence among female sex workers | FSW | 2006, 2014, 2018, 2019 | Optima's data | secondary |
+| ART coverage (share of PLHIV on ART) | all ages; 15+ by sex (MPHIA) | UNAIDS 2010-2021; MPHIA 2020-21 | UNAIDS, 2025 round; MPHIA 2020-21 report, Table 9.1.A | primary (added in experiment 03) |
+| Viral suppression among PLHIV | 15+, by sex | MPHIA 2020-21 | MPHIA 2020-21 report, Table 9.1.A | primary (added in experiment 03) |
 
 **Checks, not fitted:**
 - **Number on ART by sex,** 2004-2015 (programme data via Spectrum, one of EMOD's targets). ART is an input only as a total, so the split by sex is a check.
-- **MPHIA 2020-21 cascade:** share diagnosed, share of those on ART, and share suppressed. HIVsim matches the number on ART to its input, so these shares follow from PLHIV and can't be fitted separately (Robyn). The way to get them right is to get PLHIV right.
+- **MPHIA 2020-21 share diagnosed.** HIVsim matches the number on ART to its input, so the cascade shares mostly follow from PLHIV (Robyn). ART coverage and suppression among PLHIV were nonetheless made primary targets in experiment 03, because they must match well and testing limits whether the ART input is reached.
 - **Population** by sex and 5-year age group, 1990-2020 (WPP). Demography is an input.
 
 **Inputs, not targets:** the number on ART (UNAIDS from 2010, Optima's data before); viral suppression among people on ART (`data/vls.csv`, from MPHIA, see below); circumcision coverage, once there is an `n_vmmc.csv`.
@@ -29,6 +31,7 @@
 - **Prevalence: the shape matters more than the exact level** (Robyn). The age and sex pattern and the trend between surveys should fit; a survey's level can be missed by a little. The likelihood should reflect that, for example by widening the survey intervals or giving the age pattern more weight than the level.
 - Prevalence is compared in the survey's own groups. HIVsim records results in 5-year age groups from 15 to 65 (`age_bins` in `malawi.py`).
 - **Uncertainty:** the DHS and MPHIA 2015-16 values carry EMOD's effective sample sizes and 95% intervals. For MPHIA 2020-21 the intervals come from the number tested (Jeffreys), so they leave out the survey design effect and are narrower than the survey's own. UNAIDS bounds aren't in the file yet (they're in the UNAIDS downloads in `raw_data/`).
+- **Stopping rule** (agreed 3 Nov): stop when at least 10 runs are within 10 points of UNAIDS ART coverage every year, within MPHIA's intervals for ART coverage and suppression, within a factor of 1.5 of UNAIDS PLHIV from 2005, and inside the middle 90% of runs for survey prevalence by age. Those runs go forward to the swaps.
 - **Dates:** each survey is dated at the middle of its fieldwork: DHS 2004 2004.9, DHS 2010 2010.7, DHS 2015-16 2015.9, MPHIA 2015-16 2016.2, MPHIA 2020-21 2020.5 (fieldwork January-March 2020 and March-April 2021). EMOD's files label these 2004, 2010, 2015.5 and 2015.
 - **Weights:** surveys primary, UNAIDS secondary, sex workers secondary. The likelihood and the numbers are set with `calib:likelihood-design`.
 

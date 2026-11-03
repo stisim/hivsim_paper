@@ -32,7 +32,7 @@ Each is checked against the harness before the next is added, with the component
 
 ## Starsim changes needed (upstream)
 
-1. **Bug:** a rate given as a function by group (`ss.by(pop=fn)`) used as an inflow is multiplied by each group's share; a static `ss.by` is not (`engine.py:577`, also the check at `engine.py:418`). Reproduced: [100, 0, 50] becomes [20, 0, 25].
+1. **Fixed** (Starsim #1498, merged). **Bug:** a rate given as a function by group (`ss.by(pop=fn)`) used as an inflow is multiplied by each group's share; a static `ss.by` is not (`engine.py:577`, also the check at `engine.py:418`). Reproduced: [100, 0, 50] becomes [20, 0, 25].
 2. **Rescaling compartments:** a public way to scale the people in some states and groups by a factor, recording the change (for population forcing).
 3. **Per-group counts in functions:** a public reader of compartment counts by group (now `engine.count(..., total=False)`, internal).
 4. **Slow initialization:** the R0 shown at `verbose>=1` takes 30–75 s for a model of this size (`Compartmental.next_generation()`); make it cheap or skippable.

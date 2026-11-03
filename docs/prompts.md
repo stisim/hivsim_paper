@@ -58,8 +58,8 @@ The model owner signs off at the end: Daniel for EMOD, Robyn for Optima.
 | P0 | **Humans, not agents.** Gather the originals and export their reference outputs | Daniel: EMOD-HIV Malawi (config, campaign, demographics, binary version, calibrated parameter sets). Robyn: Optima HIV Malawi project | `raw_results/originals/` (gitignored); reference outputs summarised into `results/` | both originals rerun and match their MIHPSA outputs | Done by Daniel and Robyn |
 | P4 | List the atomic components of each model and propose shared interfaces | EMOD source + Malawi config, Optima source + Malawi project, HIVsim/stisim, Starsim v4 | component map + interface spec | each model's behaviour accounted for by exactly one component | **Approve boundaries:** Robyn, Daniel (EMOD), Cliff (v4) |
 | P1 | Re-express EMOD-HIV (Malawi) in Starsim v4, against the interfaces | P4 spec, EMOD source + Malawi config, Starsim v4, stisim | `models/emod/` | for each output and year 2000–2040, the rebuilt model's median lies inside the original's 90% interval across seeds | TBD |
-| P2 | Re-express Optima HIV (Malawi) in Starsim v4, against the interfaces | P4 spec, Optima source + Malawi project, Starsim v4, stisim | `models/optima/` | within 2% of the original Optima, for each output and year 2000–2020 (the years with treatment data; decided 30 Oct) | TBD |
-| P3 | Build a common target set from the data EMOD and Optima actually used, then calibrate HIVsim Malawi to it (calib plugin); score the EMOD and Optima originals on the same set | P0 calibration inputs, Bansi-Matharu 2025 + supplement, calib plugin | `results/targets.csv`, priors, fitted HIVsim, a fit scorecard for all three models | HIVsim fits the common set; scorecard complete | **Approve target set** (Robyn) before calibrating |
+| P2 | Re-express Optima HIV (Malawi) in Starsim v4, against the interfaces | P4 spec, Optima source + Malawi project, Starsim v4, stisim | `models/optima/` | within 2% of the original Optima, for each output and year 2000–2020 (the years with treatment data; decided 30 Oct) | Robyn signs off (sprint 4). First pass done 30 Oct: `models/optima/acceptance.py` |
+| P3 | Build a common target set from the data EMOD and Optima actually used, then calibrate HIVsim Malawi to it (calib plugin); score the EMOD and Optima originals on the same set | P0 calibration inputs, Bansi-Matharu 2025 + supplement, calib plugin | `results/targets.csv`, priors, fitted HIVsim, a fit scorecard for all three models | HIVsim fits the common set; scorecard complete | **Approve target set** (Robyn) before calibrating. Approved 2 Nov; calibration in `experiments/` |
 | P5 | Refactor HIVsim to the interfaces; design and run the sequential swaps | P1–P4 outputs | swap plan, path results | endpoint identity is exact (unit test, with common random numbers) | TBD |
 
 ### P1 (draft)
@@ -87,6 +87,11 @@ List out the atomic components of each model and design the sequential swapping.
 ```
 
 ## Starsim v4 notes (reviewed 28 Oct, `origin/v4` = 1ce69a13)
+
+**Update (3 Nov).**
+- The pin is now Starsim 4.0.0rc1 (PyPI). It needs Python 3.12 or later (on 3.11 its Rust kernels silently fall back to Numba) and works with sciris 3.7.0.
+- The declared/coded spike is done (`spikes/seam/`, 29 Oct): a declared cascade runs on HIVsim's coded HIV, via `ss.move()` along a transition (Starsim #1492, merged).
+- HIVsim's cascade is coded, not declared: STIsim #607 splits ART from HIV and adds optional Optima-style care, so swapping the cascade is a change of settings.
 
 - **Base.**
   - Build on `origin/v4`, pinned to a commit, and rerun the endpoint-identity test on every re-pin.
