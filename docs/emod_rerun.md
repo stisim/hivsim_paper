@@ -24,3 +24,13 @@
 - **Fix** the scale factor (one line): his 250 parameter sets were fitted without background mortality, so they probably no longer fit his targets and would need recalibrating.
 - **Reproduce as published:** EMOD enters the comparison with a population that's far too large.
 - Either way, raise it with Daniel.
+
+## Figures against the shared targets (`results/emod/sub10/figures/`)
+
+`models/emod/emod_targets.py` measures EMOD runs against `results/targets.csv` and draws the same three figures as the HIVsim experiments, using `models/hivsim/targetfit.py`. Our runs now report from 1990 in 5-year age bins; this is a reporting change only. Same 10 sets, run to 2025.
+
+- **Prevalence by age and sex** matches DHS and MPHIA well. Prevalence was most of his fit (80% of the weight).
+- **UNAIDS numbers are off from about 1995:** PLHIV reaches about 2M by 2020 (data about 1M), new infections stay around 150k a year (data falls to about 20k), and AIDS deaths peak too high and rise again after 2015.
+- **ART coverage levels off at about 40% from 2014** (data reaches 86% by 2021), even though about 90% of PLHIV are diagnosed, matching MPHIA. So in this model most diagnosed people never start ART or don't stay on it. The number on ART matches the programme data, so the low coverage comes from PLHIV being about double. ART in his campaign is triggered by events, not handed out as fixed numbers, so the link to the mortality bug is not mechanical. I haven't found the cause yet.
+- **Not shown:** viral suppression (EMOD has no viral load) and FSW prevalence (the model has risk groups but no sex-work flag).
+- **Check of the 2.37 build:** across the 10 sets, our scores agree only weakly with his likelihoods (Spearman 0.43 in the right direction). That's too few sets to say much.

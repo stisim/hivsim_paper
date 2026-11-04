@@ -133,6 +133,8 @@ def build_inputs(table, run_number, years=None):
     to_v237(files[CAMPAIGN])
     cp.update(Run_Number=int(run_number), Campaign_Filename=CAMPAIGN, x_Base_Population=SCALE,
               Enable_Demographics_Builtin=0, Demographics_Filenames=[Path(f).name for f in DEMOG])
+    # Reporting only, to match results/targets.csv: from 1990, 5-year age bins (lower edges) to 65+
+    cp.update(Report_HIV_ByAgeAndGender_Start_Year=1990, Report_HIV_ByAgeAndGender_Collect_Age_Bins_Data=list(range(0, 70, 5)))
     if years is not None:
         cp['Simulation_Duration'] = round((years - cp['Base_Year']) * 365)
     files['config.json'] = config
