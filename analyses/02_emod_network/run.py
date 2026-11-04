@@ -5,6 +5,7 @@ Each run (EMOD with HIV, EMOD without HIV, EMOD′) is reduced to the same summa
 run and stratum, with columns `model` and `pid`. See README.md.
 
     python run.py          # run EMOD′, reduce its runs and EMOD's (raw_results/emod/net10, net3_nohiv) to outputs/
+    python run.py --demog  # EMOD′'s demography alone, 20 seeds, to outputs/population.csv.gz
     python run.py --plot   # figures/ from outputs/
 """
 import sys
@@ -130,6 +131,20 @@ def reduce(cores=8):
     return
 
 
+def demog_one(seed):
+    import harness
+    sim = harness.make_sim(0, seed=seed, network=False)
+    sim.run()
+    return sim.analyzers.snapshots.df.assign(model='v4_demog', pid=seed)
+
+
+def reduce_demog(cores=8, seeds=20):
+    with Pool(cores) as pool:
+        res = pool.map(demog_one, range(1, seeds + 1))
+    pd.concat(res, ignore_index=True).to_csv(here / 'outputs' / 'population.csv.gz', index=False)
+    return
+
+
 # %% Figures
 
 def plot():
@@ -154,7 +169,7 @@ def plot():
 
     def save(fig, name, note=None):
         if note:
-            fig.text(0.01, 0.005, note, fontsize=7, color=c_muted, va='bottom')
+            fig.text(0.01, -0.06, note, fontsize=7, color=c_muted, va='bottom')
         fig.savefig(figdir / name, dpi=150, bbox_inches='tight')
         plt.close(fig)
 
@@ -175,6 +190,37 @@ def plot():
         style(ax, ti)
     axs[0].legend(fontsize=7, frameon=False)
     save(fig, 'population.png', note)
+
+    # The demography alone (20 seeds) against EMOD: total, and by age and sex
+    pop = pd.concat([pd.read_csv(here / 'outputs' / 'population.csv.gz'), snap[snap.model != 'v4']])
+    pa = pop.groupby(['model', 'pid', 'year', 'female', 'age'])['pop'].sum().reset_index()
+    fig, axs = plt.subplots(1, 3, figsize=(12, 3))
+    t = pa.groupby(['model', 'pid', 'year'])['pop'].sum().reset_index()
+    ref = t[t.model == 'emod_nohiv'].groupby('year')['pop'].mean()
+    for m, lk in [('v4_demog', dict(color=c_run, label='EMOD′ demography (20 seeds)')), ('emod', looks['emod']), ('emod_nohiv', dict(color=c_best, ls='--', marker='o', ms=3, lw=0, label='EMOD, no HIV (3 runs)'))]:
+        d = t[t.model == m].pivot(index='year', columns='pid', values='pop').div(ref, axis=0)
+        if m == 'emod_nohiv':
+            for c in d:
+                axs[0].plot(d.index, d[c], color=c_best, marker='o', ms=1.5, lw=0)
+            axs[0].plot([], [], **lk)
+        else:
+            axs[0].fill_between(d.index, d.min(axis=1), d.max(axis=1), color=lk['color'], alpha=0.15, lw=0)
+            axs[0].plot(d.index, d.median(axis=1), **{k: v for k, v in lk.items() if k != 'ls'}, ls=lk.get('ls', '-'))
+    style(axs[0], 'Population, relative to EMOD without HIV', 'Ratio to the mean of the 3 runs')
+    axs[0].legend(fontsize=7, frameon=False)
+    for ax, yr, refm in [(axs[1], 1984.92, 'emod'), (axs[2], 2023.92, 'emod_nohiv')]:
+        d = pa[np.isclose(pa.year, yr)]
+        r = d[d.model == refm].groupby(['female', 'age'])['pop'].mean()
+        v = d[d.model == 'v4_demog'].groupby(['pid', 'female', 'age'])['pop'].sum().unstack(['female', 'age']).div(r)
+        for f, col in ((0, c_run), (1, c_data)):
+            q = v.xs(f, axis=1, level='female')
+            ax.fill_between(q.columns + 2.5, q.quantile(0.05), q.quantile(0.95), color=col, alpha=0.12, lw=0)
+            ax.plot(q.columns + 2.5, q.median(), color=col, marker='o', ms=3, lw=1.2, label='Women' if f else 'Men')
+        ax.axhline(1, color=c_muted, lw=0.6)
+        style(ax, f'By age, {int(yr)}: EMOD′ / EMOD{"" if refm == "emod" else " without HIV"}', 'Ratio')
+        ax.set_xlabel('Age', fontsize=8, color=c_muted)
+    axs[1].legend(fontsize=7, frameon=False)
+    save(fig, 'demography.png', 'EMOD′ demography alone, 20 seeds (median, 5-95%), against the mean of EMOD\'s runs: in 1984, all 13 (HIV has hardly acted yet); in 2023, the 3 without HIV.')
 
     # In a relationship of each type, by sex, among those past debut
     fig, axs = plt.subplots(2, 4, figsize=(13, 5.5), sharex=True)
@@ -309,6 +355,7 @@ def plot():
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--plot', action='store_true')
+    ap.add_argument('--demog', action='store_true')
     ap.add_argument('--cores', type=int, default=8)
     a = ap.parse_args()
-    plot() if a.plot else reduce(a.cores)
+    plot() if a.plot else reduce_demog(a.cores) if a.demog else reduce(a.cores)
