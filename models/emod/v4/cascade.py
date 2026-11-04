@@ -78,6 +78,7 @@ class EmodCascade(ss.Intervention):
             for t in li['triggers']:
                 self.by_trigger.setdefault(t, []).append(k)
         self.define_states(ss.BoolArr('vmmc_given', default=False)) # Holds the programme's MaleCircumcision (named Any_MC)
+        self.choosers_state = [NChooser(c, self) for c in self.choosers]
         return
 
     def add(self, cfg):
@@ -97,7 +98,6 @@ class EmodCascade(ss.Intervention):
         self.items = dict(uid=np.zeros(0, np.int64), tid=np.zeros(0, np.int64), left=np.zeros(0)) # Interventions waiting (delays, PMTCT)
         self.muxers = {}
         self.carry = []
-        self.choosers_state = [NChooser(c, self) for c in self.choosers]
         return
 
     def step(self):
@@ -393,6 +393,11 @@ class NChooser:
         return
 
     def step(self, year):
+        picks = self.select(year)
+        return self.cas.give(self.cfg['tid'], picks) if len(picks) else []
+
+    def select(self, year):
+        """ Who is chosen on this step """
         ec, cas = self.cfg['ec'], self.cas
         out = []
         for d in ec['Distributions']:
@@ -412,9 +417,9 @@ class NChooser:
             for ar, sex, per in targets:
                 n = per[k] if k < len(per) else 0
                 if n:
-                    out += self.choose(d, ar, sex, n)
+                    out.append(self.choose(d, ar, sex, n))
             self.plan = (key, targets, k + 1)
-        return out
+        return ss.uids(np.concatenate(out)) if out else ss.uids()
 
     def choose(self, d, ar, sex, n):
         cas, ppl, hiv = self.cas, self.cas.sim.people, self.cas.sim.diseases.hiv
@@ -431,5 +436,4 @@ class NChooser:
             if has is not None:
                 u = u[~has[u]]
         u = u[cas.has_props(u, d.get('Property_Restrictions_Within_Node') or None)]
-        pick = u[cas.rng.permutation(len(u))[:n]] # Those refused (circumcised traditionally) count towards the target
-        return cas.give(self.cfg['tid'], pick)
+        return u[cas.rng.permutation(len(u))[:n]] # Those refused (circumcised traditionally) count towards the target

@@ -67,15 +67,21 @@ class Snapshots(ss.Analyzer):
         return
 
 
-def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, **kwargs):
+def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, compiled=False, **kwargs):
     """ EMOD′ for parameter set `pid`: its demography; with `network`, its sexual network and Risk; with `hiv`, HIV;
-    with `cascade`, the rest of the campaign (testing, care, ART, VMMC, PrEP, PMTCT), and `EmodReport` """
+    with `cascade`, the rest of the campaign (testing, care, ART, VMMC, PrEP, PMTCT), and `EmodReport`; with `compiled`
+    as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (cascade.py) """
     inp = inputs.load(pid)
     mods = dict(networks=EmodNetwork(inp, record=record), interventions=[EmodRisk(inp)]) if network or hiv or cascade else {}
     if hiv or cascade:
         mods['diseases'] = EmodHIV(inp, record=record)
-    if cascade:
+    if cascade and compiled:
+        from compile_campaign import compile_campaign
+        holder, deliveries = compile_campaign(inp)
+        mods['interventions'] += [holder] + deliveries
+    elif cascade:
         mods['interventions'].append(EmodCascade(inp))
+    if cascade:
         kwargs['analyzers'] = [Snapshots(), EmodReport()] + sc.tolist(kwargs.get('analyzers'))
     kwargs.setdefault('analyzers', Snapshots())
     return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0, use_aging=False, # EmodDemography ages people as EMOD does
