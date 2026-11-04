@@ -34,7 +34,8 @@ import sciris as sc
 import starsim as ss
 
 TYPES = ['TRANSITORY', 'INFORMAL', 'MARITAL', 'COMMERCIAL']
-KEYS = ['T', 'I', 'M', 'C']
+KEYS = ['T', 'I', 'M', 'C'] # Short names, for results
+COLS = [t.lower() for t in TYPES] # Columns of the per-type states
 NT = len(TYPES)
 MAX_SLOTS = 63 # The most relationships plus queue entries anyone can have (IRelationship.h)
 BIG = np.int64(1) << 32 # For pair keys, man*BIG + woman
@@ -191,9 +192,9 @@ class EmodNetwork(ss.SexualNet):
         self.inp = inp
         self.record = record
         self.define_states(
-            *[ss.IntArr(f'n_{k}', default=0) for k in KEYS],   # Relationships of each type
-            *[ss.IntArr(f'q_{k}', default=0) for k in KEYS],   # Queue entries of each type
-            *[ss.IntArr(f'max_{k}', default=0) for k in KEYS], # Most relationships of each type at a time
+            ss.IntArr('n', default=0, columns=COLS),      # Relationships of each type
+            ss.IntArr('q', default=0, columns=COLS),      # Queue entries of each type
+            ss.IntArr('maxrel', default=0, columns=COLS), # Most relationships of each type at a time
             ss.IntArr('flags', default=0),       # Extra-relational flags, one bit per type
             ss.IntArr('risk_drawn', default=-1), # The Risk the flags and maxima were drawn for
         )
@@ -209,7 +210,7 @@ class EmodNetwork(ss.SexualNet):
         self.node = sim.people.add_state(ss.IntArr('node', default=0))
         self.risk = sim.people.add_state(ss.IntArr('risk', default=-1))
         inp = self.inp
-        self.dt_days = inp.dt
+        self.dt_days = self.t.dt_year*365 # The step in days (EMOD's Simulation_Timestep)
         self.nbins = [len(t.edges[0]) for t in inp.types]
         assert all(len(t.edges[0]) == len(t.edges[1]) for t in inp.types)
         self.rates = np.zeros((3, NT, 2, max(self.nbins), 2)) # Per day: node, type, sex, age bin, has the type's flag
@@ -228,9 +229,9 @@ class EmodNetwork(ss.SexualNet):
 
     # %% People
 
-    def stack(self, prefix, uids):
-        """ Per-type states for some people, as an array of people × type """
-        return np.stack([getattr(self, f'{prefix}_{k}').raw[uids] for k in KEYS], axis=1)
+    def stack(self, name, uids):
+        """ A per-type state for some people, as an array of people × type """
+        return getattr(self, name).raw[uids]
 
     def set_people(self):
         """ Debut ages for those with none; flags and maxima for those whose Risk has changed (or who have none) """
@@ -254,9 +255,9 @@ class EmodNetwork(ss.SexualNet):
                 flags[got] |= 1 << t[got]
                 going &= got
             self.flags[uids] = flags
-            for k, typ in zip(KEYS, inp.types):
+            for t, typ in enumerate(inp.types):
                 m = typ.max_rels[risk, sex]
-                getattr(self, f'max_{k}')[uids] = np.floor(m).astype(int) + (self.rng.random(len(uids)) < m - np.floor(m))
+                self.maxrel.raw[uids, t] = np.floor(m).astype(int) + (self.rng.random(len(uids)) < m - np.floor(m))
             self.risk_drawn[uids] = risk
         return
 
@@ -293,10 +294,10 @@ class EmodNetwork(ss.SexualNet):
         if not gone.any():
             return
         e = self.edges
-        for t, k in enumerate(KEYS):
+        for t in range(NT):
             m = gone & (e.type == t)
             for p in (e.p1[m], e.p2[m]):
-                np.add.at(getattr(self, f'n_{k}').raw, p, -1)
+                np.add.at(self.n.raw[:, t], p, -1)
         if self.record:
             self.ends.append(dict(type=e.type[gone], start=e.start[gone], end=np.full(gone.sum(), self.ti), acts=e.total_acts[gone], died=np.full(gone.sum(), died)))
         self.remove_edges(gone)
@@ -319,7 +320,7 @@ class EmodNetwork(ss.SexualNet):
         inp, ppl = self.inp, self.sim.people
         auids = ppl.auids
         uids = auids[(self.risk.raw[auids] >= 0) & (ppl.age.raw[auids] >= self.debut.raw[auids])]
-        a, q, mx = self.stack('n', uids), self.stack('q', uids), self.stack('max', uids)
+        a, q, mx = self.n.raw[uids], self.q.raw[uids], self.maxrel.raw[uids]
         flags = self.flags.raw[uids].astype(np.int64)
         node, female = self.node.raw[uids], ppl.female.raw[uids].astype(int)
         bins = self.bins(uids)
@@ -342,8 +343,7 @@ class EmodNetwork(ss.SexualNet):
 
         rates = self.rates[node[:, None], np.arange(NT)[None, :], female[:, None], bins, has_flag]
         ei, et = nb_enter(rates, a, q, mx, flags, self.dt_days)
-        for t, k in enumerate(KEYS):
-            getattr(self, f'q_{k}').raw[uids] = q[:, t]
+        self.q.raw[uids] = q
         Q = self.queue
         Q.uid = np.concatenate([Q.uid, uids[ei]])
         Q.type = np.concatenate([Q.type, et])
@@ -377,9 +377,9 @@ class EmodNetwork(ss.SexualNet):
         for k in Q.keys():
             Q[k] = Q[k][~taken]
         k = KEYS[t]
-        for arr in (getattr(self, f'q_{k}'), getattr(self, f'n_{k}')):
-            for p in (p1, p2):
-                np.add.at(arr.raw, p, -1 if arr.name.startswith('q') else 1)
+        for p in (p1, p2):
+            np.add.at(self.q.raw[:, t], p, -1)
+            np.add.at(self.n.raw[:, t], p, 1)
         days = 365*typ.dur_scale*(-np.log(self.rng.random(len(p1))))**typ.dur_het
         dur = np.maximum(1, np.ceil(days/self.dt_days)) # Steps, including this one
         self.append(p1=p1, p2=p2, dur=dur, dur_days=days, type=np.full(len(p1), t), start=np.full(len(p1), self.ti))
@@ -395,7 +395,7 @@ class EmodNetwork(ss.SexualNet):
         if not len(self):
             return
         e, inp = self.edges, self.inp
-        nrels = sum(getattr(self, f'n_{k}').raw for k in KEYS)
+        nrels = self.n.raw.sum(axis=1)
         most = np.minimum(np.maximum(nrels[e.p1], nrels[e.p2]), 4)
         rate = np.array([typ.coital_rate for typ in inp.types])[e.type]
         lam = self.dt_days*np.array(inp.dilution)[most]*rate

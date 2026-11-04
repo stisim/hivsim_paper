@@ -17,6 +17,8 @@ sections 4, 5, 9 (ART), 10 (traditional circumcision), 11 (transmission at birth
    Weibull time (scale 618 days, shape 2) before death, which fires NewlySymptomatic. On ART, failure comes 9 months
    before the death drawn at ART start: the AIDS stage, with no ART effect, and CD4 falling to √31.63 by the death.
 5. The campaign's care cascade (cascade.py), after progression, as EMOD updates interventions after infections.
+   Steps 1-4 are `step_state()`; the cascade is an intervention, which Starsim runs after it (and after the network);
+   step 6 is `step()`.
 6. Exposure: each uninfected person's acts, in random order, until one transmits (RelationshipGroups::ExposeToContagion),
    with × (1 − 0.6) for a circumcised man, × the male-to-female multiplier for a woman by her age, and × (1 − PrEP).
    New infections draw their prognosis from the age then (FerrandAgeDependentDistribution): under 15, exponential
@@ -61,6 +63,7 @@ class EmodHIV(ss.Disease):
             ss.IntArr('art', default=OFF), F('art_mult'), F('supp_timer'), F('fail_timer'), F('art_days', default=-1.0), F('cd4_at_art'),
             ss.BoolArr('ever_tested', default=False), ss.BoolArr('diagnosed', default=False), F('last_test'), F('lowest_cd4', default=np.inf),
             ss.BoolArr('ever_art', default=False), F('pmtct', default=0.0), F('prep_until', default=-np.inf), F('prep_eff', default=0.0),
+            F('p_act'), ss.IntArr('stage0', default=-1), F('days0'), # Per-act infectiousness, stage and days since infection at the start of the step
         )
         self.infections, self.deaths = [], []
         self.seeded = self.circ_started = False
@@ -73,7 +76,7 @@ class EmodHIV(ss.Disease):
         self.sti = sim.people.add_state(ss.BoolArr('sti', default=False))
         self.circumcised = sim.people.add_state(ss.BoolArr('circumcised', default=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 5)
-        self.dt_days = self.inp.dt
+        self.dt_days = self.t.dt_year*365 # The step in days (EMOD's Simulation_Timestep)
         h = self.inp.hiv
         self.acute_len, self.aids_len = h.Acute_Duration_In_Months*365/12, h.AIDS_Duration_In_Months*365/12
         self.sqrt_post, self.sqrt_death = np.sqrt(h.CD4_Post_Infection_Weibull_Scale), np.sqrt(h.CD4_At_Death_LogLogistic_Scale)
@@ -335,7 +338,7 @@ class EmodHIV(ss.Disease):
         src = np.where(inf[p1], p1, p2)
         dst = np.where(inf[p1], p2, p1)
         sti = np.maximum(np.where(self.sti.raw[src], h.STI_Coinfection_Transmission_Multiplier, 1), np.where(self.sti.raw[dst], h.STI_Coinfection_Acquisition_Multiplier, 1))
-        return dict(idx=idx, src=src, dst=dst, p=self.infectiousness(src)*sti, stage=self.stage.raw[src].copy(), days=self.days.raw[src].copy(), type=e.type[idx])
+        return dict(idx=idx, src=src, dst=dst, p=self.p_act.raw[src]*sti, stage=self.stage0.raw[src], days=self.days0.raw[src], type=e.type[idx])
 
     def exposures(self, a):
         """ Who is infected by the acts, and by which """
@@ -361,13 +364,17 @@ class EmodHIV(ss.Disease):
         _, first = np.unique(who, return_index=True)
         return ss.uids(who[first]), act[order[first]]
 
-    def step(self):
+    def step_state(self):
+        """ Steps 1-4: campaign basics, births, the infectiousness of the step's acts, and progression """
+        super().step_state()
         ppl = self.sim.people
         self.step_new = []
         self.campaign()
         self.at_birth()
-        a = self.acts()
         inf = ppl.auids[self.infected.raw[ppl.auids]]
+        self.p_act[inf] = self.infectiousness(inf) # As at the start of the step, for transmission in step()
+        self.stage0[inf] = self.stage.raw[inf]
+        self.days0[inf] = self.days.raw[inf]
         dead, self.newly_symptomatic = self.progress(inf)
         if len(dead):
             ppl.request_death(dead, cause=self)
@@ -375,15 +382,19 @@ class EmodHIV(ss.Disease):
                 self.deaths.append(dict(year=np.full(len(dead), self.t.now('year')), age=ppl.emod_age.raw[dead]/365, female=ppl.female.raw[dead],
                                         node=self.node.raw[dead], years_infected=(self.t.now('year') - self.year_infected.raw[dead]), cd4=self.cd4(dead),
                                         on_art=self.on_art(dead)))
-        cascade = self.sim.interventions.get('emodcascade')
-        if cascade is not None:
-            cascade.update(dying=dead)
+        self.dead_uids = dead
+        return
+
+    def step(self):
+        """ Step 6: exposure, after the cascade (an intervention, so it runs between step_state and step) """
+        a = self.acts()
+        dead = self.dead_uids
         new, k = self.exposures(a)
         new = self.infect(new)
         if a is not None:
             self.log_infections(new, src=a['src'][k], kind=a['type'][k], src_stage=a['stage'][k], src_days=a['days'][k])
         self.n_new, self.n_dead = len(new), len(dead)
-        self.new_uids, self.dead_uids = ss.uids(np.concatenate(self.step_new + [new])), dead # Every infection of the step, as EMOD's NewInfectionEvent
+        self.new_uids = ss.uids(np.concatenate(self.step_new + [new])) # Every infection of the step, as EMOD's NewInfectionEvent
         return
 
     def log_infections(self, uids, src, kind, src_stage=None, src_days=None):

@@ -31,8 +31,8 @@ class Snapshots(ss.Analyzer):
         if (self.ti - 5) % 12: # EMOD reports at 1960.92, 1961.92, ...
             return
         ppl, net = self.sim.people, self.sim.networks.get(self.netname)
-        uids = ppl.auids
-        uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born) & ppl.alive.raw[uids]] # EMOD reports before the step's births
+        uids = ppl.alive.uids
+        uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born)] # EMOD reports before the step's births
         age = AGES[np.searchsorted(AGES*365, ppl.emod_age.raw[uids], side='right') - 1] # EMOD's age in days at its report
         df = pd.DataFrame(dict(node=ppl.node.raw[uids] + 1, female=ppl.female.raw[uids].astype(int), age=age, pop=1))
         if net is None:
@@ -42,7 +42,7 @@ class Snapshots(ss.Analyzer):
             return
         n = net.stack('n', uids)
         q = net.stack('q', uids)
-        mx = net.stack('max', uids)
+        mx = net.stack('maxrel', uids)
         debuted = ppl.emod_age.raw[uids]/365 >= net.debut.raw[uids]
         avail = available_all(n, q, mx, net.flags.raw[uids].astype(np.int64)) & debuted[:, None]
         df = df.assign(risk=net.risk.raw[uids], debuted=debuted, concurrent=n.sum(1) > 1, partners=n.sum(1))
@@ -78,7 +78,7 @@ def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cas
         mods['interventions'].append(EmodCascade(inp))
         kwargs['analyzers'] = [Snapshots(), EmodReport()] + sc.tolist(kwargs.get('analyzers'))
     kwargs.setdefault('analyzers', Snapshots())
-    return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0,
+    return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0, use_aging=False, # EmodDemography ages people as EMOD does
                   demographics=EmodDemography(inp), **mods, **kwargs)
 
 
@@ -106,8 +106,8 @@ class EmodReport(ss.Analyzer):
                 self.flows.append(self.keys(uids).assign(col=col))
         if (self.ti - 5) % 6 or self.t.now('year') < self.start - 0.5:
             return
-        uids = ppl.auids
-        uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born) & ppl.alive.raw[uids]]
+        uids = ppl.alive.uids
+        uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born)]
         inf, art = hiv.infected.raw[uids], hiv.art.raw[uids] != 0
         year = self.t.now('year') + 1/12
         df = self.keys(uids).assign(ARTStatus=np.array(cas.artstatuses)[cas.artstatus.raw[uids]], InterventionStatus=np.array(cas.statuses)[cas.istatus.raw[uids]],

@@ -101,7 +101,8 @@ class EmodCascade(ss.Intervention):
         return
 
     def step(self):
-        """ Nothing here: the HIV module calls `update()` at EMOD's point in the step """
+        """ After the HIV module's progression (its step_state) and before its exposure (its step), as in EMOD """
+        self.update(dying=self.sim.diseases.hiv.dead_uids)
         return
 
     # %% Who qualifies
@@ -347,9 +348,9 @@ class EmodCascade(ss.Intervention):
     # %% The step
 
     def update(self, dying):
-        """ One step of the campaign, called by the HIV module after progression and before exposure """
+        """ One step of the campaign """
         ppl = self.sim.people
-        self.dt_days = self.inp.dt
+        self.dt_days = self.t.dt_year*365 # The step in days (EMOD's Simulation_Timestep)
         year = self.t.now('year')
         self.dying = np.zeros(len(ppl.alive.raw), bool)
         self.dying[dying] = True

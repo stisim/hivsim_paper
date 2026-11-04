@@ -57,7 +57,7 @@ class EmodDemography(ss.Demographics):
         self.node = sim.people.add_state(ss.IntArr('node', default=0))
         self.emod_age = sim.people.add_state(ss.FloatArr('emod_age', default=0.0)) # Days, after this step's ageing
         self.rng = np.random.default_rng(sim.pars.rand_seed + 4)
-        self.dt_days = self.inp.dt
+        self.dt_days = self.t.dt_year*365 # The step in days (EMOD's Simulation_Timestep)
         return
 
     def init_results(self):

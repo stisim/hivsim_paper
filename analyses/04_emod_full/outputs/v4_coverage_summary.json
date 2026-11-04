@@ -1,11 +1,11 @@
 {
   "n_runs": 30,
-  "best_run": 20,
-  "best_score": 81.97392398249588,
-  "median_score": 105.25478867623934,
+  "best_run": 22,
+  "best_score": 78.12273677976017,
+  "median_score": 108.26675486450392,
   "best_pars": {
-    "set": 150.0,
-    "seed": 3.0,
-    "likelihood": 96.76678409937121
+    "set": 175.0,
+    "seed": 2.0,
+    "likelihood": 97.60693838967123
   }
 }
