@@ -57,8 +57,9 @@ class EmodRisk(ss.Intervention):
         auids = ppl.auids
         female = ppl.female.raw
 
-        # Debut: whether they will ever sell or buy sex, and when they start
-        new = auids[~self.debuted.raw[auids] & (ppl.age.raw[auids] >= net.debut.raw[auids])]
+        # Debut (EMOD's STIDebut, as people age within the step): whether they will ever sell or buy sex, and when they start
+        age = ppl.emod_age.raw[auids]/365 if 'emod_age' in ppl.states else ppl.age.raw[auids] + self.t.dt_year
+        new = auids[~self.debuted.raw[auids] & (age >= net.debut.raw[auids])]
         self.debuted[new] = True
         if year >= sw.start_year and len(new):
             sex = female[new].astype(int)

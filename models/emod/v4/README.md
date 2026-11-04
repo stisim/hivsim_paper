@@ -30,7 +30,6 @@ The comparison with EMOD is `analyses/02_emod_network/` (`run.py`, then `run.py 
 
 - When a woman queued more than once in one type's queue is matched, EMOD removes her most recent entry, which may be in another age bin; here the entry matched is removed.
 - EMOD's 50,000-candidate cap on partner selection in one age bin is not applied. Only women are chosen from a bin, and women's queues stay short (the commercial queue that grows is men's).
-- Sexual debut is seen at the step after it (here the risk module runs after the network; in EMOD the debut event fires as people age within the step). Sex-work delays are months to years, so this shifts them by a month.
 - Random numbers can't match EMOD's, so runs agree only in distribution.
 
 See `analyses/02_emod_network/` for how close it is.

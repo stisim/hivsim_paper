@@ -153,9 +153,12 @@ def plot():
     import matplotlib.pyplot as plt
     from targetfit import style, c_run, c_best, c_data, c_muted, c_band
     o = {n: pd.read_csv(here / 'outputs' / f'{n}.csv.gz') for n in ['snap', 'formed', 'dists', 'means', 'commercial', 'mixing']}
+    for n, df in o.items(): # EMOD′ on the 3 sets run without HIV in EMOD, for like-for-like lines
+        o[n] = pd.concat([df, df[(df.model == 'v4') & df.pid.isin(NOHIV)].assign(model='v4_3')], ignore_index=True)
     figdir = here / 'figures'
     figdir.mkdir(exist_ok=True)
-    looks = dict(emod=dict(color=c_best, label='EMOD (with HIV)'), emod_nohiv=dict(color=c_best, ls='--', label='EMOD, no HIV'), v4=dict(color=c_run, label='EMOD′ network'))
+    looks = dict(emod=dict(color=c_best, label='EMOD with HIV, 10 sets'), v4=dict(color=c_run, label='EMOD′ (no HIV), 10 sets'),
+                 emod_nohiv=dict(color=c_best, ls='--', label='EMOD without HIV, 3 sets'), v4_3=dict(color=c_run, ls='--', label='EMOD′, the same 3 sets'))
     tnames = [t.title() for t in TYPES]
 
     def band(ax, df, x, y, model):
@@ -163,7 +166,7 @@ def plot():
         g = df.groupby(x)[y]
         lo, mid, hi = g.min(), g.median(), g.max()
         lk = looks[model]
-        if model != 'emod_nohiv':
+        if model in ('emod', 'v4'):
             ax.fill_between(mid.index, lo, hi, color=lk['color'], alpha=0.15, lw=0)
         ax.plot(mid.index, mid, lw=1.5, **lk)
 
@@ -175,7 +178,7 @@ def plot():
 
     snap = o['snap']
     tot = lambda by: snap.groupby(['model', 'pid', 'year'] + by).sum(numeric_only=True).reset_index()
-    note = 'Lines: median over the 10 parameter sets (3 without HIV); bands: their range.'
+    note = 'Solid: median over the 10 parameter sets, bands their range; dashed: median over sets 0, 100 and 200, the ones EMOD was also run for without HIV.'
 
     # Population, FSW and clients
     fig, axs = plt.subplots(1, 3, figsize=(11, 3))
@@ -192,7 +195,7 @@ def plot():
     save(fig, 'population.png', note)
 
     # The demography alone (20 seeds) against EMOD: total, and by age and sex
-    pop = pd.concat([pd.read_csv(here / 'outputs' / 'population.csv.gz'), snap[snap.model != 'v4']])
+    pop = pd.concat([pd.read_csv(here / 'outputs' / 'population.csv.gz'), snap[snap.model.isin(['emod', 'emod_nohiv'])]])
     pa = pop.groupby(['model', 'pid', 'year', 'female', 'age'])['pop'].sum().reset_index()
     fig, axs = plt.subplots(1, 3, figsize=(12, 3))
     t = pa.groupby(['model', 'pid', 'year'])['pop'].sum().reset_index()
@@ -235,22 +238,22 @@ def plot():
     axs[0, 0].legend(fontsize=7, frameon=False)
     save(fig, 'in_relationship.png', note)
 
-    # By age, in 1990 and 2020
+    # By age, in 1985 (10 sets, before HIV matters) and 2020 (the 3 sets without HIV)
     fig, axs = plt.subplots(2, 4, figsize=(13, 5.5), sharex=True)
     t = tot(['female', 'age'])
     for f in (0, 1):
         for i, k in enumerate(KEYS):
             ax = axs[f, i]
-            for yr, alpha in ((1990.92, 0.5), (2020.92, 1)):
-                for m in ['emod', 'v4']:
+            for yr, alpha, models in ((1985.92, 0.5, ['emod', 'v4']), (2020.92, 1, ['emod_nohiv', 'v4_3'])):
+                for m in models:
                     d = t[(t.model == m) & (t.female == f) & np.isclose(t.year, yr)].assign(share=lambda d: d[f'cur_{k}']/d['pop'].clip(lower=1))
                     g = d.groupby('age').share.median()
-                    ax.plot(g.index + 2.5, g, color=looks[m]['color'], alpha=alpha, lw=1.5, marker='o', ms=2, label=f'{looks[m]["label"]}, {int(yr)}')
+                    ax.plot(g.index + 2.5, g, color=looks[m]['color'], ls=looks[m].get('ls', '-'), alpha=alpha, lw=1.5, marker='o', ms=2, label=f'{looks[m]["label"]}, {int(yr)}')
             style(ax, f'{tnames[i]}, {"women" if f else "men"}', 'Share of the age group' if i == 0 else None)
     axs[0, 0].legend(fontsize=6, frameon=False)
     for ax in axs[1]:
         ax.set_xlabel('Age', fontsize=8, color=c_muted)
-    save(fig, 'by_age.png', 'Median over the 10 parameter sets; EMOD with HIV.')
+    save(fig, 'by_age.png', 'Median over parameter sets: in 1985, the 10 (EMOD with HIV, which has hardly acted yet); in 2020, the 3 EMOD was run for without HIV.')
 
     # Concurrency and number of partners
     fig, axs = plt.subplots(2, 2, figsize=(9, 5.5), sharex=True)

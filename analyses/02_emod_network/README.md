@@ -6,6 +6,8 @@
 - **EMOD:** the same 10 parameter sets as analysis 01 (ids 0, 25, ..., 225), at 1% population, to 2025, with relationship reports switched on: `models/emod/reference/run_emod.py --sets 0 25 50 75 100 125 150 175 200 225 --cores 10 --out net10 --network`. This is the published model, with HIV.
 - **EMOD without HIV:** sets 0, 100 and 200 with the epidemic seeding removed (`--sets 0 100 200 --out net3_nohiv --network --no-hiv`), since the v4 harness has no HIV and HIV deaths change the population from the late 1980s.
 - **EMOD′ network:** `models/emod/v4/harness.py`, the network and risk modules on EMOD's population (initial ages, node sizes, pregnancy and mortality tables, 3 nodes, 1% scale, from 1960.5, monthly steps), no HIV, for the same 10 sets, one run each.
+- **EMOD′ demography alone:** `run.py --demog`, 20 seeds, against the population by age, sex and node in all the EMOD runs (before 1985) and the 3 without HIV.
+- **EMOD's frozen pair-formation rates:** the 10 sets run to 1976 without HIV with `logLevel_FlowControllerImpl` at DEBUG (`raw_results/emod/rates_debug/`), to compare with EMOD′'s rate tables at the end of the burn-in.
 - `run.py` reduces both to the same summaries (`outputs/`), and `run.py --plot` draws the figures (`figures/`).
 
 **Compared, over time:** people in relationships by type, sex and age; concurrency; relationship durations by type; partner age differences; commercial contacts per FSW and per client; formation rates by type; also queue sizes, population and the number of FSW and clients, which explain the others.
