@@ -52,6 +52,7 @@ EMOD′ (10 sets × 3 seeds) against EMOD (the same 10 sets, one run each, `raw_
 
 - EMOD has one run per set; EMOD′ three. The InterventionStatus check uses 3 sets.
 - The `unblocked` and `persist` variants exist only in `pmtct.py`, for the test.
+- Rerun after the Starsim v4 cleanup (HIV progression in `step_state`, the cascade as an ordinary intervention, 2-D network states, `use_aging=False`): targets and cascade unchanged within seed noise.
 
 ## Next steps
 
