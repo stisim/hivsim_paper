@@ -7,7 +7,7 @@
 | `swap.py` | `make_sim(variant, seed)`: HIVsim Malawi with its own care (`own`), or with the condensed cascade and EMOD's Malawi table (`condensed`); `BEST` is hivsim_malawi experiment 03's best run |
 | `reference/` | Where the finalized HIVsim Malawi will go |
 
-Needs STIsim with the host's methods (`HIV.who_stage()`, `HIV.new_symptoms()`, `HIV.start_pmtct()`, `ART.start_art(effective=)`, PrEP courses ended by HIV): branch `rs-cascade-host` (from `rs-art-split`, PR #607), and Starsim v4 after 4.0.0rc1 for the condensed cascade:
+Needs STIsim with the host's methods (`HIV.who_stage()`, `HIV.new_symptoms()`, `HIV.start_pmtct()`, `ART.start_art(effective=)`, PrEP courses ended by HIV): branch `rs-cascade-host` (STIsim PR #609, stacked on #607 `rs-art-split`), and Starsim v4 after 4.0.0rc1 for the condensed cascade:
 
 ```bash
 PYTHONPATH=<stisim rs-cascade-host>:<starsim v4> python -c "import swap; swap.make_sim('condensed').run()"
