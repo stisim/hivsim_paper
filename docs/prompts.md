@@ -68,6 +68,8 @@ The model owner signs off at the end: Daniel for EMOD, Robyn for Optima.
 Implement EMOD in the Starsim architecture.
 ```
 
+- Decided (Robyn, 3 Nov): EMOD′ copies the bugs in Daniel's model (background mortality scale, ART dropout trap, the male non-suppressive mortality-table row, the ignored ANC table, the no-op calibrated parameters), so it reproduces the published model. Fixes can be switches, off by default.
+
 ### P2 (draft)
 
 ```text

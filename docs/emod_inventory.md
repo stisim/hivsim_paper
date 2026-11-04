@@ -332,6 +332,8 @@ All of these pathways are switched off for anyone whose `InterventionStatus` is 
 
 ## Implications for EMOD′ (Starsim v4 / STIsim)
 
+EMOD′ copies the problems above, so it reproduces the published model (decided 3 Nov; see `docs/prompts.md`, P1).
+
 **Probably easy:**
 
 - **Demography**: age- and year-specific pregnancy and death tables, with no migration. The three nodes are separate populations, so a node attribute with partnerships restricted within a node, or three sims, would do.
