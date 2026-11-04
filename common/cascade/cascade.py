@@ -42,6 +42,7 @@ CARE = ['none', 'uptake', 'testing', 'staging', 'preart', 'linking', 'on_art', '
 ARMS = ['', 'suppressive', 'nonsuppressive'] # people.arm: the arm of the last ART start
 TESTING_FROM = [NONE, UPTAKE, TESTING]           # Reached by testing pathways
 STAGING_FROM = [NONE, UPTAKE, TESTING, STAGING]  # Reached by staging
+RISKS = ['LOW', 'MEDIUM', 'HIGH'] # Risk groups a flow can be restricted to (see CascadeHost.risk())
 TRIGGERS = dict(debut='debuts', symptoms='newly_symptomatic', anc='twelve_weeks_pregnant', infant='six_weeks_old') # Events of the host
 
 
@@ -72,7 +73,7 @@ class Holder(ss.Intervention):
         self.care = sim.people.add_state(ss.IntArr('care', default=NONE))
         self.cx_dying = sim.people.add_state(ss.BoolArr('cx_dying', default=False))
         self.cx_postdebut = sim.people.add_state(ss.BoolArr('cx_postdebut', default=False))
-        self.vmmc = sim.people.add_state(ss.BoolArr('vmmc', default=False)) # Circumcised by the programme
+        self.vmmc = sim.people.add_state(ss.BoolArr('cx_circ', default=False)) # Circumcised by the programme
         self.arm = sim.people.add_state(ss.IntArr('arm', default=0))
         self.host = self.host_class(sim)
         self.rng = np.random.default_rng(sim.pars.rand_seed + 7)
@@ -96,7 +97,8 @@ class Holder(ss.Intervention):
         for r in f[f.intervention == intervention].itertuples():
             if not (r.start <= self.year < r.end):
                 continue
-            total = int(r.n*self.params.value('flows', 'scale'))
+            scale = self.params.value('flows', 'scale') if self.params.has('flows', 'scale') else 1/self.sim.pars.pop_scale # Agents per person in the table
+            total = int(r.n*scale)
             steps = int(round((r.end - r.start)/self.t.dt_year))
             k = int(round((self.year - r.start)/self.t.dt_year))
             n = total//steps + (k < total % steps)
@@ -105,15 +107,15 @@ class Holder(ss.Intervention):
             u = ppl.alive.uids
             u = u[~self.cx_dying.raw[u] & (host.female(u) == (r.sex == 'f'))]
             if r.node != 'all':
-                u = u[ppl.node.raw[u] + 1 == int(r.node)]
+                u = u[host.node(u) == int(r.node)]
             age = host.age_years(u)
             u = u[(age >= r.age_lo) & (age < r.age_hi) & ~host.infected(u)]
             for res in str(r.restrict).split(';') if isinstance(r.restrict, str) else []:
                 key, val = res.split(':')
                 if key == 'risk':
-                    u = u[np.isin(ppl.risk.raw[u], [['LOW', 'MEDIUM', 'HIGH'].index(v) for v in val.split('|')])]
+                    u = u[np.isin(host.risk(u), [RISKS.index(v) for v in val.split('|')])]
                 elif key == 'not' and val == 'vmmc':
-                    u = u[~ppl.vmmc.raw[u]]
+                    u = u[~self.vmmc.raw[u]]
             out.append(u[self.rng.permutation(len(u))[:n]])
         return ss.uids(np.concatenate(out)) if out else ss.uids()
 
@@ -208,7 +210,7 @@ class StopART(CareProduct):
 class Circumcise(CareProduct):
     def administer(self, uids):
         done = self.cx.host.circumcise(uids)
-        self.sim.people.vmmc[done] = True
+        self.cx.vmmc[done] = True
 
 
 class PrEP(CareProduct):

@@ -1,0 +1,6 @@
+check,data,runs_median,share_of_runs
+plhiv: within x1.5 of the data every year from 2000,,,0.46
+new_infections: within x1.5 of the data every year from 2000,,,0.16
+aids_deaths: within x1.5 of the data every year from 2000,,,0.0
+art_coverage: within 10% of the data every year,,,0.98
+new infections 2020 / peak 1990-95,0.16153846153846155,0.45950374531835214,0.04

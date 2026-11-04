@@ -49,6 +49,12 @@ class EmodHost(CascadeHost):
     def dying(self, uids):
         return np.isin(uids, self.hiv.dead_uids)
 
+    def node(self, uids):
+        return self.ppl.node.raw[uids] + 1
+
+    def risk(self, uids):
+        return self.ppl.risk.raw[uids]
+
     # Events
     def debuts(self):
         return self.sim.interventions.emodrisk.new_debuts

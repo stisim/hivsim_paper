@@ -1,0 +1,9 @@
+{
+  "n_runs": 50,
+  "best_run": 25,
+  "best_score": 4.861761514421271,
+  "median_score": 5.927708537248623,
+  "best_pars": {
+    "seed": 26
+  }
+}

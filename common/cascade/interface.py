@@ -4,17 +4,16 @@ What the condensed cascade needs from the model it runs in: the HIV disease and 
 A model implements `CascadeHost` (one object, bound to the sim when the cascade starts); the cascade uses nothing else.
 EMOD′ implements it in models/emod/v4/cascade_host.py.
 
+HIVsim (STIsim's `sti.HIV` with `sti.ART`) implements it in models/hivsim/cascade_host.py, with WHO stage and first
+symptoms from the CD4 count.
+
 Fit with other models (not implemented):
-- STIsim's `sti.HIV` with `sti.ART`: `diagnosed` and `cd4` are states of `sti.HIV`; `start_art(uids, arm)` maps to
-  `ART.start_art(uids, p_effective_art=1 or 0)` (its arms are suppressive or not, by a probability), `stop_art` to
-  `ART.stop_art(uids)`, `start_prep(uids, efficacy, days)` to `HIV.start_prep(uids, eff, dur, ...)`, `circumcise` to
-  `HIV.circumcise(uids)`. STIsim has no WHO stage, symptom onset event, or PMTCT efficacy per mother: those would need
-  adding (or WHO stage derived from CD4, symptoms from its AIDS stage).
 - Optima′ is compartmental: people are counts by CD4 and cascade state, moved by rates, so a cascade that acts on
   agents (`start_art(uids)`) cannot drive it; it would need the same parameters turned into rates between its
   compartments (undx → dx → care → treated, and lost), as Optima does.
 """
 from abc import ABC, abstractmethod
+import numpy as np
 
 
 class CascadeHost(ABC):
@@ -39,6 +38,12 @@ class CascadeHost(ABC):
     @abstractmethod
     def dying(self, uids):
         """ Whether each is dying in this step (so is given nothing) """
+    def node(self, uids):
+        """ Each one's node (region), from 1, for flows given by node; by default one node """
+        return np.ones(len(uids), int)
+    def risk(self, uids):
+        """ Each one's risk group, 0-2 (low, medium, high), for flows restricted by risk """
+        raise NotImplementedError(f'{type(self).__name__} has no risk groups, which a flow is restricted to')
 
     # Events of the step (UIDs)
     @abstractmethod
