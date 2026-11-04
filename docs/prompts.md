@@ -90,7 +90,7 @@ List out the atomic components of each model and design the sequential swapping.
 
 **Update (3 Nov).**
 - The pin is now Starsim 4.0.0rc1 (PyPI). It needs Python 3.12 or later (on 3.11 its Rust kernels silently fall back to Numba) and works with sciris 3.7.0.
-- The declared/coded spike is done (`spikes/seam/`, 29 Oct): a declared cascade runs on HIVsim's coded HIV, via `ss.move()` along a transition (Starsim #1492, merged).
+- The declared/coded spike is done (`spikes/seam/`, 29 Oct; removed 3 Nov, last in commit a751284): a declared cascade runs on HIVsim's coded HIV, via `ss.move()` along a transition (Starsim #1492, merged).
 - HIVsim's cascade is coded, not declared: STIsim #607 splits ART from HIV and adds optional Optima-style care, so swapping the cascade is a change of settings.
 
 - **Base.**
