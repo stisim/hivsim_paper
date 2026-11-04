@@ -1,0 +1,10 @@
+{
+  "n_runs": 10,
+  "best_run": 7,
+  "best_score": 87.11625552157882,
+  "median_score": 111.8318946333294,
+  "best_pars": {
+    "set": 175.0,
+    "likelihood": 97.60693838967123
+  }
+}

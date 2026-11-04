@@ -1,6 +1,6 @@
 # Optima HIV Malawi: component inventory
 
-Source: `models/optima/original/Malawi_20220912.prj`, run on Optima HIV 2.12.2 (`~/src/optima`, conda env `optima`). The project was saved by Optima 2.11.4 on 12 Sep 2022 (branch `updates-june-2022`). Reference run and outputs: `models/optima/original/run_optima.py`.
+Source: `models/optima/reference/Malawi_20220912.prj`, run on Optima HIV 2.12.2 (`~/src/optima`, conda env `optima`). The project was saved by Optima 2.11.4 on 12 Sep 2022 (branch `updates-june-2022`). Reference run and outputs: `models/optima/reference/run_optima.py`.
 
 ## Project contents
 
@@ -60,7 +60,7 @@ The thing to rebuild is therefore the epidemic model plus its databook inputs. T
 
 ## Time-step dependence (30 Oct)
 
-The calibrated Optima Malawi model is a discrete-time model at dt = 0.2, and its results are not converged in dt (`models/optima/original/dt_study.py`). Maximum relative difference from dt = 0.2, 2000–2030:
+The calibrated Optima Malawi model is a discrete-time model at dt = 0.2, and its results are not converged in dt (`models/optima/reference/dt_study.py`). Maximum relative difference from dt = 0.2, 2000–2030:
 
 | dt | PLHIV | New infections | HIV deaths | Diagnosed | On ART |
 |---|---|---|---|---|---|
@@ -77,7 +77,7 @@ Consequence for P2: a continuous-time ODE re-expression cannot be within 2% of O
 
 ### Making the step explicit (option 1, 30 Oct)
 
-`models/optima/original/model_dt.py` is a copy of Optima's `model.py` (2.12.2) with switches (`FIX`) that make the calibrated step (`REF_DT = 0.2`) explicit, and `models/optima/original/dt_fix.py` measures them. Every switch is the identity at dt = 0.2 (equal to the original to 3e-8 people). Following Robyn's decision (30 Oct), the comparison covers only years with treatment data, **2000–2020**.
+`models/optima/reference/model_dt.py` is a copy of Optima's `model.py` (2.12.2) with switches (`FIX`) that make the calibrated step (`REF_DT = 0.2`) explicit, and `models/optima/reference/dt_fix.py` measures them. Every switch is the identity at dt = 0.2 (equal to the original to 3e-8 people). Following Robyn's decision (30 Oct), the comparison covers only years with treatment data, **2000–2020**.
 
 **The rule that works: read everything Optima does in one 0.2-year step as rate × 0.2.** At a smaller step, each step is built exactly as Optima builds a 0.2-year step (transitions, infections, births and PMTCT diagnosis, circumcision, ageing, risk transitions), and dt/0.2 of the change is taken (`FIX = {'linear'}`). The inputs are Optima's own dt = 0.2 series, interpolated between 0.2-year points (`'inputs'`), because Optima smooths inputs over `int(1/dt)` points, so the series themselves change with the step. Population forcing and the ART and cascade targets act on levels and are applied unchanged.
 

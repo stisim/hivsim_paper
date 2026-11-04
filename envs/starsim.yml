@@ -1,4 +1,4 @@
-# HIVsim (models/hivsim) and Optima′ (models/optima), on Starsim v4
+# Optima′ (models/optima/v4) and HIVsim, on Starsim v4
 #   conda env create -f envs/starsim.yml
 name: starsim
 channels: [conda-forge]

@@ -1,12 +1,12 @@
 # Optima′: build plan
 
-Optima′ re-expresses the Optima HIV Malawi project (`models/optima/original/Malawi_20220912.prj`) as a declared Starsim v4 model that runs compartmentally. It keeps Optima's handling of time (decided 30 Oct; see `optima_inventory.md`, "Time-step dependence"): Optima's step of 0.2 years is read as rate × 0.2, so each rate in Optima′ is Optima's per-step probability at dt = 0.2 divided by 0.2, with Optima's product structure.
+Optima′ re-expresses the Optima HIV Malawi project (`models/optima/reference/Malawi_20220912.prj`) as a declared Starsim v4 model that runs compartmentally. It keeps Optima's handling of time (decided 30 Oct; see `optima_inventory.md`, "Time-step dependence"): Optima's step of 0.2 years is read as rate × 0.2, so each rate in Optima′ is Optima's per-step probability at dt = 0.2 divided by 0.2, with Optima's product structure.
 
 ## Acceptance
 
 - Within 2% of the calibrated Optima run (dt = 0.2) for each output and year, **2000–2020** (the years with treatment data). Outputs: PLHIV, new infections, HIV deaths, diagnosed, on ART, suppressed, population size, overall and by population.
-- Run as an ODE at a small step (0.02 y), with Optima's dt = 0.2 input series (`models/optima/original/optima_malawi_ref.obj`, interpolated between 0.2-year points).
-- The step-independent harness (`models/optima/original/model_dt.py`, `FIX={'linear','inputs'}`) is the intermediate reference. At dt = 0.01 it is within 1.4% of the calibrated run for 2000–2019 and 2.5% at 2020. Optima′ at the same step should match it closely, component by component, because both compute the force of infection once per step from the start-of-step state.
+- Run as an ODE at a small step (0.02 y), with Optima's dt = 0.2 input series (`models/optima/reference/optima_malawi_ref.obj`, interpolated between 0.2-year points).
+- The step-independent harness (`models/optima/reference/model_dt.py`, `FIX={'linear','inputs'}`) is the intermediate reference. At dt = 0.01 it is within 1.4% of the calibrated run for 2000–2019 and 2.5% at 2020. Optima′ at the same step should match it closely, component by component, because both compute the force of infection once per step from the start-of-step state.
 
 ## Structure
 

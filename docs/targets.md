@@ -1,6 +1,6 @@
 # P3 target set for HIVsim Malawi
 
-**Status:** agreed with Robyn, 2 Nov 2026; ART coverage and viral suppression added as primary targets in experiment 03 (2 Nov). The values are in `results/targets.csv`, made by `models/hivsim/make_targets.py` from `models/hivsim/data/sources/`. The same set is used to score EMOD and Optima.
+**Status:** agreed with Robyn, 2 Nov 2026; ART coverage and viral suppression added as primary targets in experiment 03 (2 Nov). The values are in `common/targets.csv`, made by `hivsim/make_targets.py` in hivsim_malawi from `hivsim/data/sources/` there. The same set is used to score EMOD and Optima.
 
 **What it is for:** HIVsim is the third model of the comparison, so it has to fit the evidence that EMOD and Optima were fitted to. It doesn't need to fit better than they do. The decomposition is about outputs the data don't pin down (transmissions by cascade stage of the source, deaths on ART), so the targets cover what the data do pin down: prevalence by age and sex, the size of the epidemic over time, and prevalence among sex workers.
 
@@ -44,7 +44,7 @@ The 2015-16 value is from Optima's data (`optpropsupp`, 2016). Its three values 
 ## The other two models
 
 - **Optima** was fitted to prevalence by population (its `hivprev` data), with the Spectrum estimates and the 2016 cascade for comparison. Its fit: PLHIV and population close; early new infections and AIDS deaths too low (see `optima_inventory.md`).
-- **EMOD**'s targets are in its calibration files (`models/emod/original/calib_targets_data/`): prevalence by sex and age (DHS 2004, 2010, 2015-16; MPHIA 2015-16), incidence (MPHIA 2015-16 and 2020-21), numbers on ART by sex (2004-2015), ART coverage by sex and age (MPHIA 2015-16), and population (WPP). Prevalence and incidence are targets here, numbers on ART by sex and population are checks, and ART coverage by sex and age isn't used, for the same reason as the MPHIA cascade. EMOD also has prevalence by region (`ARTCoverage.csv`, despite its name), which this national set leaves out. Its weights are in its calibration form (`models/emod/original/Data/calibration_ingest_form_Malawi_3_node_DTC.xlsm`), not yet read.
+- **EMOD**'s targets are in its calibration files (`models/emod/reference/source/calib_targets_data/`): prevalence by sex and age (DHS 2004, 2010, 2015-16; MPHIA 2015-16), incidence (MPHIA 2015-16 and 2020-21), numbers on ART by sex (2004-2015), ART coverage by sex and age (MPHIA 2015-16), and population (WPP). Prevalence and incidence are targets here, numbers on ART by sex and population are checks, and ART coverage by sex and age isn't used, for the same reason as the MPHIA cascade. EMOD also has prevalence by region (`ARTCoverage.csv`, despite its name), which this national set leaves out. Its weights are in its calibration form (`models/emod/reference/source/Data/calibration_ingest_form_Malawi_3_node_DTC.xlsm`), not yet read.
 
 ## Calibration knobs (provisional, for the second half of P3)
 

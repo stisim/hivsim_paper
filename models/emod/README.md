@@ -1,12 +1,13 @@
 # EMOD
 
-`original/`: Daniel Citron's EMOD-HIV Malawi model as used for MIHPSA (inputs, 250 resampled parameter sets, calibration form, dtk-tools scripts for the NYU cluster).
-
-`run_emod.py` reruns the 250 parameter sets here, without dtk-tools or the cluster. It maps each parameter set to model inputs as `original/optim_script.py` does and runs the EMOD binary directly. Runs stop at 2025 by default (the original runs to 2100; `--years` changes it). Outputs go to `raw_results/emod/<out>/setNNN/output/`. `compare_emod.py --out <out>` plots national outputs against Daniel's calibration targets.
+- `reference/source/`: Daniel Citron's EMOD-HIV Malawi model as used for MIHPSA (inputs, 250 resampled parameter sets, calibration form, dtk-tools scripts for the NYU cluster), unchanged.
+- `reference/run_emod.py` reruns his parameter sets here, without dtk-tools or the cluster. It maps each parameter set to model inputs as `source/optim_script.py` does and runs the EMOD binary directly. Runs stop at 2025 by default (his setup runs to 2100; `--years` changes it). The report is widened to start in 1990, use 5-year age bins and split by `Risk` and `ARTStatus`; this changes the output only. Outputs go to `raw_results/emod/<out>/setNNN/output/`.
+- `reference/emod_targets.py --out <out>` measures the runs against `common/targets.csv` and draws the shared figures in `analyses/01_reference_fits/`.
+- `v4/` (to come): EMOD′, the Starsim v4 translation.
 
 ## Binary
 
-Daniel ran `EradicationMalaria-Ongoing_2023_01_05`. We use the published build in `emod-hiv` 2.37.0 (EMOD main, Aug 2026). `to_v237()` in `run_emod.py` lists the input changes this needs.
+Daniel ran `EradicationMalaria-Ongoing_2023_01_05`. We use the published build in `emod-hiv` 2.37.0 (EMOD main, Aug 2026). `to_v237()` in `reference/run_emod.py` lists the input changes this needs.
 
 One-time setup:
 
@@ -18,7 +19,7 @@ mkdir raw_results/emod_bin/lib && ln -s ~/miniconda/envs/emod/lib/libmpi.so.12 r
 chmod +x raw_results/emod_bin/Eradication
 ```
 
-The binary links to `libpython3.13` and `libmpich.so.12`. On Azure VMs MPI fails to start unless `UCX_TLS=self,sm,tcp UCX_NET_DEVICES=lo` (set in `run_emod.py`).
+The binary links to `libpython3.13` and `libmpich.so.12`. On Azure VMs MPI fails to start unless `UCX_TLS=self,sm,tcp UCX_NET_DEVICES=lo` (set in `reference/run_emod.py`).
 
 ## Known quirks of the original setup (reproduced as is)
 
