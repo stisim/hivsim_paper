@@ -8,14 +8,15 @@ EMOD's semantics (campaign/Interventions.cpp, InterventionsContainer::Update, in
 
 - An intervention is refused if the person's `InterventionStatus` is one of its `Disqualifying_Properties`, when it
   is given and again whenever it is updated; on its first update it sets its `New_Property_Value`.
-- Interventions given during a person's update are updated in the same step, so chains of events with no delay, and
-  delays shorter than what is left of the step, resolve within the step. Here they run in waves within the step.
+- Interventions given during a person's update are updated in the same step, so chains of events with no delay
+  resolve within the step. Here they run in waves within the step.
 - Decisions (HIVSigmoidByYearAndSexDiagnostic, HIVPiecewiseByYearAndSexDiagnostic, HIVRapidHIVDiagnostic,
   STIIsPostDebut, HIVDrawBlood, HIVARTStagingCD4AgnosticDiagnostic, HIVARTStagingByCD4Diagnostic, HIVRandomChoice)
   broadcast a positive or negative event at once. A sigmoid reads only its `Ramp_*` keys, so a `Time_Value_Map` given
   to one is ignored (the ANC uptake), as in EMOD.
-- Delays (HIVDelayedIntervention, HIVMuxer) count down by the step from the step they are given in; a muxer is refused
-  if the person already holds `Max_Entries` of that name.
+- Delays (HIVDelayedIntervention, HIVMuxer) count down by the step from the step they are given in, and fire at the
+  first update at which their time is already up (CountdownTimer::Decrement), so a 1-day delay fires the next step; a
+  muxer is refused if the person already holds `Max_Entries` of that name.
 - PropertyValueChanger, BroadcastEvent, ARTMortalityTable and ARTDropout (through the HIV module), PMTCT (its efficacy
   for 280 days), MaleCircumcision and ControlledVaccine (PrEP) act at once.
 - NChooserEventCoordinatorHIV (VMMC, PrEP) gives a number of interventions each year (see `NChooser`).
@@ -294,9 +295,9 @@ class EmodCascade(ss.Intervention):
             over = m[uids] > c.get('Max_Entries', 1)
             np.add.at(m, uids[over], -1)
             uids = uids[~over]
-        left = self.draw_delay(c, len(uids)) - self.dt_days
-        due = left <= 0
-        self.store(tid, uids[~due], left[~due])
+        left = self.draw_delay(c, len(uids))
+        due = left <= 0 # CountdownTimer::Decrement fires if the time is already up, else only counts down
+        self.store(tid, uids[~due], left[~due] - self.dt_days)
         return self.fire(tid, uids[due], year)
 
     def store(self, tid, uids, left):
@@ -327,9 +328,10 @@ class EmodCascade(ss.Intervention):
             d = self.templates[tid]['disq']
             if d:
                 disq[m] = np.isin(self.istatus.raw[it['uid'][m]], d)
-        it['left'] = it['left'] - self.dt_days
+        pmtct = np.array([self.templates[t]['class'] == 'PMTCT' for t in it['tid']], bool)
         end = ~alive | disq
-        due = ~end & (it['left'] <= 0)
+        due = ~end & np.where(pmtct, it['left'] - self.dt_days <= 0, it['left'] <= 0) # PMTCT ends when its time left is within the step; a delay fires once its time was already up
+        it['left'] = it['left'] - self.dt_days
         out = []
         for tid in np.unique(it['tid'][end | due]):
             m = it['tid'] == tid

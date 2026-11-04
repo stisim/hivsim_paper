@@ -136,7 +136,7 @@ def natural_history(files, cp):
               Report_HIV_ByAgeAndGender_Collect_Circumcision_Data=1, Report_Transmission=1, Report_HIV_Mortality=1)
 
 
-def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False):
+def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False, report_ip=()):
     """Return {filename: json} for one simulation."""
     config = json.load(open(orig / 'InputFiles' / 'Templates' / 'config.json'))
     files = {CAMPAIGN: json.load(open(orig / 'InputFiles' / 'Templates' / CAMPAIGN))}
@@ -167,6 +167,8 @@ def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat
         network_reports(cp)
     if nat_hist:
         natural_history(files, cp)
+    if report_ip:
+        cp['Report_HIV_ByAgeAndGender_Collect_IP_Data'] = cp['Report_HIV_ByAgeAndGender_Collect_IP_Data'] + list(report_ip)
     if no_hiv: # Drop the seeding, the only source of infection, for comparisons of the network without HIV
         camp = files[CAMPAIGN]
         camp['Events'] = [e for e in camp['Events'] if e['Event_Coordinator_Config'].get('Intervention_Config', {}).get('class') != 'OutbreakIndividual']
@@ -177,10 +179,10 @@ def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat
 
 
 def run_one(args):
-    pid, table, run_number, years, outdir, network, no_hiv, nat_hist = args
+    pid, table, run_number, years, outdir, network, no_hiv, nat_hist, report_ip = args
     simdir = outdir / f'set{pid:03d}'
     simdir.mkdir(parents=True, exist_ok=True)
-    for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist).items():
+    for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist, report_ip).items():
         json.dump(obj, open(simdir / name, 'w'), indent=1)
     env = dict(os.environ, LD_LIBRARY_PATH=f"{bindir / 'lib'}:{Path.home() / 'miniconda/envs/emod/lib'}",
                UCX_TLS='self,sm,tcp', UCX_NET_DEVICES='lo')  # Azure NIC breaks MPI init otherwise
@@ -199,6 +201,7 @@ def main():
     ap.add_argument('--cores', type=int, default=150)
     ap.add_argument('--network', action='store_true', help='also write relationship reports (RelationshipStart/End, relationships by age and sex from 1960)')
     ap.add_argument('--no-hiv', action='store_true', help='without the epidemic seeding, so nobody is infected')
+    ap.add_argument('--report-ip', nargs='*', default=[], help='more individual properties to split the report by, e.g. InterventionStatus')
     ap.add_argument('--natural-history', action='store_true', help='campaign reduced to sex work, STI co-infection, traditional circumcision and seeding; report transmissions and HIV deaths')
     a = ap.parse_args()
 
@@ -208,7 +211,7 @@ def main():
     meta = ['iteration_number', 'likelihood', 'parameterization_id', 'run_number', 'sim_id']
     pmap = load_param_map()
     outdir = outroot / a.out
-    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv, a.natural_history)
+    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv, a.natural_history, a.report_ip)
             for _, r in sets.iterrows()]
     with ProcessPoolExecutor(min(a.cores, len(jobs))) as ex:
         for pid, rc, dt in ex.map(run_one, jobs):
