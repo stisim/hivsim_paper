@@ -9,6 +9,8 @@ EMOD′ Risk and sex work: the `Risk` individual property and the campaign event
   it becomes MEDIUM, whatever it was before. The listeners that start the delay begin in 1961, so only debuts from 1961
   count (and nobody already past debut at the start).
 - The network redraws a person's flags and maxima when their Risk changes.
+- STI co-infection (`people.sti`), a lifelong flag: at debut, with a probability by Risk then (0.3 MEDIUM or HIGH, 0.1
+  LOW). EMOD gives it on day 1 to those already past debut, and at debut to the others, with the same probabilities.
 
 It runs as an intervention, after the network, as EMOD's campaign runs after its pair formation.
 """
@@ -38,6 +40,7 @@ class EmodRisk(ss.Intervention):
         super().init_pre(sim)
         self.node = sim.people.add_state(ss.IntArr('node', default=0))
         self.risk = sim.people.add_state(ss.IntArr('risk', default=-1))
+        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 3)
         return
 
@@ -61,6 +64,7 @@ class EmodRisk(ss.Intervention):
         age = ppl.emod_age.raw[auids]/365 if 'emod_age' in ppl.states else ppl.age.raw[auids] + self.t.dt_year
         new = auids[~self.debuted.raw[auids] & (age >= net.debut.raw[auids])]
         self.debuted[new] = True
+        self.sti[new[self.rng.random(len(new)) < self.inp.campaign.p_sti[self.risk.raw[new]]]] = True
         if year >= sw.start_year and len(new):
             sex = female[new].astype(int)
             ever = new[self.rng.random(len(new)) < sw.p_ever[self.node.raw[new], sex]]

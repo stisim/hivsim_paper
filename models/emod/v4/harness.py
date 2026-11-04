@@ -12,6 +12,7 @@ import inputs
 from demography import EmodDemography
 from network import EmodNetwork, KEYS, available_all
 from risk import EmodRisk
+from hiv import EmodHIV
 
 AGES = np.arange(0, 70, 5) # Lower edges of the report's age bins, as in the EMOD run
 
@@ -29,7 +30,7 @@ class Snapshots(ss.Analyzer):
             return
         ppl, net = self.sim.people, self.sim.networks.get(self.netname)
         uids = ppl.auids
-        uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born)] # EMOD reports before the step's births
+        uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born) & ppl.alive.raw[uids]] # EMOD reports before the step's births
         age = AGES[np.searchsorted(AGES*365, ppl.emod_age.raw[uids], side='right') - 1] # EMOD's age in days at its report
         df = pd.DataFrame(dict(node=ppl.node.raw[uids] + 1, female=ppl.female.raw[uids].astype(int), age=age, pop=1))
         if net is None:
@@ -48,6 +49,11 @@ class Snapshots(ss.Analyzer):
             df[f'num_{k}'] = n[:, t]
             df[f'que_{k}'] = q[:, t]
             df[f'avail_{k}'] = avail[:, t]
+        hiv = self.sim.diseases.get('hiv')
+        if hiv is not None:
+            st = hiv.stage.raw[uids]
+            inf = hiv.infected.raw[uids]
+            df = df.assign(infected=inf, acute=inf & (st == 0), latent=inf & (st == 1), aids=inf & (st == 2), circumcised=ppl.circumcised.raw[uids], sti=ppl.sti.raw[uids])
         out = df.groupby(['node', 'female', 'risk', 'age']).sum().reset_index()
         out.insert(0, 'year', round(self.t.now('year') + 1/12, 2))
         self.rows.append(out)
@@ -59,9 +65,11 @@ class Snapshots(ss.Analyzer):
         return
 
 
-def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, **kwargs):
-    """ EMOD′ for parameter set `pid`: its demography, and with `network`, its sexual network and Risk """
+def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, **kwargs):
+    """ EMOD′ for parameter set `pid`: its demography; with `network`, its sexual network and Risk; with `hiv`, HIV too """
     inp = inputs.load(pid)
-    mods = dict(networks=EmodNetwork(inp, record=record), interventions=EmodRisk(inp)) if network else {}
+    mods = dict(networks=EmodNetwork(inp, record=record), interventions=EmodRisk(inp)) if network or hiv else {}
+    if hiv:
+        mods['diseases'] = EmodHIV(inp, record=record)
     return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0,
                   demographics=EmodDemography(inp), analyzers=Snapshots(), **mods, **kwargs)

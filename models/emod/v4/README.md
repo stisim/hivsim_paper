@@ -1,16 +1,17 @@
 # EMOD′ (EMOD-HIV re-expressed in Starsim v4)
 
-So far: demography, the sexual network, and Risk and sex work. No HIV yet.
+So far: demography, the sexual network, Risk and sex work, and HIV transmission and natural history without treatment. No testing, care, ART, VMMC, PrEP or PMTCT yet.
 
 | File | What it is |
 |---|---|
 | `inputs.py` | `load(pid)`: the parameters for one of Daniel's parameter sets, read from the EMOD inputs that `reference/run_emod.py` builds for it, so his quirks come with them (e.g. the Risk overlay's node order) |
 | `network.py` | `EmodNetwork`, an `ss.SexualNet`: EMOD's pair-formation algorithm and its four relationship types (transitory, informal, marital, commercial): queues with per-person entry rates set during the 15-year burn-in and then frozen, matching on the joint age tables and Risk weights, the extra-relational flag chain and randomly rounded maxima, Weibull durations in whole steps, and Poisson coital acts with dilution and a forced first act. The module docstring lists the steps and where each is in the EMOD source |
-| `risk.py` | `EmodRisk`, an intervention: `Risk` drawn by node at first sight, and the campaign's sex work (at debut from 1961, will ever be FSW or client by node; uniform delay to Risk HIGH, then Weibull or uniform time to MEDIUM) |
+| `risk.py` | `EmodRisk`, an intervention: `Risk` drawn by node at first sight; the campaign's sex work (at debut from 1961, will ever be FSW or client by node; uniform delay to Risk HIGH, then Weibull or uniform time to MEDIUM); and the STI co-infection flag, given at debut by Risk |
+| `hiv.py` | `EmodHIV`, a disease written as code: per-act transmission over the network's acts with EMOD's multipliers (stage, STI flag, condoms, circumcision, male-to-female by age), acts taken in random order per person; transmission at birth; the age-dependent prognosis, acute and AIDS stages and deterministic CD4; traditional circumcision from 1975; and the seeding at SeedYr. The docstring gives EMOD's order within a step |
 | `demography.py` | `EmodDemography`: EMOD's initial population (node sizes at 1% scale, ages from its CDF, pregnant at the start), pregnancies by age and year with 280-day gestation, background deaths by sex, age and year with the mortality tables read 1000 times too low as EMOD reads them (`fix_mortality=True` reads them as labelled), 3 nodes, no migration, and ages in single-precision days as EMOD keeps them |
-| `harness.py` | `make_sim(pid, seed, network=True)`: the modules for one parameter set, from 1960.5 in monthly steps, with `Snapshots`, an analyzer giving the same counts as EMOD's `ReportHIVByAgeAndGender` (with relationships) |
+| `harness.py` | `make_sim(pid, seed, network=True, hiv=False)`: the modules for one parameter set, from 1960.5 in monthly steps, with `Snapshots`, an analyzer giving the same counts as EMOD's `ReportHIVByAgeAndGender` (with relationships, and with HIV, infections by stage) |
 
-People properties shared between the modules: `people.node` (0-2, EMOD's nodes 1-3), `people.risk` (0 LOW, 1 MEDIUM, 2 HIGH). `EmodNetwork.debut` holds debut ages. Edges have `p1` the man, `p2` the woman, `type` (0-3, EMOD's order), `acts` this step, `condoms` (the share of acts with a condom, from each type's sigmoid by node), `total_acts`.
+People properties shared between the modules: `people.node` (0-2, EMOD's nodes 1-3), `people.risk` (0 LOW, 1 MEDIUM, 2 HIGH), `people.emod_age` (EMOD's age in days, after the step's ageing), `people.sti`, `people.circumcised`. `EmodNetwork.debut` holds debut ages. Edges have `p1` the man, `p2` the woman, `type` (0-3, EMOD's order), `acts` this step, `condoms` (the share of acts with a condom, from each type's sigmoid by node), `total_acts`.
 
 ## Running
 
@@ -22,9 +23,14 @@ sim = harness.make_sim(pid=0, seed=1)  # about 45 s to 2025
 sim.run()
 sim.networks.emodnet.starts            # every relationship started: step, type, node, ages, Risk of both, drawn duration
 sim.analyzers.snapshots.df             # yearly counts by node, sex, Risk and age
+
+sim = harness.make_sim(pid=0, seed=1, hiv=True)  # about a minute to 2025
+sim.run()
+sim.diseases.hiv.infections            # every infection: year, relationship type (-1 seeded, -2 at birth), node, sex, age, stage of the source
+sim.diseases.hiv.deaths                # every death from HIV: year, age, years since infection, CD4
 ```
 
-The comparison with EMOD is `analyses/02_emod_network/` (`run.py`, then `run.py --plot`; it needs the EMOD runs it names).
+The comparisons with EMOD are `analyses/02_emod_network/` (demography and network) and `analyses/03_emod_hiv_natural_history/` (HIV without treatment); each has `run.py`, then `run.py --plot`, and needs the EMOD runs it names.
 
 ## Known differences from EMOD
 
@@ -32,4 +38,4 @@ The comparison with EMOD is `analyses/02_emod_network/` (`run.py`, then `run.py 
 - EMOD's 50,000-candidate cap on partner selection in one age bin is not applied. Only women are chosen from a bin, and women's queues stay short (the commercial queue that grows is men's).
 - Random numbers can't match EMOD's, so runs agree only in distribution.
 
-See `analyses/02_emod_network/` for how close it is.
+See the two analyses for how close it is.

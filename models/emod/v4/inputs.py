@@ -69,6 +69,30 @@ def campaign_sexwork(camp):
     return out
 
 
+def campaign_hiv(camp):
+    """ The campaign's STI co-infection (at debut, by Risk), traditional circumcision (by node) and seeding """
+    out = sc.objdict(p_sti=np.zeros(3), p_circ=np.zeros(3), circ_year=None, seed_year=None, seed_coverage=None)
+    for ev in camp['Events']:
+        ec = ev['Event_Coordinator_Config']
+        ic = ec.get('Intervention_Config', {})
+        act = ic.get('Actual_IndividualIntervention_Config', {})
+        if ic.get('Trigger_Condition_List') == ['STIDebut'] and act.get('class') == 'ModifyStiCoInfectionStatus':
+            risks = [r['Risk'] for r in ic.get('Property_Restrictions_Within_Node', [])] or [r.split(':')[1] for r in ic['Property_Restrictions']]
+            for r in risks:
+                out.p_sti[RISKS.index(r)] = ic['Demographic_Coverage']
+        elif ic.get('Trigger_Condition_List') == ['Births'] and act.get('Choice_Names', [''])[0] == 'WillReceiveTraditionalMaleCircumcision':
+            for node in ev['Nodeset_Config']['Node_List']:
+                out.p_circ[node-1] = act['Choice_Probabilities'][0]
+            out.circ_year = ev['Start_Year']
+        elif ic.get('class') == 'OutbreakIndividual':
+            assert ec['Property_Restrictions'] == ['Risk:HIGH'] and ic['Incubation_Period_Override'] == 0
+            out.seed_year, out.seed_coverage = ev['Start_Year'], ec['Demographic_Coverage']
+        elif ic.get('Trigger_Condition_List') == ['WillReceiveTraditionalMaleCircumcision']:
+            out.circ_efficacy = act['Circumcision_Reduced_Acquire']
+    assert out.p_sti.all() and out.p_circ.all() and out.seed_year
+    return out
+
+
 def load(pid):
     """ Parameters of the EMOD′ network, risk and demography for parameter set `pid` """
     files, run_number = build(pid)
@@ -124,6 +148,18 @@ def load(pid):
         assert risk['Values'] == RISKS and risk['Initial_Distribution'][2] == 0
         p.p_low[n['NodeID'] - 1] = risk['Initial_Distribution'][0]
     p.sexwork = campaign_sexwork(files[run_emod.CAMPAIGN])
+    p.campaign = campaign_hiv(files[run_emod.CAMPAIGN])
+
+    # HIV (InfectionHIV, SusceptibilityHIV, IndividualHumanSTI)
+    keys = ['Base_Infectivity', 'Acute_Duration_In_Months', 'Acute_Stage_Infectivity_Multiplier', 'AIDS_Duration_In_Months', 'AIDS_Stage_Infectivity_Multiplier',
+            'Condom_Transmission_Blocking_Probability', 'STI_Coinfection_Acquisition_Multiplier', 'STI_Coinfection_Transmission_Multiplier',
+            'Male_To_Female_Relative_Infectivity_Ages', 'Male_To_Female_Relative_Infectivity_Multipliers', 'Maternal_Infection_Transmission_Probability',
+            'CD4_Post_Infection_Weibull_Scale', 'CD4_At_Death_LogLogistic_Scale', 'HIV_Adult_Survival_Scale_Parameter_Intercept', 'HIV_Adult_Survival_Scale_Parameter_Slope',
+            'HIV_Adult_Survival_Shape_Parameter', 'HIV_Age_Max_for_Adult_Age_Dependent_Survival', 'HIV_Age_Max_for_Child_Survival_Function',
+            'HIV_Child_Survival_Rapid_Progressor_Fraction', 'HIV_Child_Survival_Rapid_Progressor_Rate', 'HIV_Child_Survival_Slow_Progressor_Scale', 'HIV_Child_Survival_Slow_Progressor_Shape']
+    p.hiv = sc.objdict({k: cp[k] for k in keys})
+    assert cp['Max_Individual_Infections'] == 1 and cp['Heterogeneous_Infectiousness_LogNormal_Scale'] == 0 and cp['Enable_Maternal_Infection_Transmission']
+    assert cp['CD4_Post_Infection_Weibull_Heterogeneity'] == 0 and cp['CD4_At_Death_LogLogistic_Heterogeneity'] == 0 and cp['Base_Mortality'] == 0
 
     # Demography
     dem = files['Demographics_Malawi.json']
