@@ -10,6 +10,7 @@ Setup (once): see README.md in this folder.
 
     python run_emod.py --sets 0 25 50 --out test   # a few sets
     python run_emod.py                              # all 250 sets
+    python run_emod.py --sets 0 25 --network --out net   # with relationship reports
 """
 import argparse
 import copy
@@ -110,7 +111,20 @@ def to_v237(obj):
             to_v237(v)
 
 
-def build_inputs(table, run_number, years=None):
+def network_reports(cp):
+    """Relationship outputs for comparing the sexual network (output only)."""
+    cp.update(Report_HIV_ByAgeAndGender_Start_Year=1960, Report_HIV_ByAgeAndGender_Add_Relationships=1,
+              Report_HIV_ByAgeAndGender_Add_Concordant_Relationships=1,
+              Report_Relationship_Start=1, Report_Relationship_Start_Individual_Properties=['Risk'],
+              Report_Relationship_Start_Include_HIV_Disease_Statistics=0,
+              Report_Relationship_Start_Include_Other_Relationship_Statistics=0,
+              Report_Relationship_Start_Start_Year=1900, Report_Relationship_Start_End_Year=2200,
+              Report_Relationship_Start_Min_Age_Years=0, Report_Relationship_Start_Max_Age_Years=200,
+              Report_Relationship_Start_Must_Have_IP_Key_Value='', Report_Relationship_Start_Must_Have_Intervention='',
+              Report_Relationship_Start_Node_IDs_Of_Interest=[], Report_Relationship_End=1)
+
+
+def build_inputs(table, run_number, years=None, network=False, no_hiv=False):
     """Return {filename: json} for one simulation."""
     config = json.load(open(orig / 'InputFiles' / 'Templates' / 'config.json'))
     files = {CAMPAIGN: json.load(open(orig / 'InputFiles' / 'Templates' / CAMPAIGN))}
@@ -137,6 +151,11 @@ def build_inputs(table, run_number, years=None):
     # Risk=HIGH marks current female sex workers; ARTStatus separates suppressive from non-suppressive ART
     cp.update(Report_HIV_ByAgeAndGender_Start_Year=1990, Report_HIV_ByAgeAndGender_Collect_Age_Bins_Data=list(range(0, 70, 5)),
               Report_HIV_ByAgeAndGender_Collect_IP_Data=['Risk', 'ARTStatus'])
+    if network:
+        network_reports(cp)
+    if no_hiv: # Drop the seeding, the only source of infection, for comparisons of the network without HIV
+        camp = files[CAMPAIGN]
+        camp['Events'] = [e for e in camp['Events'] if e['Event_Coordinator_Config'].get('Intervention_Config', {}).get('class') != 'OutbreakIndividual']
     if years is not None:
         cp['Simulation_Duration'] = round((years - cp['Base_Year']) * 365)
     files['config.json'] = config
@@ -144,10 +163,10 @@ def build_inputs(table, run_number, years=None):
 
 
 def run_one(args):
-    pid, table, run_number, years, outdir = args
+    pid, table, run_number, years, outdir, network, no_hiv = args
     simdir = outdir / f'set{pid:03d}'
     simdir.mkdir(parents=True, exist_ok=True)
-    for name, obj in build_inputs(table, run_number, years).items():
+    for name, obj in build_inputs(table, run_number, years, network, no_hiv).items():
         json.dump(obj, open(simdir / name, 'w'), indent=1)
     env = dict(os.environ, LD_LIBRARY_PATH=f"{bindir / 'lib'}:{Path.home() / 'miniconda/envs/emod/lib'}",
                UCX_TLS='self,sm,tcp', UCX_NET_DEVICES='lo')  # Azure NIC breaks MPI init otherwise
@@ -164,6 +183,8 @@ def main():
     ap.add_argument('--years', type=float, default=2025, help='stop year (the original setup runs to 2100)')
     ap.add_argument('--out', default='baseline', help='folder under raw_results/emod/')
     ap.add_argument('--cores', type=int, default=150)
+    ap.add_argument('--network', action='store_true', help='also write relationship reports (RelationshipStart/End, relationships by age and sex from 1960)')
+    ap.add_argument('--no-hiv', action='store_true', help='without the epidemic seeding, so nobody is infected')
     a = ap.parse_args()
 
     sets = pd.read_csv(orig / 'resampled_parameter_sets_20230424.csv')
@@ -172,7 +193,7 @@ def main():
     meta = ['iteration_number', 'likelihood', 'parameterization_id', 'run_number', 'sim_id']
     pmap = load_param_map()
     outdir = outroot / a.out
-    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir)
+    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv)
             for _, r in sets.iterrows()]
     with ProcessPoolExecutor(min(a.cores, len(jobs))) as ex:
         for pid, rc, dt in ex.map(run_one, jobs):
