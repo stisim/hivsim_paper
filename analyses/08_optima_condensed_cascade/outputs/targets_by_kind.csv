@@ -1,0 +1,13 @@
+target,emodcx_ratio,emodcx_noflows_ratio,emod06_ratio
+aids_deaths,1.155,1.155,
+art_coverage,0.618,0.618,0.61
+diagnosed,0.946,0.943,0.949
+incidence,2.045,2.065,1.934
+new_infections,1.059,1.059,
+on_ART_among_diagnosed,0.559,0.561,0.554
+on_art,0.719,0.719,
+plhiv,1.0,1.0,
+population,1.0,1.0,
+prevalence,1.007,1.007,1.218
+suppressed_among_on_ART,0.854,0.853,0.87
+vls_among_plhiv,0.448,0.447,0.457

@@ -106,7 +106,7 @@ class CompartmentalCascade:
         """
         The cascade's states that the care states don't hold, as shares over time: of everyone past debut, of the
         undiagnosed and of the diagnosed in the routine testing loop (the rest wait in uptake), and of those dropped
-        out of ART who are still out rather than lost for good. Each pool is taken as steady in size (inflow = outflow).
+        out of ART who are still out rather than lost for good. The testing pools are taken as steady in size (inflow = outflow).
         """
         P, yrs = self.P, self.years
         tt, tu, td = self.mean_days('hct', 'test_interval')/365, self.mean_days('hct', 'uptake_interval')/365, self.mean_days('art', 'dropout_delay')/365
@@ -119,18 +119,23 @@ class CompartmentalCascade:
         self.loop_share = dict(everyone=np.interp(yrs, fine, s, left=0),
                                undx=integrate(pool(sgen), 0, yrs, start), dx=integrate(pool(lambda y: 0), 0, yrs, start))
         # Dropped out of ART: out (offered dropout and return again) or lost for good. Of each dropout, i_out go out
-        # and i_lost are lost; those out leave at `leave` (to lost for good at p_lost/td, the rest out of the pool)
+        # and i_lost are lost; those out leave at `leave` (to lost for good at p_lost/td). Dropouts at a steady rate
+        # from the first year anyone can start ART; both die at lost_exit
         def drop(y):
             pl, po, pr = (self.p('dropout', k, y) for k in ('p_lost', 'p_out', 'p_restart'))
-            return pl, po, pr, (pl + (1 - pl)*(1 - po) + (1 - pl)*po*pr)/td, ((1 - pl)*(1 - po) + (1 - pl)*po*pr)/td
-        def out_share(y, phi):
-            pl, po, pr, leave, exits = drop(y)
-            i_out, i_lost = (1 - pl)*po*(1 - pr), pl
-            inflow = (phi*exits + lost_exit)/max(i_out + i_lost, 1e-12) # Dropouts a year per person in the pool
-            return inflow*(i_out - phi*(i_out + i_lost)) - phi*leave + phi**2*exits
+            return pl, po, pr, (pl + (1 - pl)*(1 - po) + (1 - pl)*po*pr)/td
         self.drop = drop
-        y0 = min(yrs.min(), start)
-        self.out_share = integrate(out_share, 0, yrs, y0)
+        grid = np.arange(min(yrs.min(), start), yrs.max() + 1e-9, 0.01)
+        art = next((y for y in grid if self.v('eligibility', 'cd4', y, -np.inf) > 0 or max(self.p('hct', 'p_immediate_art', y, s) for s in 'fm') > 0), np.inf)
+        o = f = 0.0
+        phi = np.zeros(len(grid))
+        for i, y in enumerate(grid):
+            pl, po, pr, leave = drop(y)
+            i_out, i_lost = (1 - pl)*po*(1 - pr), pl
+            if y >= art:
+                o, f = o + 0.01*(i_out - (leave + lost_exit)*o), f + 0.01*(i_lost + pl/td*o - lost_exit*f)
+            phi[i] = o/(o + f) if o + f > 0 else i_out/max(i_out + i_lost, 1e-12)
+        self.out_share = np.interp(yrs, grid, phi)
 
     def eligible(self, band, g, year, pregnant):
         """ The share of band `band` of group `g` eligible for ART at staging: the eligibility rule of `year` """
@@ -179,7 +184,7 @@ class CompartmentalCascade:
         interval, td = self.mean_days('preart', 'interval')/365, self.mean_days('art', 'dropout_delay')/365
         for self.ti, y in enumerate(self.years):
             hct, anc, sym = self.started('hct', y), self.started('anc', y), self.started('symptomatic', y)
-            pl, po, pr, _, _ = self.drop(y)
+            pl, po, pr, _ = self.drop(y)
             for g in range(G):
                 sex = self.sex[g]
                 arms = self.arms(g, y)
