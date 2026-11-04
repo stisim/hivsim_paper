@@ -1,38 +1,41 @@
 # 02: EMOD′ sexual network against EMOD — summary
 
-**Answer:** the first EMOD′ network reproduces EMOD's closely. Run on the same parameter sets without HIV, nearly every statistic compared agrees with EMOD to within a few percent from 1961 to 2025: the share in each relationship type by sex and age, concurrency, formation rates, durations, coital acts, age differences, Risk mixing, and contacts per FSW and per client. The largest systematic difference is commercial sex: about 5% more people are in a commercial relationship at any time, and about 7% more commercial relationships are formed. Against the published model (with HIV), the two diverge after about 1990, by as much as HIV deaths change the population; most of all for marital relationships, many of which HIV ends.
+**Answer:** EMOD′'s network and demography reproduce EMOD's within its run-to-run noise. On the same parameter sets without HIV, every statistic compared agrees with EMOD to within a few percent from 1961 to 2025: population by age, sex and node; the share in each relationship type by sex and age; concurrency; formation rates; durations; coital acts; age differences; Risk mixing; and contacts per FSW and per client. The 5–7% commercial-sex excess in the first version was noise: it reversed sign with a change that leaves the mechanism unchanged. The frozen pair-formation rates match the tables EMOD logs, but because they are frozen, each run's commercial intensity varies by about ±15%. Against the published model (with HIV), the two diverge after about 1990, by as much as HIV deaths change the population, most of all for marital relationships.
 
 ## What matches
 
-v4 against EMOD without HIV, on the same parameter sets (0, 100, 200). Figures are in `figures/`, numbers in `outputs/`. In the figures, lines are medians over the sets each model was run on (10 for v4 and EMOD with HIV, 3 for EMOD without HIV), so the dashed line isn't strictly comparable with the others; the numbers below use matched sets.
+Solid lines and bands in the figures are medians and ranges over the 10 sets. Dashed lines are medians over sets 0, 100 and 200 for both models, so each pair of lines is like for like. Numbers are v4 against EMOD without HIV on those 3 sets unless stated.
 
-- **Population** (`population.png`): v4 is 0.3–1.2% larger than EMOD in 1980 and 0.8–2.1% larger in 2024. Numbers of FSW and clients (Risk HIGH) agree within run-to-run noise (−2% to +8% in single years). With HIV, EMOD's population is 12% smaller by 2024.
-- **In a relationship, by type and sex** (`in_relationship.png`), as a share of those past debut: the mean v4 − EMOD difference over sets and sexes is between −1.2% and +1.7% for transitory, informal and marital, in 1980, 2000 and 2020. This holds across a wide range over parameter sets (transitory 3–7%, informal 4–30%). EMOD's marital peak (28% around 1978) and decline to 25% by 2005 are reproduced.
-- **By age** (`by_age.png`, 1990 and 2020): shapes match, including marital peaking at 55–60 for men and 50–55 for women, and commercial sex confined to women aged 15–30. The 2020 gap at older ages is against EMOD *with* HIV.
-- **Concurrency** (`concurrency.png`): the share with two or more partners and the mean number of partners are 1.8–3.6% above EMOD, mostly the commercial excess below.
-- **Formation** (`formation.png`): relationships formed in 1970–2024 are +1.9% (transitory), +3.5% (informal) and +1.0% (marital), mostly v4's slightly larger population. The early spike, the marital decline to about 10 per 1000 a year by 1985, and the burn-in shape match. Rates are frozen from 1975.5, as in EMOD.
-- **Queues** (`queues.png`): queue lengths match for every type, including EMOD's runaway commercial queue: after the burn-in, men's commercial entries outpace women's and the queue grows to about 1,800 entries per 1000 people past debut by 1995, all men. This is EMOD behaviour (frozen rates), reproduced.
-- **Durations and acts** (`durations.png`): drawn durations are identical (mean 329, 727, 7300 and 7.0 days in both). Actual durations of ended relationships and coital acts per relationship match, including one act per commercial relationship.
-- **Age differences** (`age_difference.png`): mean 3.4 / 4.6 / 4.8 / 6.7 years in v4 against 3.3 / 4.6 / 4.9 / 6.7 in EMOD without HIV (transitory / informal / marital / commercial); the distributions overlie each other.
-- **Commercial contacts** (`commercial.png`), 1990–2024: 101.6 a year per FSW in v4 against 99.4 in EMOD without HIV, and 24.3 against 23.8 per client.
-- **Risk mixing** (`outputs/mixing.csv.gz`): shares of each Risk pair are within about 1.5 percentage points for every type.
+- **Demography** (`demography.png`, the demography alone, 20 seeds):
+  - Total population: −0.2% in 1984 against all 13 EMOD runs (107,757 ± 395 against 107,976 ± 453); +0.04% in 2023 against the 3 without HIV.
+  - All 5-year bands by sex within about 1% in 2023; yearly births within about 0.5%.
+  - The bands needed EMOD's own ageing: EMOD keeps age in single-precision days, so after whole steps a monthly cohort falls on the other side of some 5-year edges, and EMOD reports before the step's births. Both are copied.
+  - Single network runs differ by −0.3% to +1.9% in 2023, which is seed noise.
+- **In a relationship** (`in_relationship.png`, share of those past debut): transitory, informal and marital within −1.6% to +1.1% in 1980, 2000 and 2020; against all 10 EMOD sets in 1980, −0.3% to +0.2% for every type. EMOD's marital peak (28% around 1978) and decline to 25% by 2005 are reproduced.
+- **By age** (`by_age.png`; 1985 over the 10 sets, 2020 over the 3): the shapes match.
+- **Concurrency** (`concurrency.png`): −0.5% to +0.1%; mean number of partners −1.5% to +0.2%.
+- **Formation** (`formation.png`, 1970–2024): transitory +1.8%, informal +2.3%, marital −0.3%.
+- **Frozen rates**: EMOD's tables were logged at 1975.5 for all 10 sets (`raw_results/emod/rates_debug/`). v4 / EMOD: FSW commercial 1.005 ± 0.026 (s.e.), clients 1.009, transitory 0.992 ± 0.013, informal 0.983 ± 0.013, marital 1.031 ± 0.060.
+- **Queues** (`queues.png`): match, including the runaway commercial queue of men (about 1,800 entries per 1000 past debut).
+- **Durations and acts** (`durations.png`): drawn means 328 / 728 / 7300 / 7.0 days against 329 / 731 / 7302 / 7.0; actual durations and acts per relationship also match.
+- **Age differences** (`age_difference.png`): means 3.3 / 4.6 / 4.6 / 6.8 years against 3.3 / 4.6 / 4.9 / 6.7.
+- **Commercial contacts** (`commercial.png`), 1990–2024 means: per FSW 98.0, against 99.8 (10 sets with HIV) and 99.5 (3 without); per client 23.1, against 24.9 and 23.6. On the 3 matched sets alone v4 gives 92.2 per FSW; the first version gave 101.6 on the same sets, so this is the spread of frozen rates in single runs, not a bias.
+- **Risk mixing**: within 0.9 points for every type.
 
 ## What doesn't, and likely causes
 
-1. **Commercial sex runs about 5% high**: +4% to +6% in a commercial relationship at every year compared, and +7.3% commercial formations in 1970–2024 (+4.6% to +12.7% over the 3 sets), against about +1.5% for population. Women's commercial queue-entry rate is frozen at its 1975.5 value, which depends on the FSW-to-client ratio then. v4 sees debut one step late (the risk module runs after the network), which shifts sex-work uptake around the freeze. Likeliest cause; not tested.
-2. **Population is 1–2% larger** than EMOD's without HIV by 2024, growing. Candidates: pregnancy timing (EMOD's 280-day gestation starting within the step) and where in the step the yearly snapshot falls. Shares per person past debut are unaffected; counts are.
-3. **With HIV, EMOD diverges from about 1990** (marital −20% and concurrency −8% by 2020, relative to v4), as expected with no HIV deaths in the harness. Up to the late 1980s v4 is within about 1% of EMOD with HIV for every type.
-4. **Small simplifications** not visible in these statistics: when a woman queued twice for one type is matched, the matched entry is removed rather than EMOD's most recent one; EMOD's 50,000-candidate cap isn't applied (women's queues stay short, so it never binds). See `models/emod/v4/README.md`.
+1. **With HIV, EMOD diverges from about 1990**: by 2020 it has marital −21% and concurrency −7% relative to v4, as expected with no HIV in this comparison (analysis 03 adds HIV). Up to the late 1980s v4 is within about 1% for every type.
+2. **Commercial intensity varies a lot between runs** (frozen rates), so agreement can only be judged as an average over runs or sets.
+3. **Small simplifications**: when a woman queued twice for one type is matched, the matched entry is removed rather than EMOD's most recent one; EMOD's 50,000-candidate cap isn't applied (it never binds).
 
 ## Caveats
 
-- One v4 run per set against one EMOD run per set (3 without HIV). Single-year differences of a few percent are within noise; the systematic ones (commercial sex, population) appear in all 3 sets.
-- The harness demography is minimal and copies EMOD's 1000-times-too-low background mortality. It is not EMOD′'s demography component.
-- Snapshots are taken in the step of EMOD's report times (x.92), but not at the same point within the step.
-- v4 uses its own random numbers (EMOD's within-step queues need sequential draws per person), so it isn't safe for common random numbers.
+- One v4 run per set against one EMOD run per set (3 without HIV).
+- Snapshots are taken after the step's ageing and before its births, as EMOD's report is.
+- v4's random numbers aren't safe for common random numbers.
+- These outputs were produced before the STI flag was added to the risk module; that changes only the random-number sequence.
 
 ## Next steps
 
-- Find the commercial excess: compare EMOD's frozen rates with `net.rates`, and detect debut within the network step.
-- Add HIV (EMOD′ transmission from `edges.acts` and `edges.condoms`, and natural history), then rerun against EMOD with HIV.
-- Replace the harness demography with the EMOD′ demography component.
+- HIV: analysis 03.
+- For commercial sex, compare averages over many seeds, or over several EMOD runs per set.
