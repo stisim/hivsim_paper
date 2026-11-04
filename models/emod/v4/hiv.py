@@ -62,7 +62,7 @@ class EmodHIV(ss.Disease):
             F('who1'), F('who2'), F('who3'),                       # Shares of the prognosis in WHO stages 1-3
             ss.IntArr('art', default=OFF), F('art_mult'), F('supp_timer'), F('fail_timer'), F('art_days', default=-1.0), F('cd4_at_art'),
             ss.BoolArr('ever_tested', default=False), ss.BoolArr('diagnosed', default=False), F('last_test'), F('lowest_cd4', default=np.inf),
-            ss.BoolArr('ever_art', default=False), F('pmtct', default=0.0), F('prep_until', default=-np.inf), F('prep_eff', default=0.0),
+            ss.BoolArr('ever_art', default=False), F('pmtct', default=0.0), F('pmtct_until', default=np.inf), F('prep_until', default=-np.inf), F('prep_eff', default=0.0),
             F('p_act'), ss.IntArr('stage0', default=-1), F('days0'), # Per-act infectiousness, stage and days since infection at the start of the step
         )
         self.infections, self.deaths = [], []
@@ -310,7 +310,7 @@ class EmodHIV(ss.Disease):
             return
         m = dem.mothers
         p = np.where(self.on_art(m), h.Maternal_Infection_Transmission_Probability*h.Maternal_Transmission_ART_Multiplier,
-                     h.Maternal_Infection_Transmission_Probability*(1 - self.pmtct.raw[m]))
+                     h.Maternal_Infection_Transmission_Probability*(1 - np.where(self.pmtct_until.raw[m] >= self.t.now('year'), self.pmtct.raw[m], 0)))
         hit = self.infected.raw[m] & (self.rng.random(len(m)) < p)
         kids = self.infect(dem.born[hit])
         self.step_new.append(kids)

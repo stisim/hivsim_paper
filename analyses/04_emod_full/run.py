@@ -14,7 +14,7 @@ import pandas as pd
 
 here = Path(__file__).resolve().parent
 repo = here.parents[1]
-for p in ('models/emod/v4', 'models/emod/reference', 'common'):
+for p in ('common', 'models/emod/reference', 'models/emod/v4'): # v4 first: common/cascade would hide its cascade.py
     sys.path.insert(0, str(repo / p))
 import targetfit # noqa: E402
 import emod_targets # noqa: E402

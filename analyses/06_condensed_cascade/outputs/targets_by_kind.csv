@@ -1,0 +1,13 @@
+target,n,within2,ratio_median,ratio_lo,ratio_hi
+aids_deaths,32,32,1.0,0.982,1.015
+art_coverage,14,13,1.004,0.991,1.009
+diagnosed,2,2,1.0,1.0,1.0
+incidence,4,4,1.022,0.992,1.038
+new_infections,32,32,1.0,0.969,1.029
+on_ART_among_diagnosed,2,2,0.998,0.996,1.001
+on_art,24,23,0.998,0.965,1.064
+plhiv,32,32,1.0,0.996,1.005
+population,112,112,1.0,0.997,1.004
+prevalence,88,88,1.006,0.968,1.042
+suppressed_among_on_ART,1,1,1.001,1.001,1.001
+vls_among_plhiv,2,2,0.996,0.995,0.998

@@ -67,10 +67,11 @@ class Snapshots(ss.Analyzer):
         return
 
 
-def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, compiled=False, **kwargs):
+def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, compiled=False, condensed=False, **kwargs):
     """ EMOD′ for parameter set `pid`: its demography; with `network`, its sexual network and Risk; with `hiv`, HIV;
     with `cascade`, the rest of the campaign (testing, care, ART, VMMC, PrEP, PMTCT), and `EmodReport`; with `compiled`
-    as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (cascade.py) """
+    as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (cascade.py); with
+    `condensed` instead, the condensed cascade (common/cascade) with the set's parameters (extract_cascade.py) """
     inp = inputs.load(pid)
     mods = dict(networks=EmodNetwork(inp, record=record), interventions=[EmodRisk(inp)]) if network or hiv or cascade else {}
     if hiv or cascade:
@@ -79,6 +80,12 @@ def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cas
         from compile_campaign import compile_campaign
         holder, deliveries = compile_campaign(inp)
         mods['interventions'] += [holder] + deliveries
+    elif cascade and condensed:
+        from cascade_host import EmodHost
+        from extract_cascade import extract
+        from common.cascade.cascade import condensed_cascade
+        from common.cascade.params import Params
+        mods['interventions'] += condensed_cascade(Params(*extract(inp)), EmodHost)
     elif cascade:
         mods['interventions'].append(EmodCascade(inp))
     if cascade:
@@ -91,8 +98,9 @@ def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cas
 class EmodReport(ss.Analyzer):
     """
     The table EMOD's ReportHIVByAgeAndGender writes (with Risk and ARTStatus, as reference/run_emod.py asks for), every
-    half year at 0.42 and 0.92: stocks at the report, flows since the last one; and InterventionStatus as well. So
-    reference/emod_targets.py's measure() reads it as it reads EMOD's.
+    half year at 0.42 and 0.92: stocks at the report, flows since the last one; and InterventionStatus as well (with
+    the condensed cascade, its place in care, and ARTStatus from its ART arm). So reference/emod_targets.py's
+    measure() reads it as it reads EMOD's.
     """
     def __init__(self, name='emodreport', start=1990, **kwargs):
         super().__init__(name=name, **kwargs)
@@ -105,7 +113,7 @@ class EmodReport(ss.Analyzer):
         return pd.DataFrame(dict(NodeId=ppl.node.raw[uids] + 1, Gender=ppl.female.raw[uids].astype(int), Risk=np.array(['LOW', 'MEDIUM', 'HIGH'])[ppl.risk.raw[uids]], Age=age))
 
     def step(self):
-        ppl, hiv, cas = self.sim.people, self.sim.diseases.hiv, self.sim.interventions.emodcascade
+        ppl, hiv = self.sim.people, self.sim.diseases.hiv
         dead = ppl.auids[ppl.ti_dead.raw[ppl.auids] == self.ti]
         for col, uids in (('Newly Infected', hiv.new_uids), ('Died', dead), ('Died_from_HIV', hiv.dead_uids)):
             if len(uids):
@@ -116,8 +124,7 @@ class EmodReport(ss.Analyzer):
         uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born)]
         inf, art = hiv.infected.raw[uids], hiv.art.raw[uids] != 0
         year = self.t.now('year') + 1/12
-        df = self.keys(uids).assign(ARTStatus=np.array(cas.artstatuses)[cas.artstatus.raw[uids]], InterventionStatus=np.array(cas.statuses)[cas.istatus.raw[uids]],
-                                    HasHIV=inf.astype(int), Population=1, Infected=inf, On_ART=art,
+        df = self.keys(uids).assign(**self.statuses(uids), HasHIV=inf.astype(int), Population=1, Infected=inf, On_ART=art,
                                     **{'Tested Past Year or On_ART': ((year - hiv.last_test.raw[uids] <= 1) & hiv.ever_tested.raw[uids]) | art,
                                        'Tested Ever': hiv.ever_tested.raw[uids], 'Diagnosed': hiv.diagnosed.raw[uids]})
         by = ['NodeId', 'Gender', 'Risk', 'ARTStatus', 'InterventionStatus', 'HasHIV', 'Age']
@@ -133,6 +140,16 @@ class EmodReport(ss.Analyzer):
         self.rows.append(out)
         self.flows = []
         return
+
+    def statuses(self, uids):
+        cas = self.sim.interventions.get('emodcascade')
+        if cas is not None:
+            return dict(ARTStatus=np.array(cas.artstatuses)[cas.artstatus.raw[uids]], InterventionStatus=np.array(cas.statuses)[cas.istatus.raw[uids]])
+        from common.cascade.cascade import CARE
+        cx, hiv = self.sim.interventions.cascade, self.sim.diseases.hiv
+        on, arm = hiv.art.raw[uids] != 0, cx.arm.raw[uids]
+        art = np.where(on, np.where(arm == 1, 'OnEffectiveART', 'OnNonSuppressiveART'), np.where(hiv.ever_art.raw[uids], 'OffART', 'ARTNaive'))
+        return dict(ARTStatus=art, InterventionStatus=np.array(CARE)[cx.care.raw[uids]])
 
     def finalize(self):
         super().finalize()

@@ -19,7 +19,7 @@ import pandas as pd
 
 here = Path(__file__).resolve().parent
 repo = here.parents[1]
-for p in ('models/emod/v4', 'models/emod/reference', 'common'):
+for p in ('common', 'models/emod/reference', 'models/emod/v4'): # v4 first: common/cascade would hide its cascade.py
     sys.path.insert(0, str(repo / p))
 SETS, SEEDS, VARIANTS = [0, 100, 200], [1, 2, 3], ['as_is', 'unblocked', 'persist']
 EMOD = repo / 'raw_results' / 'emod' / 'ip3'
