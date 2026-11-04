@@ -385,7 +385,7 @@ class NChooser:
     """
     def __init__(self, cfg, cascade):
         self.cfg, self.cas = cfg, cascade
-        self.scale = 0.01
+        self.scale = cascade.inp.scale
         self.plan = None
         return
 
@@ -397,11 +397,11 @@ class NChooser:
                 continue
             key = id(d)
             if self.plan is None or self.plan[0] != key:
-                steps = int(round((d['End_Year'] - d['Start_Year'])*12))
+                steps = int(round((d['End_Year'] - d['Start_Year'])*365/cas.inp.dt)) # EMOD: int(days/dt) in single precision, 12 a year
                 targets = []
                 for k, ar in enumerate(d['Age_Ranges_Years']):
                     for sex, col in ((0, 'Num_Targeted_Males'), (1, 'Num_Targeted_Females')):
-                        n = int(d[col][k]*self.scale)
+                        n = int(d[col][k]*self.scale) # Truncated, as EMOD scales its integer targets
                         per = np.full(steps, n//steps) + (np.arange(steps) < n % steps)
                         targets.append((ar, sex, per))
                 self.plan = (key, targets, 0)

@@ -99,7 +99,7 @@ def load(pid):
     cp = files['config.json']['parameters']
     pfa, assort = files['PFA_Overlay_Malawi.json'], files['Risk_Assortivity_Overlay_Malawi.json']
     socs = [society(pfa, assort, n) for n in (1, 2, 3)]
-    p = sc.objdict(pid=pid, run_number=run_number, dt=cp['Simulation_Timestep'], start=cp['Base_Year'])
+    p = sc.objdict(pid=pid, run_number=run_number, dt=cp['Simulation_Timestep'], start=cp['Base_Year'], scale=cp['x_Base_Population'])
     assert abs(p.dt - DT) < 1e-6
 
     # Network: one entry per relationship type, in EMOD's order
