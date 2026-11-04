@@ -149,6 +149,9 @@ def load(pid):
         p.p_low[n['NodeID'] - 1] = risk['Initial_Distribution'][0]
     p.sexwork = campaign_sexwork(files[run_emod.CAMPAIGN])
     p.campaign = campaign_hiv(files[run_emod.CAMPAIGN])
+    p.events = files[run_emod.CAMPAIGN]['Events'] # The whole campaign, for the cascade (cascade.py)
+    ip = next(n for n in ips if n['NodeID'] == 1)['IndividualProperties']
+    p.ip_values = {d['Property']: d['Values'] for d in ip}
 
     # HIV (InfectionHIV, SusceptibilityHIV, IndividualHumanSTI)
     keys = ['Base_Infectivity', 'Acute_Duration_In_Months', 'Acute_Stage_Infectivity_Multiplier', 'AIDS_Duration_In_Months', 'AIDS_Stage_Infectivity_Multiplier',
@@ -156,7 +159,8 @@ def load(pid):
             'Male_To_Female_Relative_Infectivity_Ages', 'Male_To_Female_Relative_Infectivity_Multipliers', 'Maternal_Infection_Transmission_Probability',
             'CD4_Post_Infection_Weibull_Scale', 'CD4_At_Death_LogLogistic_Scale', 'HIV_Adult_Survival_Scale_Parameter_Intercept', 'HIV_Adult_Survival_Scale_Parameter_Slope',
             'HIV_Adult_Survival_Shape_Parameter', 'HIV_Age_Max_for_Adult_Age_Dependent_Survival', 'HIV_Age_Max_for_Child_Survival_Function',
-            'HIV_Child_Survival_Rapid_Progressor_Fraction', 'HIV_Child_Survival_Rapid_Progressor_Rate', 'HIV_Child_Survival_Slow_Progressor_Scale', 'HIV_Child_Survival_Slow_Progressor_Shape']
+            'HIV_Child_Survival_Rapid_Progressor_Fraction', 'HIV_Child_Survival_Rapid_Progressor_Rate', 'HIV_Child_Survival_Slow_Progressor_Scale', 'HIV_Child_Survival_Slow_Progressor_Shape',
+            'Days_Between_Symptomatic_And_Death_Weibull_Scale', 'Days_Between_Symptomatic_And_Death_Weibull_Heterogeneity', 'Maternal_Transmission_ART_Multiplier']
     p.hiv = sc.objdict({k: cp[k] for k in keys})
     assert cp['Max_Individual_Infections'] == 1 and cp['Heterogeneous_Infectiousness_LogNormal_Scale'] == 0 and cp['Enable_Maternal_Infection_Transmission']
     assert cp['CD4_Post_Infection_Weibull_Heterogeneity'] == 0 and cp['CD4_At_Death_LogLogistic_Heterogeneity'] == 0 and cp['Base_Mortality'] == 0

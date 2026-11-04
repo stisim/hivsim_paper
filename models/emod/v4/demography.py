@@ -49,6 +49,7 @@ class EmodDemography(ss.Demographics):
         self.define_states(ss.FloatArr('preg_days')) # Days left in a pregnancy
         self.born = self.mothers = ss.uids()
         self.n_births = self.n_deaths = 0
+        self.twelve_weeks = ss.uids()
         return
 
     def init_pre(self, sim):
@@ -106,6 +107,8 @@ class EmodDemography(ss.Demographics):
         # Births to those whose pregnancy ends, then new pregnancies
         preg = uids[~np.isnan(self.preg_days.raw[uids])]
         self.preg_days[preg] = self.preg_days.raw[preg] - dt
+        left = self.preg_days.raw[preg]
+        self.twelve_weeks = preg[(left - dt < GESTATION - 84) & (left >= GESTATION - 84)] # IndividualHumanHIV::UpdatePregnancy's TwelveWeeksPregnant
         born = preg[self.preg_days.raw[preg] <= 0]
         self.preg_days[born] = np.nan
         ok = self.can_conceive(uids, age) & ~np.isin(uids, born)

@@ -42,6 +42,7 @@ class EmodRisk(ss.Intervention):
         self.risk = sim.people.add_state(ss.IntArr('risk', default=-1))
         self.sti = sim.people.add_state(ss.BoolArr('sti', default=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 3)
+        self.new_debuts = ss.uids()
         return
 
     def start_step(self):
@@ -64,6 +65,7 @@ class EmodRisk(ss.Intervention):
         age = ppl.emod_age.raw[auids]/365 if 'emod_age' in ppl.states else ppl.age.raw[auids] + self.t.dt_year
         new = auids[~self.debuted.raw[auids] & (age >= net.debut.raw[auids])]
         self.debuted[new] = True
+        self.new_debuts = new # EMOD's STIDebut, for the cascade
         self.sti[new[self.rng.random(len(new)) < self.inp.campaign.p_sti[self.risk.raw[new]]]] = True
         if year >= sw.start_year and len(new):
             sex = female[new].astype(int)
