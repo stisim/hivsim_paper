@@ -26,6 +26,8 @@ Rerun with the published `emod-hiv` 2.37.0 binary instead of Daniel's 2023 clust
 
 **Check of the 2.37 build (all 250 sets):** sets Daniel scored higher also score better against our targets, but weakly. Rank correlation between his likelihood and our score is 0.21 overall and 0.27 for prevalence alone (in the right direction). By fifth of his likelihood, our median score falls steadily from 118 to 100 (prevalence alone: 10.8 to 5.6). That fits the 2.37 binary behaving like his build, given that his likelihood and our targets differ; it's not a tight check. The set that scores best against our targets (set 130) has his lowest likelihood, because our targets include the UNAIDS series, which his fit didn't use.
 
+**Duplicates:** Daniel's 250 resampled sets contain only 129 distinct parameter vectors (one repeated 22 times), as expected from importance resampling; EMOD tells copies apart by Run_Number. So the 250 runs are 129 parameter vectors, some with several seeds.
+
 **Spread across the 250 sets:** prevalence by age falls inside the survey intervals for most points in every survey. Every set has too many PLHIV and new infections after 2000, and every set has the ART coverage plateau and the low suppression, so these come from the model structure and the bugs, not from particular parameter values.
 
 **Open decision:** fix the mortality scale factor (one line, but his parameter sets were fitted without background mortality, so they would probably need recalibrating) or reproduce the model as published. Raised with Daniel on 3 Nov.
