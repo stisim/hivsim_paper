@@ -4,8 +4,12 @@ Optima′: Optima HIV (the Malawi project) as a declared Starsim model.
 Each rate is Optima's probability per step of 0.2 years divided by 0.2, with Optima's products, so that Optima's
 handling of time is kept (see docs/optima_inventory.md). Inputs are Optima's own series at dt=0.2.
 """
+import sys
 from pathlib import Path
 import numpy as np, sciris as sc, starsim as ss
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from common.cascade.rates import CompartmentalCascade # noqa: E402
 
 REF_DT = 0.2 # The step Optima's Malawi project was calibrated at
 REFFILE = Path(__file__).resolve().parents[1] / 'reference' / 'optima_malawi_ref.obj'
@@ -46,12 +50,14 @@ class Births:
     not diagnose mothers for PMTCT), worked out once a step from the compartments at its start. Returns births per year
     into each population: uninfected, infected to undiagnosed mothers, and infected to diagnosed mothers.
     """
-    def __init__(self, ref, mtct=True):
+    def __init__(self, ref, mtct=True, cx=None):
         sp, st = ref.simpars, ref.settings
+        self.cx = cx # A CompartmentalCascade: PMTCT from its ANC testing, and infected births tested at 6 weeks
         self.tvec, self.eps = sp['tvec'], 1e-3
         self.names = [s.replace('-', '_') for s in st['statelabels']]
         rows = lambda cs: [self.names.index(f'{c}_{k}') for c in cs for k in CD4]
         self.undx, self.alldx, self.alltx = rows(['undx']), rows(['dx', 'care', 'lost', 'usvl', 'svl']), rows(TREATED)
+        self.dx, self.notcare = rows(['dx']), rows(['care', 'lost'])
         assert np.all(np.asarray(sp['relhivbirth']) == 1) and np.all(np.isnan(sp['proppmtct'])), 'relhivbirth other than 1, or proppmtct, are not handled yet'
         self.rates = np.einsum('ij,ik->ijk', np.asarray(sp['birthtransit']), sp['birth']) # Mother pop × child pop × time, births per woman per year
         effmtct = sp['mtctbreast']*sp['breast'] + sp['mtctnobreast']*(1 - sp['breast'])
@@ -76,9 +82,16 @@ class Births:
         proppmtct = min(self.at(self.numpmtct, year)*REF_DT/(self.eps*REF_DT + pregdx), 1) # Optima: numpmtct over the steps of a year, over those eligible
         effmtct, pmtcteff = self.at(self.effmtct, year), self.at(self.pmtcteff, year)
         births = rates.T @ total
+        if self.cx is not None: # Mothers not in care are reached by ANC testing and PMTCT; those in care or lost are not
+            dx, notcare = people[self.dx].sum(axis=0), people[self.notcare].sum(axis=0)
+            averted = np.interp(year, self.tvec, self.cx.mtct_averted)
+            mtct = rates.T @ (undx + dx)*effmtct*(1 - averted) + rates.T @ notcare*effmtct + rates.T @ alltx*pmtcteff
+            infant = {c: self.at(a, year) for c, a in self.cx.births.items()}
+            self._ti, self._out = sim.ti, dict(birth=births - mtct, birth_undx=mtct*(1 - sum(infant.values())), **{f'birth_{c}': mtct*p for c, p in infant.items()})
+            return self._out
         mtctundx = rates.T @ undx*effmtct
         mtctdx = rates.T @ alldx*(proppmtct*pmtcteff + (1 - proppmtct)*effmtct) + rates.T @ alltx*pmtcteff # Mothers on ART count as both on treatment and eligible for PMTCT, as in Optima
-        self._ti, self._out = sim.ti, (births - mtctundx - mtctdx, mtctundx, mtctdx)
+        self._ti, self._out = sim.ti, dict(birth=births - mtctundx - mtctdx, birth_undx=mtctundx, birth_dx=mtctdx)
         return self._out
 
 
@@ -205,10 +218,76 @@ class Transmission:
         return self._rate
 
 
-def make_disease(ref, components=('demography', 'natural_history')):
-    """ The Optima′ disease: Optima's 38 states, stratified by its 39 populations """
+def groups(ref):
+    """ Optima's populations as groups of sex and ages (the key populations are 15-49) """
+    out = []
+    for p in ref.simpars['popkeys']:
+        if p in ('FSW', 'Clients', 'MSM'):
+            out.append(dict(sex='f' if p == 'FSW' else 'm', age_lo=15, age_hi=50))
+        else:
+            lo, hi = (int(p[1:-1]), 100) if p.endswith('+') else (int(p[1:].split('-')[0]), int(p.split('-')[1]) + 1)
+            out.append(dict(sex=p[0].lower(), age_lo=lo, age_hi=hi))
+    return out
+
+
+def table_cascade(ref, params, **kwargs):
+    """ A cascade table (common/cascade) as rates between Optima′'s care states, on Optima's time points; pregnancies are Optima's births per woman """
+    sp = ref.simpars
+    return CompartmentalCascade(params, groups(ref), sp['tvec'], pregnancy=np.asarray(sp['birth'], dtype=float), **kwargs)
+
+
+def overlap(ref, sex, lo, hi):
+    """ The share of each population of sex `sex` aged in [lo, hi), ages spread evenly over each """
+    return np.array([(g['sex'] == sex)*max(0, min(hi, g['age_hi']) - max(lo, g['age_lo']))/(g['age_hi'] - g['age_lo']) for g in groups(ref)])
+
+
+class VMMC:
+    """
+    The table's VMMC flows: each year's number, chosen evenly among HIV-negative men of the ages not yet circumcised by
+    the programme, moved from susreg to progcirc. As in EMOD, those already circumcised traditionally (Optima's propcirc)
+    can be chosen, to no effect. Optima has no regions, so the table's nodes are added up.
+    """
+    def __init__(self, ref, cx):
+        self.cx, self.ref = cx, ref
+        self.tvec, self.propcirc = ref.simpars['tvec'], np.asarray(ref.simpars['propcirc'], dtype=float)
+        self._ti, self._rate = None, None
+
+    def rates(self, sim):
+        if self._ti != sim.ti:
+            eng, year = sim.diseases.optima.engine, sim.now.years
+            sus = eng.y[eng.state_comps['susreg']].sum(axis=0)
+            rate = np.zeros(len(sus))
+            for sex, lo, hi, n, _ in self.cx.flow_rows('vmmc', year):
+                w = overlap(self.ref, sex, lo, hi)
+                rate += n/max((w*sus).sum(), 1e-3)*w
+            self._ti, self._rate = sim.ti, rate*(1 - Transmission.at(self, self.propcirc, year))
+        return self._rate
+
+
+def prep_inputs(ref, cx):
+    """ Optima's inputs with the table's PrEP flows as coverage: each year's starts × their days of protection, spread evenly over women of the ages (the table's Risk groups can't be told apart) """
+    sp = dict(ref.simpars)
+    tvec, size = sp['tvec'], np.asarray(sp['popsize'], dtype=float)
+    cov = np.zeros(size.shape)
+    for i, year in enumerate(tvec):
+        for sex, lo, hi, n, _ in cx.flow_rows('prep', year):
+            w = overlap(ref, sex, lo, hi)
+            cov[:, i] += n*cx.v('prep', 'days')/365/(w*size[:, i]).sum()*w
+    sp['prep'], sp['effprep'] = np.minimum(cov, 1), cx.v('prep', 'efficacy')
+    return sc.objdict(ref, simpars=sp)
+
+
+def make_disease(ref, components=('demography', 'natural_history'), cascade=None, flows=True):
+    """
+    The Optima′ disease: Optima's 38 states, stratified by its 39 populations. With `cascade` (a CompartmentalCascade,
+    from table_cascade()), its rates replace Optima's cascade (testing, linkage, loss and return, numbers on ART,
+    failure and viral load monitoring, PMTCT); with `flows` as well, its VMMC and PrEP
+    """
     inp = Inputs(ref)
     sp, pops = inp.sp, inp.pops
+    cx = cascade
+    assert cx is None or {'cascade', 'treatment'} <= set(components), 'A cascade table needs the cascade and treatment components'
+    zeros = {c: np.zeros((len(CD4),) + np.shape(sp['death'])) for c in UNTREATED}
     names = [s.replace('-', '_') for s in ref.settings['statelabels']]
     st = sc.objdict({s.name: s for s in ss.states(' '.join(names))})
     hiv = [st[f'{c}_{k}'] for c in UNTREATED + TREATED for k in CD4]
@@ -222,7 +301,7 @@ def make_disease(ref, components=('demography', 'natural_history')):
     prog = 1 - np.exp(-REF_DT/tau) # Probability per step of moving to the next CD4 stage
 
     if 'transmission' in components:
-        foi = Transmission(ref)
+        foi = Transmission(prep_inputs(ref, cx) if cx is not None and flows else ref)
         for i, s in enumerate([st.susreg, st.progcirc]):
             trs[f'infection_{s.name}'] = s >> st.undx_acute @ ss.by(pop=lambda sim, i=i: ss.peryear(foi.rates(sim)[i]))
 
@@ -232,7 +311,7 @@ def make_disease(ref, components=('demography', 'natural_history')):
                 trs[f'bgdeath_{s.name}'] = ss.death(s, rate=ss.peryear(1)*inp.by(bg/REF_DT))
 
     if 'natural_history' in components:
-        q = cascade_probs(sp) if 'cascade' in components else {c: np.zeros((len(CD4),) + bg.shape) for c in UNTREATED}
+        q = cascade_probs(sp) if 'cascade' in components and cx is None else zeros
         for c in UNTREATED:
             for i, k in enumerate(CD4):
                 s = st[f'{c}_{k}']
@@ -244,14 +323,28 @@ def make_disease(ref, components=('demography', 'natural_history')):
                 moves = {}
                 for dst, prob in [(f'{c}_{nxt}', p*(1 - q[c][i])), (f'{NEXT[c]}_{k}', (1 - p)*q[c][i]), (f'{NEXT[c]}_{nxt}', p*q[c][i])]:
                     moves[dst] = moves.get(dst, 0) + prob # From CD4<50, the last two are the same move
+                if cx is not None and i + 1 == cx.symptom_band: # First symptoms on entering the band: testing, or staging
+                    for (src, dc), pq in cx.on_progression.items():
+                        if src == c:
+                            moves[f'{c}_{nxt}'] = moves[f'{c}_{nxt}'] - p*pq
+                            moves[f'{dc}_{nxt}'] = moves.get(f'{dc}_{nxt}', 0) + p*pq
                 for dst, prob in moves.items():
                     if dst != s.name and np.any(prob):
                         trs[f'{s.name}_to_{dst}'] = s >> st[dst] @ (ss.peryear(1)*inp.by(prob*survive/REF_DT))
 
+    if cx is not None: # The table's cascade, within each CD4 stage (moves between stages are the natural history's)
+        for (src, dc), arr in cx.rates.items():
+            for i, k in enumerate(CD4):
+                if np.any(arr[i]):
+                    trs[f'cx_{src}_{k}_to_{dc}'] = st[f'{src}_{k}'] >> st[f'{dc}_{k}'] @ (ss.peryear(1)*inp.by(arr[i]))
+        if flows and 'transmission' in components:
+            vmmc = VMMC(ref, cx)
+            trs['cx_vmmc'] = st.susreg >> st.progcirc @ ss.by(pop=lambda sim: ss.peryear(vmmc.rates(sim)))
+
     if 'treatment' in components:
-        q = cascade_probs(sp)
+        q = cascade_probs(sp) if cx is None else zeros # With a table, its dropout replaces Optima's loss from ART
         fixsupp = sp['fixpropsupp'] # Treatment failure runs only while the suppressed proportion is not held (Optima's userate(propsupp))
-        fail = np.where(inp.tvec <= fixsupp, sp['treatfail']*REF_DT, 0.0)*np.ones(bg.shape)
+        fail = np.where(inp.tvec <= fixsupp, sp['treatfail']*REF_DT, 0.0)*np.ones(bg.shape)*(cx is None) # With a table, the ART arm is kept: no failure or regain
         regain = Regain(ref) # Regaining suppression through viral load monitoring: a probability per step from the number on ART, so worked out each step
         svlrecov = 1 - np.exp(-REF_DT/np.array([np.inf, np.inf, sp['svlrecovgt350'], sp['svlrecovgt200'], sp['svlrecovgt50'], sp['svlrecovlt50']]))
         u = lambda key: sp[key]*REF_DT # Rates on unsuppressive ART, used as probabilities per step
@@ -270,11 +363,13 @@ def make_disease(ref, components=('demography', 'natural_history')):
                 survive = (1 - dtx)*(1 - bg)
                 loss = q['care'][i]
                 cascade = {c: (1 - loss)*(1 - switch), other: (1 - loss)*switch, 'lost': loss} if c == 'svl' else {'lost': loss}
+                if cx is not None and c == 'usvl':
+                    cascade = {c: 1, other: 0, 'lost': 0}
                 for j, pcd4 in cd4moves[c][i].items():
                     for dc in [c, other, 'lost']:
                         dst = f'{dc}_{CD4[j]}'
                         if dst == s.name: continue
-                        if c == 'usvl' and dc != 'lost': # The chance of regaining suppression changes each step
+                        if c == 'usvl' and dc != 'lost' and cx is None: # The chance of regaining suppression changes each step
                             base = pcd4*(1 - loss)*survive*np.ones(bg.shape)/REF_DT
                             factor = (lambda r: r) if dc == 'svl' else (lambda r: 1 - r)
                             rate = lambda sim, base=base, factor=factor: ss.peryear(Transmission.at(regain, base, sim.now.years)*factor(regain.prob(sim)))
@@ -286,10 +381,11 @@ def make_disease(ref, components=('demography', 'natural_history')):
 
     # Births into F0-4 and M0-4, from all women in the mother populations, at Optima's birth rate per woman, with mother-to-child transmission
     if 'demography' in components:
-        births = Births(ref, mtct='mtct' in components)
-        for i, (name, dst) in enumerate([('birth', st.susreg), ('birth_undx', st.undx_acute), ('birth_dx', st.dx_acute)]):
-            if i == 0 or 'mtct' in components:
-                trs[name] = ss.null >> dst @ ss.by(pop=lambda sim, i=i: ss.peryear(births.inflows(sim)[i]))
+        births = Births(ref, mtct='mtct' in components, cx=cx)
+        infected = ['undx', 'dx'] + (['care', 'svl', 'usvl'] if cx is not None else [])
+        for name, dst in [('birth', st.susreg)] + [(f'birth_{c}', st[f'{c}_acute']) for c in infected]:
+            if name == 'birth' or 'mtct' in components:
+                trs[name] = ss.null >> dst @ ss.by(pop=lambda sim, n=name: ss.peryear(births.inflows(sim)[n]))
 
     # Ageing between bands (Optima's agerate per year, by source population), and risk transitions (FSW, Clients <-> general)
     if 'demography' in components:
@@ -430,12 +526,17 @@ class CascadeTargets(ss.Intervention):
         return
 
 
-def make_sim(ref=None, components=('demography', 'natural_history'), dt=0.02, end=2030, **kwargs):
+def make_sim(ref=None, components=('demography', 'natural_history'), dt=0.02, end=2030, cascade=None, flows=True, **kwargs):
+    """
+    Optima′. With `cascade` (a common/cascade Params, or a CompartmentalCascade), that cascade's rates replace Optima's
+    own, and Optima's rules on levels (the number on ART, proportions held from fix years) are not applied
+    """
     ref = ref or load()
-    dis, st = make_disease(ref, components)
+    cx = table_cascade(ref, cascade) if cascade is not None and not isinstance(cascade, CompartmentalCascade) else cascade
+    dis, st = make_disease(ref, components, cascade=cx, flows=flows)
     total = ref.raw['people'][:, :, 0].sum()
     interventions = [ForcePopsize(ref, name='force_popsize')] if 'demography' in components and ref.simpars['forcepopsize'] else []
-    if 'treatment' in components:
+    if 'treatment' in components and cx is None:
         interventions.append(CascadeTargets(ref, name='cascade_targets'))
     sim = ss.Sim(dis, interventions=interventions, solver='ode', start=1990, stop=end, dt=dt, total_pop=total, verbose=0, **kwargs)
     return sim
