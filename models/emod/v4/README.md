@@ -32,4 +32,4 @@ The comparison with EMOD is `analyses/02_emod_network/` (`run.py`, then `run.py 
 - Sexual debut is seen at the step after it (here the risk module runs after the network; in EMOD the debut event fires as people age within the step). Sex-work delays are months to years, so this shifts them by a month.
 - Random numbers can't match EMOD's, so runs agree only in distribution.
 
-See `analyses/02_emod_network/SUMMARY.md` for how close it is.
+See `analyses/02_emod_network/` for how close it is.
