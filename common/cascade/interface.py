@@ -7,10 +7,9 @@ EMOD′ implements it in models/emod/v4/cascade_host.py.
 HIVsim (STIsim's `sti.HIV` with `sti.ART`) implements it in models/hivsim/cascade_host.py, with WHO stage and first
 symptoms from the CD4 count.
 
-Fit with other models (not implemented):
-- Optima′ is compartmental: people are counts by CD4 and cascade state, moved by rates, so a cascade that acts on
-  agents (`start_art(uids)`) cannot drive it; it would need the same parameters turned into rates between its
-  compartments (undx → dx → care → treated, and lost), as Optima does.
+Optima′ is compartmental (counts by CD4 and cascade state, moved by rates), so this per-agent interface can't drive
+it. Instead `rates.py` turns the same parameter table into rates between its compartments (undx → dx → care →
+treated, and lost); see README.md and models/optima/v4/optima_prime.py (`make_sim(cascade=...)`).
 """
 from abc import ABC, abstractmethod
 import numpy as np
