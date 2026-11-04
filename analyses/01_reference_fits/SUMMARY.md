@@ -1,4 +1,4 @@
-# 01: Summary (EMOD so far, 3 Nov 2026)
+# 01: Summary (EMOD and Optima, 3 Nov 2026)
 
 ## EMOD
 
@@ -27,6 +27,26 @@ Rerun with the published `emod-hiv` 2.37.0 binary instead of Daniel's 2023 clust
 
 **Open decision:** fix the mortality scale factor (one line, but his parameter sets were fitted without background mortality, so they would probably need recalibrating) or reproduce the model as published. Raised with Daniel on 3 Nov.
 
-## Optima, HIVsim
+## Optima
+
+One deterministic run of the 2022 project (parset 20220912), measured by `models/optima/reference/optima_targets.py`. Every target has a value; none is NaN. Optima has no age bands for FSW, clients and MSM (all 15-49), so for targets by age they are spread over the 15-49 bands of their sex in proportion to each band's size. With one run there is no band, and the coverage table's "in range" counts are 0 by construction; read the figures instead.
+
+**What matches**
+- Population (WPP, within 1.5% in 1990-2020; Optima forces population size to its input).
+- Prevalence by age and sex for ages 25 and over in all five surveys, mostly within the survey intervals. Men aged 30-55 are a little low in most surveys.
+- PLHIV from 2005 to 2015 (within 3% of UNAIDS), and new infections from 2003 to 2012.
+- ART coverage to 2017 (within about 5 points of UNAIDS), and the share of PLHIV diagnosed in 2020-21 (91% for women against 90%; 89% for men against 85%).
+- FSW prevalence in 2006 (72% against 71%) and 2019 (40%, at the bottom of the survey interval).
+
+**What doesn't**
+- Prevalence at 15-24 is too high: 15-19 is 4.5% for women and 2.4% for men in 2020-21 (MPHIA: 1.7% and 1.4%), and two to three times the data in every survey. Most of it is in Optima's own 15-19 populations (3.9% and 1.7% without the key populations spread in).
+- The early epidemic is too small: new infections peak at 87k (UNAIDS 130k), AIDS deaths at 56k (UNAIDS 76k), and PLHIV is 13-15% low around 2000. Deaths stay 20-40% low throughout, 39% low by 2020.
+- New infections fall too slowly after 2012: 34k in 2020 (UNAIDS 21k), and 2020 is 40% of the early peak (UNAIDS 16%). PLHIV keeps rising to 1.15M in 2021 (UNAIDS flat at 1.0M).
+- Incidence 15-49 in both MPHIA surveys is at or above the top of the survey interval (2020-21: 0.44% for women, 0.26% for men; MPHIA 0.31% and 0.15%).
+- The cascade is short at the treatment step in 2020-21: 86% of diagnosed people are on ART (MPHIA 97-98%), so ART coverage is 79% for women and 77% for men (MPHIA 89% and 83%), and 73% and 71% are suppressed (MPHIA 86% and 80%). From 2018 ART coverage falls behind UNAIDS (78% against 84% in 2020). Optima holds the share in care on ART fixed from 2020.
+- FSW prevalence is 9-13 points low in 2014 and 2018 (53% against 63%, 42% against 55%).
+- The number on ART 15-64 matches the programme data to 2008, then is 10-30% low (2010: 150k women against 218k). Optima fits its own all-ages on-ART series exactly, so the two data sources differ.
+
+## HIVsim
 
 Not yet measured against the common targets.
