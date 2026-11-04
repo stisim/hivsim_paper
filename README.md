@@ -11,6 +11,7 @@ This repository holds the work for decomposing disagreement between HIV models. 
 | [docs/plan.md](docs/plan.md) | Weekly sprint plan to 15 Dec 2026, with the sprint 2 review |
 | [docs/targets.md](docs/targets.md) | Calibration target set for HIVsim Malawi (P3) |
 | [docs/optima_inventory.md](docs/optima_inventory.md) | Optima HIV Malawi: components, inputs, and its dependence on the time step |
+| [docs/emod_inventory.md](docs/emod_inventory.md) | EMOD-HIV Malawi: components, Malawi values, problems found, and notes for EMOD′ |
 | [docs/optima_prime_plan.md](docs/optima_prime_plan.md) | Optima′ build plan and acceptance |
 | [analyses/](analyses/) | Every result, numbered, each with a README (before running) and a SUMMARY (after) |
 | [docs/prompts.md](docs/prompts.md) | Agent prompt plan (P0–P5), human checkpoints, decisions, notes on Starsim v4, and a record of prompts run |

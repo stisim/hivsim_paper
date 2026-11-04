@@ -21,7 +21,8 @@ Rerun with the published `emod-hiv` 2.37.0 binary instead of Daniel's 2023 clust
 
 **ART coverage: mostly dropout**
 - In 2020 (set 0), 42% of PLHIV have `ARTStatus=OffART`: diagnosed, started ART and stopped. 33% are on suppressive ART, 8% on non-suppressive ART, and 17% have never started.
-- The number on ART matches the programme data, so with PLHIV about double, coverage comes out about half. How much of the dropout is his calibrated parameters and how much the mortality bug isn't known yet.
+- Most of this is a campaign bug, found by the EMOD inventory (`docs/emod_inventory.md`) and confirmed in the campaign file. Dropping out of ART sets `ARTStatus` to `OffART` (event 76) but leaves `InterventionStatus` at `OnEffectiveART` or `OnNonSuppressiveART` (set at ART start, events 66 and 68). From 2009, 85-95% of dropouts are sent to restart (event 79 to `OnART1`), but the four ART-start choices (events 62-65) are blocked for exactly those statuses, as are the testing and linkage pathways. So almost nobody who drops out restarts. Not checked against Daniel's 2023 build, but nothing in the campaign resets the status.
+- How much of the low coverage is this trap and how much the doubled PLHIV from the mortality bug isn't known yet.
 
 **Check of the 2.37 build:** our scores agree only weakly with his likelihoods across the 10 sets (rank correlation 0.43, in the right direction); too few sets to say much.
 
