@@ -297,6 +297,7 @@ class EmodHIV(ss.Disease):
             self.seeded = True
             high = ppl.auids[ppl.risk.raw[ppl.auids] == 2]
             seeds = self.infect(high[self.rng.random(len(high)) < c.seed_coverage], fast_forward=True)
+            self.step_new.append(seeds)
             self.log_infections(seeds, src=np.full(len(seeds), -1), kind='seed')
         return
 
@@ -309,6 +310,7 @@ class EmodHIV(ss.Disease):
                      h.Maternal_Infection_Transmission_Probability*(1 - self.pmtct.raw[m]))
         hit = self.infected.raw[m] & (self.rng.random(len(m)) < p)
         kids = self.infect(dem.born[hit])
+        self.step_new.append(kids)
         self.log_infections(kids, src=m[hit], kind='birth')
         return
 
@@ -361,6 +363,7 @@ class EmodHIV(ss.Disease):
 
     def step(self):
         ppl = self.sim.people
+        self.step_new = []
         self.campaign()
         self.at_birth()
         a = self.acts()
@@ -380,7 +383,7 @@ class EmodHIV(ss.Disease):
         if a is not None:
             self.log_infections(new, src=a['src'][k], kind=a['type'][k], src_stage=a['stage'][k], src_days=a['days'][k])
         self.n_new, self.n_dead = len(new), len(dead)
-        self.new_uids, self.dead_uids = new, dead
+        self.new_uids, self.dead_uids = ss.uids(np.concatenate(self.step_new + [new])), dead # Every infection of the step, as EMOD's NewInfectionEvent
         return
 
     def log_infections(self, uids, src, kind, src_stage=None, src_days=None):
