@@ -60,7 +60,7 @@ The model owner signs off at the end: Daniel for EMOD, Robyn for Optima.
 | P1 | Re-express EMOD-HIV (Malawi) in Starsim v4, against the interfaces | P4 spec, EMOD source + Malawi config, Starsim v4, stisim | `models/emod/` | for each output and year 2000–2040, the rebuilt model's median lies inside the original's 90% interval across seeds | TBD |
 | P2 | Re-express Optima HIV (Malawi) in Starsim v4, against the interfaces | P4 spec, Optima source + Malawi project, Starsim v4, stisim | `models/optima/` | within 2% of the original Optima, for each output and year 2000–2020 (the years with treatment data; decided 30 Oct) | Robyn signs off (sprint 4). First pass done 30 Oct: `models/optima/acceptance.py` |
 | P3 | Build a common target set from the data EMOD and Optima actually used, then calibrate HIVsim Malawi to it (calib plugin); score the EMOD and Optima originals on the same set | P0 calibration inputs, Bansi-Matharu 2025 + supplement, calib plugin | `common/targets.csv`, priors, fitted HIVsim, a fit scorecard for all three models | HIVsim fits the common set; scorecard complete | **Approve target set** (Robyn) before calibrating. Approved 2 Nov; calibration in `experiments/` |
-| P5 | Refactor HIVsim to the interfaces; design and run the sequential swaps | P1–P4 outputs | swap plan, path results | endpoint identity is exact (unit test, with common random numbers) | TBD |
+| P5 | Refactor HIVsim to the interfaces; design and run the sequential swaps | P1–P4 outputs; design in [`swap_design.md`](swap_design.md) | swap runner (`common/swaps/`), path results in `analyses/` | endpoint identity is exact (unit test, with common random numbers) | Robyn: decisions D1–D10 in `swap_design.md`; then per path |
 
 ### P1 (draft)
 
@@ -86,6 +86,14 @@ Extract all the calibration targets and adjustable parameters from the paper. Us
 
 ```text
 List out the atomic components of each model and design the sequential swapping.
+```
+
+### P5 (draft)
+
+Design: [`swap_design.md`](swap_design.md) (4 Nov, proposed; open decisions D1–D10 there). First milestone proposed there: the path HIVsim → EMOD′ on four coarse slots (cascade, HIV disease, network and risk, demography), uncalibrated, with endpoint identity at both ends.
+
+```text
+Build the swap runner and the first path as in docs/swap_design.md, section 5.
 ```
 
 ## Starsim v4 notes (reviewed 28 Oct, `origin/v4` = 1ce69a13)
