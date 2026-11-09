@@ -45,6 +45,7 @@ def extract(sim):
         w = rr[:, [np.argmin(abs(t - x)) for x in tg]].T if k.split('_')[1] in opp.TREATED else 1
         deaths = deaths + (res*w).sum(axis=1)
     out.deaths_step = deaths[[np.argmin(abs(tg - y)) for y in YEARS]]/(tg[1] - tg[0])
+    out.deaths_year = np.array([deaths[np.floor(tg + 1e-9).astype(int) == y].sum() for y in YEARS])*(dt/(tg[1] - tg[0]))
     return out
 
 
@@ -55,7 +56,7 @@ def group_results():
 
 def run_ode():
     OUT.mkdir(exist_ok=True)
-    for label, make in [('ode', lambda: opp.make_sim(components=cmp.COMPONENTS['E'], end=END)), ('ode_agentpieces', lambda: ag.make_sim(solver='ode', end=END))]:
+    for label, make in [('ode', lambda: opp.make_sim(components=cmp.COMPONENTS['E'], end=END, group_results=group_results())), ('ode_agentpieces', lambda: ag.make_sim(solver='ode', end=END, group_results=group_results()))]:
         T = sc.timer()
         sim = make().run()
         el = T.toc(output=True)
@@ -84,7 +85,7 @@ def compare(n=100_000):
     runs = [sc.load(f) for f in sorted(OUT.glob(f'abm_{n}_*.obj'))]
     lines = [f'Optima′ as agents ({len(runs)} seeds, {n:,} agents) against its ODE, 2000-2020, each whole year',
              f'Run time: ODE {ode.time:.0f} s; agents mean {np.mean([r.time for r in runs]):.0f} s (init {np.mean([r.time_init for r in runs]):.0f} s)', '']
-    totals = lambda o: {**{k: o[k].sum(axis=0) for k in OUTPUTS}, 'inci_step': o.inci_step, 'inci_year': o.inci_year, 'sexinci_year': o.sexinci_year, 'deaths_step': o.deaths_step}
+    totals = lambda o: {**{k: o[k].sum(axis=0) for k in OUTPUTS}, 'inci_step': o.inci_step, 'inci_year': o.inci_year, 'sexinci_year': o.sexinci_year, 'deaths_step': o.deaths_step, 'deaths_year': o.deaths_year}
     a, b = totals(ode), totals(ode2)
     lines.append('Agent pieces as an ODE vs the original ODE: max |%| difference')
     lines.append('  ' + '  '.join(f'{k} {100*np.max(np.abs(b[k][SEL]/a[k][SEL] - 1)):.2f}' for k in a))
@@ -113,9 +114,15 @@ def compare(n=100_000):
         share = o[:, -1]/o[:, -1].sum()
         bad = [(pk[j], f'{100*np.nanmean(mean[j]/np.where(o[j] > 0, o[j], np.nan) - 1):+.1f}%', f'{100*share[j]:.1f}%') for j in range(len(pk)) if np.mean(np.abs(z[j]) > 3) > 0.25]
         lines.append(f'  {k:8s} {len(bad):2d}/{len(pk)}: {bad}')
+    lines.append('')
+    lines.append('In care, not on ART (the pool ART starts are taken from): ODE | agents mean [min-max over seeds]')
+    care = lambda o: o.people[14:20].sum(axis=(0, 1))
+    for y in range(2012, 2022):
+        i, c = list(YEARS).index(y), np.array([care(r)[list(YEARS).index(y)] for r in runs])
+        lines.append(f'  {y}: {care(ode)[i]:9,.0f} | {c.mean():9,.0f} [{c.min():,.0f}-{c.max():,.0f}]')
     text = '\n'.join(lines)
     print(text)
-    (OUT / 'tables.txt').write_text(text + '\n')
+    (OUT / f'tables_{n}.txt').write_text(text + '\n')
 
 
 if __name__ == '__main__':

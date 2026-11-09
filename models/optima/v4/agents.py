@@ -91,10 +91,12 @@ class CascadeTargets(opp.CascadeTargets):
         names = [n for c in rows.values() for n in c]
         y = dict(zip(names, counts(sim, names, fresh=True).sum(axis=1))) # Totals by state, kept up to date with each move
         tot = lambda cs: sum(y[n] for c in cs for n in rows[c])
-        def move(src, dst, amount):
-            """ Move `amount` people from one state to another, as a share of the source (in expectation, as agents) """
-            if amount <= 0 or y[src] <= 0: return
-            moved = ss.move(dis[src], dis[dst], p=min(amount/y[src], 1))
+        def move(src, dst, amount=None, p=None):
+            """ Move `amount` people from one state to another, as a share of the source (in expectation, as agents); or each person with probability `p` """
+            if p is None:
+                if amount <= 0 or y[src] <= 0: return
+                p = min(amount/y[src], 1)
+            moved = ss.move(dis[src], dis[dst], p=p)
             y[src] -= moved; y[dst] += moved
         year = sim.now.years
         structure = dict(propdx=(['undx'], 'dx', ['dx', 'care', 'lost', 'usvl', 'svl'], opp.UNTREATED + opp.TREATED),
@@ -128,9 +130,10 @@ class CascadeTargets(opp.CascadeTargets):
                 for a, c in enumerate(lower):
                     for i, k in enumerate(opp.CD4):
                         src = f'{c}_{k}'
-                        if name == 'proptx': # Suppressed at the start or not (the second share is of those left, so the expected number is right)
-                            move(src, f'svl_{k}', movers[a, i]*self.treatvs)
-                            move(src, f'usvl_{k}', movers[a, i]*(1 - self.treatvs))
+                        if name == 'proptx' and y[src] > 0: # Suppressed at the start or not: each person's chances, the second given not chosen by the first (as shares of those left, the second would be capped at 1 when everyone in the state starts, and too few would be unsuppressed)
+                            q = min(movers[a, i]/y[src], 1)
+                            move(src, f'svl_{k}', p=q*self.treatvs)
+                            move(src, f'usvl_{k}', p=q*(1 - self.treatvs)/(1 - q*self.treatvs))
                         else:
                             move(src, f'{upper}_{k}', movers[a, i])
             elif diff < -self.eps: # Down the cascade
