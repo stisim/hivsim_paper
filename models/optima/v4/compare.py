@@ -40,7 +40,7 @@ def prime_inci(sim, years):
     if not flows: return None
     t = np.array([d.years for d in flows[0].timevec])
     total = sum(np.asarray(f) for f in flows)
-    return np.array([total[min(np.argmin(abs(t - y)) + 1, len(t) - 1)] for y in years])/sim.pars.dt.years if hasattr(sim.pars.dt, 'years') else None
+    return np.array([total[np.argmin(abs(t - y))] for y in years])/sim.pars.dt.years if hasattr(sim.pars.dt, 'years') else None
 
 def prime_deaths(sim, years):
     """ Optima′'s HIV deaths per year, in the step that starts at each whole year, as Optima reports them (deaths on ART scaled by rrcomorbiditydeathtx) """
@@ -51,7 +51,7 @@ def prime_deaths(sim, years):
     for k in [k for k in r.keys() if k.startswith('hivdeath_')]:
         res = r[k].by('pop')
         t = np.array([d.years for d in res.timevec])
-        inds = [min(np.argmin(abs(t - y)) + 1, len(t) - 1) for y in years]
+        inds = [np.argmin(abs(t - y)) for y in years]
         flows = np.asarray(res)[inds] # Years × pops
         if k.split('_')[1] in opp.TREATED:
             flows = flows*np.array([[np.interp(y, tvec, row) for row in rr] for y in years])

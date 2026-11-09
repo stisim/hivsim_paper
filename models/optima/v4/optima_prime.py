@@ -127,11 +127,11 @@ class Inputs:
         arr = np.asarray(arr, dtype=float)
         if arr.ndim == 1:
             return ss.by(pop=dict(zip(self.pops, arr)))
-        return ss.by(pop={p: ss.timeseries(self.tvec, row, mode='linear') for p, row in zip(self.pops, arr)})
+        return ss.by(pop={p: ss.timeseries(self.tvec, row, interpolation='linear') for p, row in zip(self.pops, arr)})
 
     def series(self, row):
         """ One time series """
-        return ss.timeseries(self.tvec, np.asarray(row, dtype=float), mode='linear')
+        return ss.timeseries(self.tvec, np.asarray(row, dtype=float), interpolation='linear')
 
 
 class Transmission:
@@ -385,7 +385,7 @@ def make_disease(ref, components=('demography', 'natural_history'), cascade=None
         infected = ['undx', 'dx'] + (['care', 'svl', 'usvl'] if cx is not None else [])
         for name, dst in [('birth', st.susreg)] + [(f'birth_{c}', st[f'{c}_acute']) for c in infected]:
             if name == 'birth' or 'mtct' in components:
-                trs[name] = ss.null >> dst @ ss.by(pop=lambda sim, n=name: ss.peryear(births.inflows(sim)[n]))
+                trs[name] = ss.unborn >> dst @ ss.by(pop=lambda sim, n=name: ss.peryear(births.inflows(sim)[n]))
 
     # Ageing between bands (Optima's agerate per year, by source population), and risk transitions (FSW, Clients <-> general)
     if 'demography' in components:
@@ -396,15 +396,15 @@ def make_disease(ref, components=('demography', 'natural_history'), cascade=None
             if OPTIONS.age_skip and j in onward: # Optima's old ageing code (projects before 2.12.0) ages people who arrive in a band again in the same step, so some of those leaving skip it
                 k = onward[j]
                 skip = rate*at[j, k]*a[j]*REF_DT
-                trs[f'skip_{pops[i]}'] = ss.transfer(pop=(pops[i], pops[k]), rate=ss.peryear(1)*inp.series(OPTIONS.skip_scale*skip))
+                trs[f'skip_{pops[i]}'] = ss.transfer(dict(pop=(pops[i], pops[k])), rate=ss.peryear(1)*inp.series(OPTIONS.skip_scale*skip))
                 rate = rate - OPTIONS.skip_scale*skip
-            trs[f'age_{pops[i]}'] = ss.transfer(pop=(pops[i], pops[j]), rate=ss.peryear(1)*inp.series(OPTIONS.age_scale*rate))
+            trs[f'age_{pops[i]}'] = ss.transfer(dict(pop=(pops[i], pops[j])), rate=ss.peryear(1)*inp.series(OPTIONS.age_scale*rate))
         rt = np.asarray(sp['risktransit'], dtype=float)
         size = sp['popsize']
         for i, j in zip(*np.nonzero(rt)) if OPTIONS.risk else []:
             r = 1 - np.exp(-REF_DT/rt[i, j]) # Probability per step
-            trs[f'risk_{pops[i]}_{pops[j]}'] = ss.transfer(pop=(pops[i], pops[j]), rate=ss.peryear(r/REF_DT))
-            trs[f'risk_{pops[j]}_{pops[i]}'] = ss.transfer(pop=(pops[j], pops[i]), rate=ss.peryear(1)*inp.series(r/REF_DT*size[i]/size[j])) # Balanced: as many move back (population sizes are forced)
+            trs[f'risk_{pops[i]}_{pops[j]}'] = ss.transfer(dict(pop=(pops[i], pops[j])), rate=ss.peryear(r/REF_DT))
+            trs[f'risk_{pops[j]}_{pops[i]}'] = ss.transfer(dict(pop=(pops[j], pops[i])), rate=ss.peryear(1)*inp.series(r/REF_DT*size[i]/size[j])) # Balanced: as many move back (population sizes are forced)
 
     # Initial state: Optima's own, as the share of each population in each state
     people0 = ref.raw['people'][:, :, 0]
