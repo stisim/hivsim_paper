@@ -34,7 +34,7 @@ def sexual_pairs(sim):
     if hiv.infection_log is None:
         raise ValueError('Outputs needs the sources of transmissions: add ss.infection_log() to the sim')
     d = hiv.infection_log.to_df(ti=sim.ti)
-    if not len(d):
+    if not len(d) or 'network' not in d.columns: # No entries, or only ones with no route (seeds): Starsim then drops the column
         return np.zeros(0, int), np.zeros(0, int)
     d = d[d.network.isin(SEXUAL)]
     return d.target.to_numpy(int), d.source.to_numpy(int)
