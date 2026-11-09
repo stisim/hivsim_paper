@@ -21,6 +21,15 @@ NEXT = dict(undx='dx', dx='care', care='lost', lost='care') # Where each untreat
 AIDS = CD4.index('gt50') # CD4 stages from here on are AIDS (Optima's settings.aidsind)
 
 
+def state_counts(sim, names):
+    """ The number of people in each of these states, by population (states × populations): the compartments, or as agents the agents (agents.counts()) """
+    eng = sim.diseases.optima.engine
+    if not hasattr(eng, 'y'):
+        import agents
+        return agents.counts(sim, names)
+    return np.array([eng.y[eng.state_comps[n]].sum(axis=0) for n in names])
+
+
 def load(reffile=REFFILE):
     """ Optima's inputs (simpars at dt=0.2) and its calibrated run """
     return sc.objdict(sc.load(reffile))
@@ -38,8 +47,7 @@ class Regain:
 
     def prob(self, sim):
         if self._ti != sim.ti:
-            eng = sim.diseases.optima.engine
-            ontx = sum(eng.y[eng.state_comps[n]].sum() for n in self.alltx)
+            ontx = state_counts(sim, self.alltx).sum()
             self._ti, self._prob = sim.ti, min(Transmission.at(self, self.series, sim.now.years)/(self.eps + ontx), 1)
         return self._prob
 
@@ -73,8 +81,7 @@ class Births:
     def inflows(self, sim):
         if self._ti == sim.ti:
             return self._out
-        eng = sim.diseases.optima.engine
-        people = np.array([eng.y[eng.state_comps[n]].sum(axis=0) for n in self.names])
+        people = state_counts(sim, self.names)
         year = sim.now.years
         rates = self.at(self.rates, year) # Per year
         total, undx, alldx, alltx = people.sum(axis=0), people[self.undx].sum(axis=0), people[self.alldx].sum(axis=0), people[self.alltx].sum(axis=0)
@@ -194,8 +201,7 @@ class Transmission:
         return self # One object, shared with the infection rates' functions (which copying a sim does not copy)
 
     def people(self, sim):
-        eng = sim.diseases.optima.engine
-        return np.array([eng.y[eng.state_comps[n]].sum(axis=0) for n in self.names]) # States × populations
+        return state_counts(sim, self.names) # States × populations
 
     def rates(self, sim):
         if self._ti == sim.ti:
@@ -261,8 +267,8 @@ class VMMC:
 
     def rates(self, sim):
         if self._ti != sim.ti:
-            eng, year = sim.diseases.optima.engine, sim.now.years
-            sus = eng.y[eng.state_comps['susreg']].sum(axis=0)
+            year = sim.now.years
+            sus = state_counts(sim, ['susreg'])[0]
             rate = np.zeros(len(sus))
             for sex, lo, hi, n, _ in self.cx.flow_rows('vmmc', year):
                 w = overlap(self.ref, sex, lo, hi)
@@ -284,7 +290,7 @@ def prep_inputs(ref, cx):
     return sc.objdict(ref, simpars=sp)
 
 
-def make_disease(ref, components=('demography', 'natural_history'), cascade=None, flows=True):
+def make_disease(ref, components=('demography', 'natural_history'), cascade=None, flows=True, extra=None):
     """
     The Optima′ disease: Optima's 38 states, stratified by its 39 populations. With `cascade` (a CompartmentalCascade,
     from table_cascade()), its rates replace Optima's cascade (testing, linkage, loss and return, numbers on ART,
@@ -418,6 +424,8 @@ def make_disease(ref, components=('demography', 'natural_history'), cascade=None
     shares0 = people0/people0.sum(axis=0)
     init = {name: inp.by(shares0[i]) for i, name in enumerate(names) if shares0[i].any()}
 
+    if extra is not None: # More transitions, from extra(states, inputs), e.g. agents.ForcePopsize's
+        trs.update(extra(st, inp))
     dis = ss.Disease(*st.values(), **trs, init=init, name='optima')
     dis.foi = foi if 'transmission' in components else None # For infections_by_source()
     dis.stratify(pop=dict(zip(pops, people0.sum(axis=0)/people0.sum())))
