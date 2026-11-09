@@ -1,0 +1,5 @@
+/tmp/ss-nov09/starsim/__init__.py /tmp/sti-613/stisim/__init__.py
+name
+D=emod_fixed,RN=emod_fixed,V=emod_fixed,C=emod_fixed    0
+D=emod_fixed,RN=emod_fixed,V=emod_fixed,C=optima        0
+Name: error, dtype: int64

@@ -34,9 +34,13 @@ STATES = ['undx', 'dx', 'care', 'lost', 'usvl', 'svl']
 
 
 def emod_config():
-    return dict(hybrids=[{s: 'emod_fixed' for s in 'D RN V C'.split()}, dict(D='emod_fixed', RN='emod_fixed', V='emod_fixed', C='optima')],
+    """ EMOD′-fixed with its own C; with Optima's (`optima`); and two sensitivity variants (variants/): with failure and
+    regain switching EMOD′'s ART arm (`optima_sw`), and with EMOD′'s own VMMC and PrEP flows as well (`optima_swp`) """
+    e = dict(D='emod_fixed', RN='emod_fixed', V='emod_fixed')
+    return dict(hybrids=[dict(e, C=c) for c in ('emod_fixed', 'optima', 'optima_sw', 'optima_swp')],
                 pairs={'emod_fixed': PIDS}, seeds=EMOD_SEEDS, stop=END,
-                models={'emod_fixed': 'models/emod/v4/components_fixed.py', 'optima': 'models/optima/v4/components.py'})
+                models={'emod_fixed': 'models/emod/v4/components_fixed.py', 'optima': 'models/optima/v4/components.py',
+                        'optima_sw': 'analyses/24_cascade_swap/variants/optima_c_switch.py', 'optima_swp': 'analyses/24_cascade_swap/variants/optima_c_switch_prev.py'})
 
 
 def run_emod(cores=96):
