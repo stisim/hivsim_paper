@@ -81,8 +81,8 @@ With these, all three cascades run on one mechanism, and swapping the cascade's 
 | **Infectiousness after diagnosis** | None | None | `effdx` lowers it for everyone diagnosed | Part of Optima's T, read from `cascade_stage()` |
 | **Transmission arithmetic** | Multiplies probabilities per act | Multiplies hazards | Whole and fractional acts per step of 0.2 years | Kept: each T keeps its own arithmetic |
 | **Prevention inputs** | VMMC and PrEP as numbers (NChooser, truncated at 1% scale) | VMMC coverage by age | `propcirc`, `prep` as coverage in the force of infection | In agents, coverage becomes per-person status drawn by population each year (a flow row in C's table) |
-| **Start year and initialization** | 1960.5, network burn-in to 1975.5, seeding 1983 | 1985, prevalence set at the start | 1990, state set by population | All hybrids run from 1960.5. HIVsim in the swaps starts in 1960.5 on its own demography and applies its 1985 prevalence as an event; Optima's 1990 state becomes an event too. Each needs a fidelity check against its native start (a small analysis like 06). **Needs a decision** |
-| **Scale** | 1% (36,600 agents in 1960); NChooser truncation depends on it | 10,000 agents in 1985 | Counts | One scale per path, EMOD's 1%. HIVsim at 1% is the same model with less noise |
+| **Start year and initialization** | 1960.5, network burn-in to 1975.5, seeding 1983 | 1985, prevalence set at the start | 1990, state set by population | **Decided** (Robyn, 9 Nov): all hybrids start in 1985, because 1960.5 is too slow. EMOD′ runs a burn-in from 1960.5 to 1985 once per parameter set and seed, saves the sim, and every hybrid with EMOD's slots continues from it. The 1985 state is part of D (and S), so it swaps with them. A resumed EMOD′ must equal a continuous one exactly (a test). Slots swapped in at 1985 that carry state (network, natural history) start from the snapshot's people; the network may need a short warm-up with transmission off. Optima's native 1990 state: to settle with the Optima paths |
+| **Scale** | 1% (36,600 agents in 1960); NChooser truncation depends on it | 10,000 agents in 1985 | Counts | **Decided** (Robyn, 9 Nov): agent numbers vary and move with D: hybrids with HIVsim's D run at 10,000 agents, with EMOD's at 1%. Checked once: HIVsim at 10,000 agents against HIVsim at 1%, in distribution. EMOD's absolute numbers (VMMC, PrEP) are scaled to agents with random rounding when its C runs on HIVsim's D |
 | **Time step** | Monthly (30.42 days) | Monthly | ODE at 0.02 years, from rates per 0.2-year step | Agent hybrids are monthly. Optima′ as agents uses the same rates; the sprint 5 dt study checks it |
 | **Compartments against agents** | Agents | Agents | Compartments; `ForcePopsize`, `CascadeTargets`, `Births` and `Transmission` read or write `engine.y` | Agent versions of these four (sprint 5, with Optima′ as agents). They are also what any Optima slot needs to run in a hybrid |
 
@@ -165,7 +165,7 @@ Proposed:
 3. **Order of modules:** the runner places modules in one canonical slot order (D, R, N, V/T/H, S, C, M), and each model's `make_sim` is refactored to the same order and the same factories. Then identity holds by construction, and the test guards against regressions. The refactor itself is checked once for fidelity, in distribution, against the old `make_sim`.
 4. **CRN check** (planned for sprint 3, not done): the variance of Δ₁ (the first step) with paired seeds against independent seeds, over 30 cells.
 
-**Endpoints used in the swaps** (proposed): EMOD′ with the condensed cascade (within noise of the literal campaign, analyses 04–06); HIVsim from 1960.5 at 1% scale (if decided, 1.4), checked against native HIVsim; Optima′ as an ODE (checked against Optima, P2), with X to agents checked in sprint 5.
+**Endpoints used in the swaps** (proposed): EMOD′ with the condensed cascade (within noise of the literal campaign, analyses 04–06); HIVsim native (from 1985, 10,000 agents); Optima′ as an ODE (checked against Optima, P2), with X to agents checked in sprint 5.
 
 **Where common random numbers hold:**
 
@@ -222,7 +222,7 @@ scenario: null                  # 'interruption' etc. from January
 | EMOD′, condensed cascade, 1% scale, to 2025 | 74 s per run (30 at once) | analysis 06 |
 | EMOD′, compiled / literal campaign | 96 s / 60 s | analysis 05 |
 | HIVsim, 10,000 agents, 1985–2021 | 10 s alone, 20–30 s with 150 at once | hivsim_malawi experiments 01–02 |
-| HIVsim at 1% scale from 1960.5 | Not measured; about 7–20 times as many agents, so perhaps 2–5 min | To measure first |
+| EMOD′, 1960.5–1985 burn-in | Not measured; run once per parameter set and seed | To measure first |
 | Optima′ ODE, dt 0.02 | Seconds (plus 30–75 s of R0 at `verbose>=1`) | `optima_prime_plan.md` |
 | Optima′ as agents | Not measured (the declared engine is about twice a coded one) | Sprint 5 |
 
@@ -258,11 +258,11 @@ Compute doesn't constrain this design; adapters do.
 
 | # | Work | Who (proposed) | Depends on |
 |---|---|---|---|
-| 0 | Decisions D1–D4 below | Robyn | |
+| 0 | Decisions below (D4 still open) | Robyn | |
 | 1 | Re-pin Starsim (post-#1538) and STIsim for both models; rerun the checks (`acceptance.py`, analysis 06 at a short horizon, an HIVsim run) | Cliff, Robyn | |
 | 2 | HIVsim's reference sets copied in, with their hivsim_malawi commit | Robyn | P3 stopping rule (9 Nov) |
 | 3 | Slot factories: `models/emod/v4/components.py` (from `harness.make_sim`, already modular) and `models/hivsim/components.py` (from `malawi.make_sim`); each `make_sim` calls them; identity tests | agent | 1 |
-| 4 | HIVsim from 1960.5 at 1% scale, with prevalence applied in 1985 (if D1); fidelity against native HIVsim; run time measured | agent | 2, 3 |
+| 4 | EMOD′ burn-in to 1985, saved and resumed: resumed equals continuous exactly; run time measured. HIVsim at 10,000 agents against 1%, once | agent | 1, 3 |
 | 5 | Analysis 07 lands: EMOD's condensed cascade on `sti.HIV`, with the `node` and `risk` the flow rows use (node = all) | other agent | 1 |
 | 6 | Adapter: EmodHIV on `StructuredSexual` and STIsim demography (acts per step, condom share, type map; `emod_age`; pregnancy and birth events; seeding of HIGH risk read as `fsw` or `client`) | agent | 3 |
 | 7 | Adapter: EmodNetwork and EmodRisk on STIsim demography (`emod_age`, nodes assigned by EMOD's node shares, debut) | agent | 3 |
@@ -279,24 +279,24 @@ Then, for sprint 8: the other direction (EMOD′ → HIVsim, which needs the rat
 |---|---|
 | HIVsim's calibration isn't finished (deaths on ART too low, `targets.md` and exp 03) | Run on provisional sets; identity holds; rerun when final, since everything is scripted |
 | Analysis 07 slips, or STIsim lacks pieces EMOD's table needs (WHO stage, symptoms, PMTCT per mother) | Derive WHO stage and symptoms from CD4; start the path at V with C held as HIVsim's (one step fewer) |
-| HIVsim from 1960.5 changes its fit (D1) | Keep 1985 for HIVsim ↔ Optima′ (Optima starts in 1990); for EMOD′, start EMOD's slots at 1985 from a saved 1985 state (complex) |
+| Resuming a saved Starsim v4 sim doesn't reproduce a continuous run | Fix upstream in Starsim; meanwhile run EMOD′ from 1960.5 |
 | EmodNetwork depends on EMOD-only people fields (single-precision ages, node, Risk-driven flags) more than seen | Swap R and N together with D (three coarse slots) |
-| HIVsim at 1% scale is slow | Lower scale for the lattice; run the path at 1% |
+| HIVsim at 10,000 agents differs from HIVsim at 1% beyond noise | Make the agent number its own step at the end of HIVsim paths |
 | Weak CRN for EMOD′ modules makes Δs noisy | More seeds (cheap); optionally move EMOD′'s streams to Starsim distributions |
 | Numba's global random stream is shared between EmodNetwork and other Numba code | Check in step 3; give EmodNetwork its own Numba generator state |
 | Starsim re-pin changes HIVsim or Optima′ results | Rerun the fidelity checks (step 1); pin deliberately (**Decided**, `prompts.md`) |
 
-## Open decisions
+## Decisions
 
-| # | Decision | For | Proposed |
-|---|---|---|---|
-| D1 | One time frame for all hybrids (from 1960.5), with HIVsim's and Optima's initial states applied as events in 1985 and 1990, so their swap endpoints are re-expressions checked in distribution | Robyn | Yes |
-| D2 | HIVsim's cascade expressed as a condensed-cascade table (with new rate and stock-target pathways), so all cascades share one mechanism; this also serves Optima's | Robyn, Cliff | Yes |
-| D3 | First path HIVsim → EMOD′ instead of HIVsim ↔ Optima′ | Robyn | Yes |
-| D4 | Order C, V, RN, D, and what "outside-in" meant | Robyn | As here; the lattice makes it a presentation choice |
-| D5 | Shapley values on the coarse slots as the summary attribution, sequential paths for the figures | Robyn | Yes |
-| D6 | Optima: a compartmental segment (with 08) next to the ODE endpoint, which moves X from first or last into the middle | Robyn | Discuss |
-| D7 | Slot boundaries and interfaces (1.1, 1.3), as input to P4 | Robyn, Daniel, Cliff | For the sprint 4 checkpoint |
-| D8 | Optima's `lost` split into lost before and after ART, for reporting only | Robyn | Yes |
-| D9 | Scale 1% for all agent hybrids | Robyn | Yes |
-| D10 | Whether EMOD's copied bugs (the dropout trap, mortality scale) also get a "fixed" variant as extra steps on EMOD paths. They are parameters or switches already, so the cost is small | Robyn, Daniel | After the first path |
+| # | Decision | For | Proposed | Decided (Robyn, 9 Nov) |
+|---|---|---|---|---|
+| D1 | One time frame for all hybrids (from 1960.5), with HIVsim's and Optima's initial states applied as events in 1985 and 1990, so their swap endpoints are re-expressions checked in distribution | Robyn | Yes | Start all hybrids in 1985, with an EMOD′ burn-in from 1960.5 saved and resumed (1.4) |
+| D2 | HIVsim's cascade expressed as a condensed-cascade table (with new rate and stock-target pathways), so all cascades share one mechanism; this also serves Optima's | Robyn, Cliff | Yes | Yes |
+| D3 | First path HIVsim → EMOD′ instead of HIVsim ↔ Optima′ | Robyn | Yes | Yes |
+| D4 | Order C, V, RN, D, and what "outside-in" meant | Robyn | As here; the lattice makes it a presentation choice | Open: explained 9 Nov |
+| D5 | Shapley values on the coarse slots as the summary attribution, sequential paths for the figures | Robyn | Yes | Yes |
+| D6 | Optima: a compartmental segment (with 08) next to the ODE endpoint, which moves X from first or last into the middle | Robyn | Discuss | Yes |
+| D7 | Slot boundaries and interfaces (1.1, 1.3), as input to P4 | Robyn, Daniel, Cliff | For the sprint 4 checkpoint | Yes, for the sprint 4 checkpoint |
+| D8 | Optima's `lost` split into lost before and after ART, for reporting only | Robyn | Yes | Yes |
+| D9 | Scale 1% for all agent hybrids | Robyn | Yes | No: agent numbers vary with D; one check of HIVsim at 10,000 agents against 1% (1.4) |
+| D10 | Whether EMOD's copied bugs (the dropout trap, mortality scale) also get a "fixed" variant as extra steps on EMOD paths. They are parameters or switches already, so the cost is small | Robyn, Daniel | After the first path | Yes: a fixed variant is needed |
