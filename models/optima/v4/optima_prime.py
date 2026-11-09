@@ -6,7 +6,7 @@ handling of time is kept (see docs/optima_inventory.md). Inputs are Optima's own
 """
 import sys
 from pathlib import Path
-import numpy as np, sciris as sc, starsim as ss
+import numpy as np, pandas as pd, sciris as sc, starsim as ss
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from common.cascade.rates import CompartmentalCascade # noqa: E402
@@ -182,6 +182,7 @@ class Transmission:
         self.bg = sp['death']*REF_DT + sp['propemigrate']*REF_DT
         self.npops = len(pops)
         self._ti, self._rate = None, None
+        self.source_shares = {} # By step: each infected state's share of the force of infection, acquiring pop × circ × infected state
 
     def at(self, arr, year):
         """ Linear interpolation of a series over Optima's dt=0.2 time points (last axis) """
@@ -212,7 +213,9 @@ class Transmission:
         lognoinf = np.zeros((self.npops, self.npops) + q.shape[1:]) # Acquiring pop × partner pop × circ × infected state
         np.add.at(lognoinf, (self.p1, self.p2), np.log(noinf))
         bg = self.at(self.bg, year)
-        prob = (1 - np.exp(lognoinf)).sum(axis=(1, 3)).T*self.force*inhomo*(1 - bg) # Circ × acquiring pop
+        part = (1 - np.exp(lognoinf)).sum(axis=1) # Acquiring pop × circ × infected state: Optima's force of infection adds over sources
+        self.source_shares[sim.ti] = part/np.maximum(part.sum(axis=2, keepdims=True), 1e-300)
+        prob = part.sum(axis=2).T*self.force*inhomo*(1 - bg) # Circ × acquiring pop
         prob = np.minimum(prob, 1 - self.eps - bg.max())
         self._ti, self._rate = sim.ti, prob/REF_DT
         return self._rate
@@ -412,6 +415,7 @@ def make_disease(ref, components=('demography', 'natural_history'), cascade=None
     init = {name: inp.by(shares0[i]) for i, name in enumerate(names) if shares0[i].any()}
 
     dis = ss.Disease(*st.values(), **trs, init=init, name='optima')
+    dis.foi = foi if 'transmission' in components else None # For infections_by_source()
     dis.stratify(pop=dict(zip(pops, people0.sum(axis=0)/people0.sum())))
     return dis, st
 
@@ -524,6 +528,17 @@ class CascadeTargets(ss.Intervention):
                     y[upper] -= movers
                     y[lost if name == 'propcare' else lower] += movers
         return
+
+
+def infections_by_source(sim):
+    """ Sexual infections per year in each step by the source's state, Optima's raw_incibypop summed over source populations: each population's infection flow split by each infected state's share of its force of infection. Rows: steps; columns: infected states """
+    foi, r = sim.diseases.optima.foi, sim.results.optima
+    names = [n for n, h in zip(foi.names, foi.hiv) if h]
+    flows = np.stack([np.asarray(r[f'infection_{s}'].by('pop')) for s in ('susreg', 'progcirc')], axis=2) # Steps × pops × circ
+    zero = np.zeros_like(foi.source_shares[0])
+    shares = np.array([foi.source_shares.get(ti, zero) for ti in range(len(flows))])
+    by = np.einsum('tjc,tjck->tk', flows, shares)/sim.pars.dt.years
+    return pd.DataFrame(by, columns=names, index=np.array([d.years for d in r['infection_susreg'].timevec]))
 
 
 def make_sim(ref=None, components=('demography', 'natural_history'), dt=0.02, end=2030, cascade=None, flows=True, **kwargs):
