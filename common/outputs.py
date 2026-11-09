@@ -34,7 +34,7 @@ def sexual_pairs(sim):
     if hiv.infection_log is None:
         raise ValueError('Outputs needs the sources of transmissions: add ss.infection_log() to the sim')
     d = hiv.infection_log.to_df(ti=sim.ti)
-    if not len(d):
+    if not len(d) or 'network' not in d.columns: # No entries, or only ones with no route (seeds): Starsim then drops the column
         return np.zeros(0, int), np.zeros(0, int)
     d = d[d.network.isin(SEXUAL)]
     return d.target.to_numpy(int), d.source.to_numpy(int)
@@ -114,12 +114,17 @@ def yearly(out):
     One row per calendar year: the outputs of docs/swap_design.md 2.2 and their numerators. Transmissions by the
     source's cascade stage (`tx_<coarse category>` shares of `tx_n`, sexual transmissions); deaths on ART
     (`share_deaths_on_art` of `hiv_deaths`); HIV incidence at 15-49 by sex per 1000 HIV-negative person-years
-    (`incidence_15_49_f`, `_m`); and new infections at all ages (`new_infections`, agents, not scaled)
+    (`incidence_15_49_f`, `_m`); new infections at all ages (`new_infections`, agents, not scaled); and the stocks at
+    the year's last step (`pop`, `plhiv`, `diagnosed`, `on_art`, `suppressed`, agents, not scaled; `art_coverage`,
+    on ART per person infected)
     """
     s = out.strata.assign(yr=np.floor(out.strata.year + 1e-9).astype(int))
     g = s.groupby('yr')
     y = pd.DataFrame(dict(new_infections=g.new_infections.sum(), hiv_deaths=g.hiv_deaths.sum(), hiv_deaths_on_art=g.hiv_deaths_on_art.sum()))
     y['share_deaths_on_art'] = y.hiv_deaths_on_art / y.hiv_deaths
+    last = s[s.year == s.groupby('yr').year.transform('max')].groupby('yr')
+    y[['pop', 'plhiv', 'diagnosed', 'on_art', 'suppressed']] = last[['pop', 'infected', 'diagnosed', 'on_art', 'suppressed']].sum()
+    y['art_coverage'] = y.on_art / y.plhiv
     a = s[(s.age >= 15) & (s.age < 50)]
     for sex, f in (('f', True), ('m', False)):
         b = a[a.female == f].groupby('yr')
