@@ -176,6 +176,8 @@ def compare():
     for yy in (2000, 2005, 2010, 2015, 2018, 2020):
         i = list(yrs).index(yy)
         lines.append(f'{yy}: {tot[:, i].mean():,.0f} ± {tot[:, i].std(ddof=1)/np.sqrt(len(runs)):,.0f}; {res[:, i].mean():,.0f}; {a20m[i]:,.0f}; ODE {a20ode.sexinci_year[idx][i]:,.0f}')
+    same = [np.allclose(r.sexual_results.loc[yrs].to_numpy(), sc.load(a20 / f.name.replace('outputs_', 'abm_')).sexinci_year[idx]) for r, f in zip(runs, files)]
+    lines.append(f'The same seeds of analysis 20 (no host or Outputs): sexual infections identical every year in {sum(same)} of {len(same)} seeds')
     rel = tot.mean(0)/a20ode.sexinci_year[idx] - 1
     lines.append(f'Agents here / ODE - 1, mean over years {100*rel.mean():+.2f}%, max |%| {100*np.abs(rel).max():.2f} ({yrs[np.abs(rel).argmax()]}); logged = results exactly: {np.allclose(tot, res)}')
     (OUT / 'compare.txt').write_text('\n'.join(lines) + '\n')
