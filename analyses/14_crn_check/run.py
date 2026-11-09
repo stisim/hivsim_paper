@@ -3,6 +3,7 @@ Analysis 14: common random numbers on step 1 (C). See README.md.
 
     python run.py runs      # the three hybrids x 60 seeds, through the runner (raw_results/swaps/)
     python run.py diverge   # 20 seeds, agent-by-agent divergence of paired runs (outputs/divergence.csv)
+    python run.py rounds    # seed 1: rounds of sti.HIV's engine per step, base vs swap (outputs/engine_rounds_seed1.csv)
     python run.py analyse   # tables (outputs/) and figures (figures/)
 """
 import os
@@ -89,6 +90,34 @@ def diverge():
         res = pool.map(diverge_one, range(1, NDIV + 1))
     pd.concat([r[0] for r in res]).to_csv(OUT / 'divergence.csv.gz', index=False)
     pd.concat([r[1] for r in res]).to_csv(OUT / 'divergence_yearly.csv.gz', index=False)
+
+
+def rounds(seed=1, stop=1993):
+    """ Where pairing first breaks (seed 1): per step, the number of rounds of moves in sti.HIV's agent engine (its draws
+    are keyed by step and round) and the first infections whose drawn acute duration differs between base and swap """
+    import starsim as ss
+    cfg = dict(CONFIG, stop=2005) # The condensed cascade has rounds from 2001, and Starsim rc3 won't start one after the stop
+    cell = next(c for c in swaps.cells(cfg) if c['seed'] == seed)
+    class Rounds(ss.Analyzer):
+        def init_post(a):
+            super().init_post()
+            a.rows = []
+        def step(a):
+            if a.t.now('year') <= stop:
+                hiv = a.sim.diseases.hiv
+                new = (hiv.ti_infected == a.ti).uids
+                a.rows.append(dict(ti=a.ti, year=a.t.now('year'), rounds=hiv.engine.round[1] + 1, new=';'.join(map(str, new)),
+                                   exit_acute=';'.join(f'{x:g}' for x in hiv.ti_exit_acute.raw[new])))
+    out = []
+    for k in ('base', 'swap'):
+        sim = swaps.build(HYBRIDS[k], cell, cfg)
+        sim.pars.analyzers = list(sim.pars.analyzers) + [Rounds(name='rounds')]
+        sim.run()
+        out.append(pd.DataFrame(sim.analyzers.rounds.rows).set_index(['ti', 'year']).add_suffix(f'_{k}'))
+    df = pd.concat(out, axis=1).reset_index()
+    df['same_draws'] = (df.new_base == df.new_swap) & (df.exit_acute_base == df.exit_acute_swap)
+    df.to_csv(OUT / 'engine_rounds_seed1.csv', index=False)
+    print(df[(df.rounds_base != df.rounds_swap) | ~df.same_draws].head(12).to_string())
 
 
 def table():
@@ -213,6 +242,7 @@ def plots(df, res):
         ctrl = d[d.arm == 'control'].any_state.max()
         ax.axvline(1990, color=grey, lw=0.6, ls=':')
         ax.set_yscale('symlog', linthresh=1e-4)
+        ax.set_ylim(0, 0.3)
         ax.set_ylabel('Share of starting agents that differ')
         ax.set_title(f'Paired runs, base vs C swapped (median, 10–90%, 20 seeds); control max = {ctrl:g}', fontsize=9)
         ax.legend(fontsize=7)
@@ -221,4 +251,4 @@ def plots(df, res):
 
 
 if __name__ == '__main__':
-    {'runs': runs, 'diverge': diverge, 'analyse': analyse}[sys.argv[1]]()
+    {'runs': runs, 'diverge': diverge, 'rounds': rounds, 'analyse': analyse}[sys.argv[1]]()
