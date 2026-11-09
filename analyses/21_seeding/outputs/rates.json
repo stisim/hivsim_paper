@@ -1,0 +1,29 @@
+{
+ "emod_seeds_mean": 12.3,
+ "emod_alive_mean": 61064.46,
+ "emod_high_mean": 1105.7,
+ "emod_per_capita": 0.00020142649259487433,
+ "emod_per_capita_expected": 0.000197423283980257,
+ "emod_year": 1980.916666667,
+ "seed_coverage": 0.010903089651515822,
+ "hivsim_alive_mean": 10314.65,
+ "hivsim_high_mean": 153.0,
+ "hivsim_expected_seeds_emod_rule": 1.6681727166819207,
+ "hivsim_expected_seeds_own_rule": 30.75147696065286,
+ "hivsim_infected_at_init": 31.25,
+ "risk_prev": [
+  [
+   0.001,
+   0.001
+  ],
+  [
+   0.010508,
+   0.012286
+  ],
+  [
+   0.070648,
+   0.150862
+  ]
+ ],
+ "expected_seeds_scaled": 2.0363520761069576
+}

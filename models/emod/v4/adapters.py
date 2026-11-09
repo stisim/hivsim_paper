@@ -256,6 +256,18 @@ class EmodNetworkAt(EmodNetwork):
         return
 
 
+def seed_per_capita(rate):
+    """ A seeding rule for EmodHIV (its `seeding`): `rate` expected seeds per person alive, drawn among Risk HIGH, each
+    with probability rate × alive/HIGH (at most 1). From the same draws as EMOD's rule (a uniform per HIGH agent), so
+    its seeds are a subset or superset of EMOD's in the same run """
+    def seeding(hiv):
+        ppl = hiv.sim.people
+        high = ppl.auids[ppl.risk.raw[ppl.auids] == HIGH]
+        p = min(1.0, rate*len(ppl.auids)/max(len(high), 1))
+        return high[hiv.rng.random(len(high)) < p]
+    return seeding
+
+
 def make_sim(pid=0, seed=1, n_agents=10_000, start=1985, stop=2025, hiv=True, network='sti', record=True, condoms=True, **kwargs):
     """
     A hybrid of EMOD′ components on HIVsim's demography (STIsim's, with HIVsim Malawi's data), monthly from `start`

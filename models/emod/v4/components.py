@@ -107,15 +107,26 @@ def make_H(inp, ctx):
         return {}
     record = opt(ctx, 'record', False)
     if own(ctx, 'RN'):
-        return dict(diseases=[EmodHIV(inp, record=record)])
+        return dict(diseases=[EmodHIV(inp, record=record, seeding=seeding(inp, ctx))])
     if own(ctx, 'D'):
         raise NotImplementedError("EMOD′'s V on another model's RN needs that RN on EMOD′'s D (no bridge yet)")
     from adapters import EmodHIVOnSti, EmodPeople
-    return dict(diseases=[EmodHIVOnSti(inp, record=record)], demographics=[EmodPeople(inp, risk_net='structuredsexual')])
+    return dict(diseases=[EmodHIVOnSti(inp, record=record, seeding=seeding(inp, ctx))], demographics=[EmodPeople(inp, risk_net='structuredsexual')])
+
+
+def seeding(inp, ctx):
+    """ EmodHIV's seeding rule: another model's S, if the hybrid has one (that model's `seeding_for(pars, ctx)`); else
+    the parameter set's `seeding` if it has one (adapters.py's options); else None, EMOD's rule """
+    if not own(ctx, 'S'):
+        s = ctx.choice['S']
+        return ctx.models[s].seeding_for(ctx.pars[s], ctx)
+    return inp.get('seeding')
 
 
 def make_S(inp, ctx):
     """ Seeding: inside EmodHIV (make_H) """
+    if not own(ctx, 'V'):
+        raise NotImplementedError("EMOD′'s S on another model's V isn't built")
     return {}
 
 
