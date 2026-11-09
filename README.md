@@ -44,7 +44,7 @@ Each model goes through three stages: its **reference** version (published or fi
 | `models/emod/reference/source/` | Daniel's calibrated EMOD-HIV Malawi model, unchanged (see `models/emod/README.md`) |
 | `models/optima/reference/` | The Optima HIV Malawi project (`Malawi_20220912.prj`), the scripts that rerun it on Optima 2.12.2, and its reference outputs |
 | `models/hivsim/reference/` | HIVsim's finalized parameter set, once [hivsim_malawi](https://github.com/stisim/hivsim_malawi) has one; HIVsim is calibrated there |
-| `common/` | Shared by every model: the Malawi targets (`targets.csv`, described in `docs/targets.md`) and `targetfit.py`, which scores runs against them and draws the standard figures |
+| `common/` | Shared by every model: the Malawi targets (`targets.csv`, described in `docs/targets.md`) and `targetfit.py`, which scores runs against them and draws the standard figures; `cascade/`, the condensed cascade; `transmission.py`, transmissions by the source's cascade stage |
 | `analyses/NN_slug/` | One per result: README before running, SUMMARY after, `outputs/`, `figures/` (files prefixed by model) |
 | `docs/` | Proposal, plan, prompts, target set, Optima notes |
 | `resources/` | Source documents, such as survey reports |
