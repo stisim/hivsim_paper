@@ -1,9 +1,10 @@
 """
 HIVsim's side of the condensed cascade (common/cascade): `StisimHost` implements its `CascadeHost` on STIsim's
-`sti.HIV` and `sti.ART`, the pregnancy module and the sexual network. Needs STIsim's v4 port with HIV.who_stage(),
-new_symptoms(), start_pmtct() and ART.start_art(effective=) (branch rs-v4-art). HIV's natural history is declared there:
-`infected` and `on_art` are conditions over its states (computed when read), and ART moves people between its states
-of treatment; diagnosis, CD4, PrEP and circumcision are still coded states, which the host sets directly.
+`sti.HIV` and `sti.ART`, the pregnancy module and the sexual network. Needs STIsim with ART as a declared module of its own
+(PR #612, with the condom fix: branch rs-v4-art-mortality, pinned in envs/starsim.yml) and HIV.who_stage(),
+new_symptoms(), start_pmtct() and ART.start_art(effective=). HIV's declared graph is natural history only (`infected`
+is a condition over its states); the states of treatment (`on_treatment`, `on_effective_art`, ...) are sti.ART's, so
+the host reads them there; diagnosis, CD4, PrEP and circumcision are still HIV's coded states, which it sets directly.
 
 `sti.ART` must be in the sim, as the holder of ART's states (CD4 on ART, mortality, infectiousness), with no coverage
 target and no stopping of its own (`art_for_cascade()`), so the cascade alone starts and stops ART.
@@ -120,4 +121,4 @@ class StisimHost(CascadeHost):
         self.hiv.start_prep(uids[~self.hiv.infected.raw[uids]], eff=efficacy, dur=ss.days(days))
 
     def cascade_stage(self, uids):
-        return dict(diagnosed=self.hiv.diagnosed.raw[uids], on_art=self.on_art(uids), suppressive=self.hiv.on_effective_art.raw[uids])
+        return dict(diagnosed=self.hiv.diagnosed.raw[uids], on_art=self.on_art(uids), suppressive=self.art.on_effective_art.raw[uids])

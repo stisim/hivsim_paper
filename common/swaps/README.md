@@ -69,7 +69,7 @@ The hybrid ID hashes the choice, the stop year, the model files, the git tree ID
 ## Tests
 
 ```bash
-PYTHONPATH=<stisim rs-v4-art> conda run -n hp_rc3 python -m pytest common/swaps/tests -v   # EMOD′ ones take a few minutes
+PYTHONPATH=<STIsim rs-v4-art-mortality>:<Starsim v4-rs-nov09> conda run -n hp_rc3 python -m pytest common/swaps/tests -v   # EMOD′ ones take a few minutes
 conda run -n hp_rc3 python -m pytest common/swaps/tests -k toy                             # seconds
 ```
 

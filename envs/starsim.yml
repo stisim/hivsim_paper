@@ -7,6 +7,7 @@ dependencies:
   - pip
   - pip:
     - starsim==4.0.0rc3 # From PyPI, with its kernels already built
-    - stisim @ git+https://github.com/starsimhub/stisim@c815b0a96ed22e52fd10c79bdceafb1d28b90d6f # rs-art-split (STIsim PR #607), on v4
+    # Also needs Starsim PR #1573 (branch v4-rs-nov09, f1273734) on rc3 until it is released: a checkout on PYTHONPATH ahead of this
+    - stisim @ git+https://github.com/starsimhub/stisim@ebbc8e78344251a43e9dcee059a6eedacad90787 # rs-v4-art-mortality (STIsim PR #613, on #612: ART as its own declared module, condom and bare-network fixes; mortality options off by default)
 variables:
   PYTHONNOUSERSITE: 1 # Ignore packages in ~/.local, which can shadow these

@@ -2,7 +2,7 @@
 Identity: each model's make_sim, rebuilt on its slot factories (models/*/components.py), gives exactly the runs it gave
 before (at REF, the commit before the factories), same seed: every result array and every analyzer's table.
 
-    PYTHONPATH=<STIsim rs-v4-art> pytest tests/test_components.py -n 8    # env hp_rc3; about 2 minutes on 8 cores
+    PYTHONPATH=<STIsim rs-v4-art-mortality>:<Starsim v4-rs-nov09> pytest tests/test_components.py -n 8    # env hp_rc3; about 2 minutes on 8 cores
 
 Each case runs in its own process (`python tests/test_components.py <case>`), since the two models have modules of the
 same name (as they were at REF: cascade_host, and EMOD's cascade against common/cascade).

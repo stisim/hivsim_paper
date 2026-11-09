@@ -49,7 +49,7 @@ def make_testing(test_scale=1, test_rel_m=1, test_start=2004):
     def low_cd4_prob(sim, uids):
         return np.full(len(uids), min(0.8 * test_scale * scaleup(sim), 1))
 
-    undiagnosed = lambda sim: ~sim.diseases.hiv.diagnosed & ~sim.diseases.hiv.on_art
+    undiagnosed = lambda sim: ~sim.diseases.hiv.diagnosed & ~sim.interventions.art.on_treatment # ART's states are sti.ART's
     general = sti.HIVTest(name='general_testing', test_prob_data=general_prob, start=1990, eligibility=undiagnosed)
     low_cd4 = sti.HIVTest(name='low_cd4_testing', test_prob_data=low_cd4_prob, start=1990,
                           eligibility=lambda sim: undiagnosed(sim) & (sim.diseases.hiv.cd4 < 200))

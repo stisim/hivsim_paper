@@ -14,7 +14,10 @@ Fine slots, and the runner's coarse ones made of them: RN = R + N, V = T + H + S
 slots, the first slot it belongs to builds it, and the others give nothing:
 - R (risk groups, sex work) is inside N's `sti.StructuredSexual` (`risk_group`, `fsw`, `client`).
 - T (transmission) and S (seeding) are inside H's `sti.HIV` (`beta_m2f`, `rel_trans`/`rel_sus`; `init_prev_data`).
-- ART is in C (`make_art()`), as the cascade's treatment, though its biology is H's (swap_design §1.1).
+- ART is in C (`make_art()`), as the cascade's treatment, though its biology is H's (swap_design §1.1). It is a declared
+  module of its own (`sti.ART`, an `ss.Disease` given with the interventions), which holds the states of treatment and
+  modifies sti.HIV's natural history; read them on it (`sim.interventions.art.on_treatment`), not through HIV's pass-throughs.
+  Its opt-in mortality options (`art_death_table`, `dur_reengage`) are off.
 - M (measurement) is sti.HIV's own results, and V's `ss.infection_log()` (for common/outputs.py).
 """
 import sys
@@ -108,7 +111,7 @@ def make_S(pars, ctx):
 
 
 def make_art(kind):
-    """ HIVsim's ART, the one place it is made: `own`, to the numbers on ART and the share suppressed; `cascade`, holding ART's states for the condensed cascade """
+    """ HIVsim's ART (sti.ART, its own declared module), the one place it is made: `own`, to the numbers on ART and the share suppressed; `cascade`, holding ART's states for the condensed cascade. STIsim's defaults otherwise (no `art_death_table`, no `dur_reengage`) """
     if kind == 'own':
         return sti.ART(coverage=malawi.read('n_art.csv', index_col='year'), vls_coverage=malawi.read('vls.csv', index_col='year'))
     return art_for_cascade()

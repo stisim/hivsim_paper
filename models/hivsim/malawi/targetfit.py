@@ -61,12 +61,12 @@ class TargetRecorder(ss.Analyzer):
         inf = m & hiv.infected
         if row.target == 'prevalence': return share(hiv.infected, m)
         if row.target == 'plhiv': return n(inf)
-        if row.target == 'on_art': return n(m & hiv.on_art)
+        if row.target == 'on_art': return n(m & art.on_treatment)
         if row.target == 'population': return n(m)
         if row.target == 'diagnosed': return share(hiv.diagnosed, inf)
-        if row.target == 'on_ART_among_diagnosed': return share(hiv.on_art, inf & hiv.diagnosed)
-        if row.target == 'suppressed_among_on_ART': return share(art.on_effective_art, inf & hiv.on_art)
-        if row.target == 'art_coverage': return share(hiv.on_art, inf)
+        if row.target == 'on_ART_among_diagnosed': return share(art.on_treatment, inf & hiv.diagnosed)
+        if row.target == 'suppressed_among_on_ART': return share(art.on_effective_art, inf & art.on_treatment)
+        if row.target == 'art_coverage': return share(art.on_treatment, inf)
         if row.target == 'vls_among_plhiv': return share(art.on_effective_art, inf)
         if row.target == 'incidence': return n(m & ~hiv.infected) # Susceptible people, the denominator
         raise ValueError(row.target)
