@@ -85,7 +85,7 @@ def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_p
         datafolder=datadir,
         demographics=location,
         diseases=hiv,
-        networks=[nw, ss.MaternalNet()],
+        networks=[nw, ss.PrenatalNet()],
         interventions=intvs,
         rand_seed=seed,
         verbose=verbose,

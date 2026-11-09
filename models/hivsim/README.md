@@ -7,11 +7,13 @@
 | `swap.py` | `make_sim(variant, seed)`: HIVsim Malawi with its own care (`own`), or with the condensed cascade and EMOD's Malawi table (`condensed`); `BEST` is hivsim_malawi experiment 03's best run |
 | `reference/` | Where the finalized HIVsim Malawi will go |
 
-Needs STIsim with the host's methods (`HIV.who_stage()`, `HIV.new_symptoms()`, `HIV.start_pmtct()`, `ART.start_art(effective=)`, PrEP courses ended by HIV): branch `rs-cascade-host` (STIsim PR #609, stacked on #607 `rs-art-split`), and Starsim v4 after 4.0.0rc1 for the condensed cascade:
+Needs Starsim 4.0.0rc3 (env `hp_rc3`) and STIsim's v4 port with the host's methods (`HIV.who_stage()`, `HIV.new_symptoms()`, `HIV.start_pmtct()`, `ART.start_art(effective=)`, PrEP courses ended by HIV): branch `rs-v4-art` (at c1127e3), until it is merged:
 
 ```bash
-PYTHONPATH=<stisim rs-cascade-host>:<starsim v4> python -c "import swap; swap.make_sim('condensed').run()"
+PYTHONPATH=<stisim rs-v4-art> python -c "import swap; swap.make_sim('condensed').run()"
 ```
+
+On rc3 the only change to the model's code was `ss.MaternalNet` → `ss.PrenatalNet` (the same network: prenatal only). `analyses/11_slot_factories/` compares it with the version before.
 
 How the interface maps onto HIVsim, and what is approximate:
 - WHO stage and first symptoms come from the CD4 count (stage 4 and symptoms below 200), not from a clinical course; first symptoms come once per person.

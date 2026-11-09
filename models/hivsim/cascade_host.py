@@ -1,7 +1,9 @@
 """
 HIVsim's side of the condensed cascade (common/cascade): `StisimHost` implements its `CascadeHost` on STIsim's
-`sti.HIV` and `sti.ART`, the pregnancy module and the sexual network. Needs STIsim with HIV.who_stage(),
-new_symptoms(), start_pmtct() and ART.start_art(effective=) (branch rs-cascade-host).
+`sti.HIV` and `sti.ART`, the pregnancy module and the sexual network. Needs STIsim's v4 port with HIV.who_stage(),
+new_symptoms(), start_pmtct() and ART.start_art(effective=) (branch rs-v4-art). HIV's natural history is declared there:
+`infected` and `on_art` are conditions over its states (computed when read), and ART moves people between its states
+of treatment; diagnosis, CD4, PrEP and circumcision are still coded states, which the host sets directly.
 
 `sti.ART` must be in the sim, as the holder of ART's states (CD4 on ART, mortality, infectiousness), with no coverage
 target and no stopping of its own (`art_for_cascade()`), so the cascade alone starts and stops ART.
