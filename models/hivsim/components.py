@@ -23,6 +23,7 @@ slots, the first slot it belongs to builds it, and the others give nothing:
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+import numpy as np
 import sciris as sc
 import starsim as ss
 import stisim as sti
@@ -97,6 +98,8 @@ def make_T(pars, ctx):
 
 def make_H(pars, ctx):
     """ Natural history (and, as sti.HIV, transmission and seeding): beta_m2f, the 1985 prevalence by group, the surveys' age groups """
+    if not own(ctx, 'S'):
+        raise NotImplementedError("Another model's S on HIVsim's V isn't built")
     hiv = sti.HIV(**{
         'beta_m2f': 0.01, # To calibrate
         'init_prev_data': malawi.read('init_prev_hiv.csv'),
@@ -106,8 +109,39 @@ def make_H(pars, ctx):
 
 
 def make_S(pars, ctx):
-    """ Seeding: inside sti.HIV (make_H, `init_prev_data`) """
+    """ Seeding: inside sti.HIV (make_H, `init_prev_data`); for another model's V, given to it by `seeding_for()` """
     return {}
+
+
+RISK_PREV = [[0.001, 0.001], [0.010508, 0.012286], [0.070648, 0.150862]] # init_prev_data's mean by EMOD's Risk (LOW, MEDIUM, HIGH; HIGH = FSW or client, LOW = risk group 0) and sex (male, female), among the active in HIVsim's 1985 population (20 seeds; analyses/21_seeding/outputs/rates.json)
+
+
+def seeding_for(pars, ctx):
+    """ HIVsim's seeding (S) for another model's V, as a rule `seeding(hiv)` returning whom to infect, drawn with that
+    V's generator at its seeding step: sti.HIV's starting prevalence (`init_prev_data` × `rel_init_prev`). On
+    StructuredSexual, by its risk groups, sex and sex work, among the active (as `sti.init_prev_by_group`); on a network
+    without them (EMOD′'s), by EMOD's Risk class and sex (`RISK_PREV`), among those past the network's debut """
+    data = malawi.read('init_prev_hiv.csv').sort_values('sw') # sw rows last: they override the risk group's
+    rel = sub(pars, 'hiv_').get('rel_init_prev', 1)
+    def seeding(hiv):
+        sim = hiv.sim
+        ppl = sim.people
+        uids = ppl.auids
+        if 'structuredsexual' in sim.networks:
+            nw = sim.networks.structuredsexual
+            p = np.zeros(len(uids))
+            active = nw.active(ppl)
+            for r in data.itertuples():
+                cond = ppl[r.sex] & (nw.risk_group == r.risk_group) & active
+                if r.sw:
+                    cond = cond & (nw.fsw if r.sex == 'female' else nw.client)
+                p[cond[uids]] = r.init_prev
+        else:
+            net = sim.networks[hiv.netname]
+            p = np.asarray(RISK_PREV)[ppl.risk.raw[uids], ppl.female.raw[uids].astype(int)]
+            p[ppl.emod_age.raw[uids]/365 < net.debut.raw[uids]] = 0
+        return uids[hiv.rng.random(len(uids)) < np.clip(p*rel, 0, 1)]
+    return seeding
 
 
 def make_art(kind):

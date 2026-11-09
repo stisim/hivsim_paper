@@ -48,10 +48,12 @@ class EmodHIV(ss.Disease):
         inp (objdict): EMOD's inputs for one parameter set, from `inputs.load()`
         net (str): the name of the network
         record (bool): whether to keep a record of each infection and HIV death (`infections`, `deaths`)
+        seeding (callable): who is seeded at the seeding step, as `seeding(hiv)` returning uids (adapters.py has
+            options); None for EMOD's rule (`seed_coverage` of everyone at Risk HIGH)
     """
-    def __init__(self, inp, net='emodnet', record=True, name='hiv', **kwargs):
+    def __init__(self, inp, net='emodnet', record=True, seeding=None, name='hiv', **kwargs):
         super().__init__(name=name, **kwargs)
-        self.inp, self.netname, self.record = inp, net, record
+        self.inp, self.netname, self.record, self.seeding = inp, net, record, seeding
         F = ss.FloatArr
         self.define_states(
             ss.BoolState('infected', label='Infected'),
@@ -298,8 +300,12 @@ class EmodHIV(ss.Disease):
             self.circumcised[got[~ppl.female.raw[got]]] = True
         if year >= c.seed_year and not self.seeded:
             self.seeded = True
-            high = ppl.auids[ppl.risk.raw[ppl.auids] == 2]
-            seeds = self.infect(high[self.rng.random(len(high)) < c.seed_coverage], fast_forward=True)
+            if self.seeding is None:
+                high = ppl.auids[ppl.risk.raw[ppl.auids] == 2]
+                chosen = high[self.rng.random(len(high)) < c.seed_coverage]
+            else:
+                chosen = self.seeding(self)
+            seeds = self.infect(chosen, fast_forward=True)
             self.step_new.append(seeds)
             self.log_infections(seeds, src=np.full(len(seeds), -1), kind='seed')
         return
