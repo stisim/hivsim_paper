@@ -26,7 +26,7 @@ The paper: "diagnosed and ART-naive (ie, never started treatment)", "having ART 
 
 Each: `run_emod.py --transmission --seeds 1 2 3 4 5 --sets 0 25 … 225 --inputs <dir> --out fig3a_<v>`, to 2025, as analysis 09 (10 sets × 5 seeds). The calibration (the 250 resampled sets) is not redone, so the fixed variants are the same parameter sets with corrected inputs.
 
-**Totals (national):** EMOD runs at 1% (`x_Base_Population` 0.01, as `optim_script.py`). Daniel's post-processing (`source/Analysis/mwi_transmission.Rmd`) scales by 17,563,749 (census 2018) over the sim's whole population at 2018.5, and counts `Newly Infected` from `ReportHIVByAgeAndGender` at ages 15–64. Both that and the plain ×100 are reported, for 2020 and 2024, median over runs, with sexual transmissions (all ages) for comparison.
+**Totals (national):** EMOD runs at 1% (`x_Base_Population` 0.01, as `optim_script.py`). Daniel's post-processing (`source/Analysis/mwi_transmission.Rmd`) scales by 17,563,749 (census 2018) over the sim's whole population at 2018.5, and counts `Newly Infected` from `ReportHIVByAgeAndGender` at ages 15–64. Both that and the plain ×100 are reported, for 2020 and 2024, median over runs, with sexual transmissions (all ages) for comparison. The runs stop at 2025.0 and miss the last step(s) of 2024, so 2024 totals are annualised by the steps (half-years in the report) present.
 
 **Compared:** for each variant, 2020 and 2024, the four shares (median and 5–95% over 50 runs) against the figure, and the totals against 30,582 (2024).
 
