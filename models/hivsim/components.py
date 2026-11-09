@@ -38,7 +38,7 @@ LISTS = ['demographics', 'networks', 'diseases', 'interventions', 'connectors', 
 
 
 def pars(pid):
-    """ Parameter set `pid`: for now every pid is hivsim_malawi experiment 03's best run (swap.BEST), until models/hivsim/reference/ has the sets """
+    """ Parameter set `pid`: for now every pid is the one provisional reference set (models/hivsim/reference/pars.json, as swap.BEST) """
     import swap
     return dict(swap.BEST)
 

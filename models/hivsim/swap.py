@@ -6,6 +6,7 @@ in its place, with EMOD's Malawi table (set 0).
 """
 import sys
 from pathlib import Path
+import json
 import pandas as pd
 import stisim as sti
 
@@ -17,11 +18,8 @@ from common.cascade.params import Params # noqa: E402
 
 TABLES = repo / 'common' / 'cascade' / 'tables'
 
-# hivsim_malawi experiment 03's best run (outputs/coverage_summary.json): calibration is still under way
-BEST = dict(hiv_beta_m2f=0.007978243787796735, hiv_rel_init_prev=1.0839243919089498, nw_prop_f0=0.8315692935579891,
-            nw_prop_m0=0.612858870804095, nw_f1_conc=0.052841444966013285, nw_m1_conc=0.1988339487797292,
-            nw_fsw_shares=0.05474597622860841, nw_client_shares=0.23048969675026132, test_scale=1.1786373930647522,
-            condom_scale=1.286413141369469, test_rel_m=1.9641771041623357, test_start=2009.089939951)
+# HIVsim Malawi's reference parameter set (models/hivsim/reference/pars.json; provisional: hivsim_malawi experiment 03's best run)
+BEST = json.load(open(repo / 'models' / 'hivsim' / 'reference' / 'pars.json'))['pars']
 
 
 def emod_table(set_id=0):
