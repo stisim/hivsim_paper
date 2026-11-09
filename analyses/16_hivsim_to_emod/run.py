@@ -22,8 +22,9 @@ SEEDS = 200
 CONFIG = {'from': 'hivsim', 'to': 'emod', 'slots': ['C', 'V', 'RN', 'D'], 'pairs': {'hivsim': [0], 'emod': [0]}, 'seeds': SEEDS, 'stop': 2025}
 YEARS = [2010, 2015, 2020, 2024]
 COUNTS = ['plhiv', 'new_infections', 'hiv_deaths'] # Scaled to people
-OUTPUTS = ['art_coverage', 'plhiv', 'new_infections', 'incidence_15_49_f', 'incidence_15_49_m', 'hiv_deaths', 'share_deaths_on_art',
-           'tx_undiagnosed', 'tx_diagnosed_naive', 'tx_art_lt6m', 'tx_art_supp', 'tx_art_nonsupp', 'tx_interrupted']
+HEADLINE = ['new_infections', 'tx_undiagnosed', 'tx_diagnosed_naive', 'tx_on_art', 'tx_interrupted'] # Bansi-Matharu 2025 Fig 3A's categories (docs/core_question.md), 2020 first
+OUTPUTS = HEADLINE + ['art_coverage', 'plhiv', 'incidence_15_49_f', 'incidence_15_49_m', 'hiv_deaths', 'share_deaths_on_art',
+           'tx_art_lt6m', 'tx_art_supp', 'tx_art_nonsupp']
 TAKEOFF = 0.005 # Prevalence (all ages) at the end of 2020
 STEPS = ['C', 'V', 'RN', 'D']
 
@@ -110,6 +111,7 @@ def table():
     for c in COUNTS:
         df[c + '_agents'] = df[c]
         df[c] = df[c]*df.scale
+    df['tx_on_art'] = df.tx_art_lt6m + df.tx_art_supp + df.tx_art_nonsupp # Fig 3A's "on ART": any time on it, suppressed or not
     df['prev'] = df.plhiv_agents/df['pop']
     take = df[df.year == 2020].set_index(['short', 'cell']).prev.ge(TAKEOFF).rename('took_off')
     df = df.join(take, on=['short', 'cell'])
@@ -208,6 +210,9 @@ def analyse():
     h['all'] = [fmt(*r) for r in h[['delta', 'lo', 'hi', 'n']].itertuples(index=False)]
     h['conditional'] = [fmt(*r) for r in h[['delta_cond', 'lo_cond', 'hi_cond', 'n_cond']].itertuples(index=False)]
     h[['output', 'year', 'step', 'base_mean', 'all', 'conditional']].to_csv(OUT / 'deltas_2020_2024.csv', index=False)
+    hl = h[(h.year == 2020) & h.output.isin(HEADLINE)].set_index('output').loc[HEADLINE].reset_index()
+    hl[['output', 'step', 'base_mean', 'all', 'conditional', 'cond_minus_all']].to_csv(OUT / 'headline_2020.csv', index=False)
+    print(hl[['output', 'step', 'all', 'conditional']].to_string())
     waterfalls(deltas, means, path)
 
 
