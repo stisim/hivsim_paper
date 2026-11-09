@@ -198,7 +198,7 @@ def run_one(args):
     pid, table, run_number, years, outdir, network, no_hiv, nat_hist, report_ip, transmission, seed = args
     simdir = outdir / (f'set{pid:03d}' if seed is None else f'set{pid:03d}_s{seed}')
     if seed is not None:
-        run_number = run_number*10 + seed # As EMOD′'s seeds (analyses 05-06)
+        run_number = (run_number*10 + seed) % 65536 # As EMOD′'s seeds (analyses 05-06), within EMOD's range
     simdir.mkdir(parents=True, exist_ok=True)
     for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist, report_ip, transmission).items():
         json.dump(obj, open(simdir / name, 'w'), indent=1)
@@ -222,7 +222,7 @@ def main():
     ap.add_argument('--report-ip', nargs='*', default=[], help='more individual properties to split the report by, e.g. InterventionStatus')
     ap.add_argument('--natural-history', action='store_true', help='campaign reduced to sex work, STI co-infection, traditional circumcision and seeding; report transmissions and HIV deaths')
     ap.add_argument('--transmission', action='store_true', help="Daniel's transmission reports (TransmissionReport, diagnosis and ART events, ReportHIVART), from 1960")
-    ap.add_argument('--seeds', type=int, nargs='*', help='run each set with these seeds (Run_Number = run_number*10 + seed, folders setNNN_sK); default: its own run_number')
+    ap.add_argument('--seeds', type=int, nargs='*', help='run each set with these seeds (Run_Number = (run_number*10 + seed) mod 65536, folders setNNN_sK); default: its own run_number')
     a = ap.parse_args()
 
     sets = pd.read_csv(orig / 'resampled_parameter_sets_20230424.csv')
