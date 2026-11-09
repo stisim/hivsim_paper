@@ -2,6 +2,7 @@
 Analysis 12: EMOD′ components on HIVsim's slots, against EMOD′ itself. See README.md.
 
     python run.py          # 5 models × 6 seeds, to outputs/
+    python run.py --warmup # the network checks for warm-ups of 2, 5, 15 and 30 years (after the runs)
     python run.py --plot   # figures/
 
 Needs STIsim v4 (branch rs-v4-art) on PYTHONPATH and Starsim 4.0.0rc3.
@@ -147,6 +148,41 @@ def run_one(job):
     return res
 
 
+def warm_one(job):
+    w, seed = job
+    import adapters
+    track = make_track()
+    sim = adapters.make_sim(pid=PID, seed=seed, network='emod', hiv=False, stop=STOP, analyzers=[track])
+    sim.init()
+    sim.networks.emodnet.warmup = w*365
+    sim.run()
+    st = sim.networks.emodnet.starts
+    gap = (st.age_m - st.age_f).groupby(st.type).mean().rename(lambda t: f'gap_{TYPES[t]}')
+    return pd.DataFrame(sim.analyzers.track.net).assign(w=w, seed=seed), gap.to_frame().T.assign(w=w, seed=seed)
+
+
+def warmup(lengths=(2, 5, 15, 30)):
+    """ The network checks (hybrid 7, no HIV) for warm-ups of several lengths (years), against EMOD′ (outputs/net.csv) """
+    jobs = [(w, s) for w in lengths for s in SEEDS]
+    with Pool(len(jobs)) as pool:
+        res = pool.map(warm_one, jobs)
+    net, gaps = pd.concat([r[0] for r in res]), pd.concat([r[1] for r in res])
+    home = pd.read_csv(out / 'net.csv')
+    key = ['year', 'female', 'age', 'type']
+    per = lambda d: d.assign(per=d.rels/d.n).groupby(key).per.mean()
+    h = per(home[home.model == 'home_net'])
+    rows = []
+    for w, d in net.groupby('w'):
+        r = np.log(per(d)/h).replace([np.inf, -np.inf], np.nan).dropna()
+        rows.append(dict(warmup_years=w, **{f'median_abs_log_ratio_{y}': np.median(np.abs(r.loc[y])) for y in SNAP_YEARS},
+                         marital_women_25_34_1990=np.exp(r.loc[(1990, 1, '25-34', 'M')]), **gaps[gaps.w == w].drop(columns=['w', 'seed']).mean()))
+    g = pd.read_csv(out / 'gap.csv')
+    g = g[g.model == 'home_net'].groupby('type')['mean'].mean()
+    rows.append(dict(warmup_years='EMOD′', **{f'gap_{TYPES[t]}': v for t, v in g.items()}))
+    pd.DataFrame(rows).round(3).to_csv(out / 'warmup.csv', index=False)
+    return
+
+
 def run():
     out.mkdir(exist_ok=True)
     jobs = [(m, s) for m in MODELS for s in (HYB_SEEDS if m in ('hyb6', 'hyb7') else SEEDS)]
@@ -266,9 +302,12 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--plot', action='store_true')
     ap.add_argument('--compare', action='store_true')
+    ap.add_argument('--warmup', action='store_true')
     args = ap.parse_args()
     if args.plot:
         plot()
+    elif args.warmup:
+        warmup()
     elif args.compare:
         compare()
     else:

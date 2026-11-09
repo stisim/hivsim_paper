@@ -18,10 +18,12 @@ EMOD′ components on HIVsim's slots (docs/swap_design.md, section 5, steps 6 an
   reads them).
 - `EmodNetworkAt` and `EmodRiskAt` (step 7): EmodNetwork and EmodRisk starting in a population that has no
   sexual history. At its first step the network draws debut ages, then EmodRisk gives those already past debut the
-  sex work and STI flag they would have had (`EmodRiskAt.start_history()`), then the network runs its burn-in as a
-  warm-up: `inp.burnin` days of its own steps (end, form, match, acts) with time, ages and the rest of the sim frozen,
-  so the queue-entry rates are set from the starting population and frozen before the hybrid's first step, as EMOD's
-  are after its burn-in. The warm-up's relationships carry on into the run. The network reseeds its Numba stream from
+  sex work and STI flag they would have had (`EmodRiskAt.start_history()`), then the network runs a burn-in as a
+  warm-up: 5 years of its own steps (end, form, match, acts) with time, ages and the rest of the sim frozen, so the
+  queue-entry rates are set from the starting population and frozen before the hybrid's first step, as EMOD's are
+  after its burn-in. The warm-up's relationships carry on into the run. EMOD's own burn-in length (15 years) is too
+  long with ages frozen: long relationships pile up in the frozen age groups and the rates set from that population
+  stay wrong after it (analysis 12: relationships by type, sex and age within 8% of EMOD′'s at 5 years, 17% at 15). The network reseeds its Numba stream from
   its own generator at each step (`own_stream`), so other Numba code drawing from the shared global stream can't move
   its draws.
 
@@ -173,10 +175,10 @@ class EmodNetworkAt(EmodNetwork):
 
     Args:
         risk (str): the name of the `EmodRiskAt` module that gives the starting population its sex work
-        warmup (float): days of warm-up (default: EMOD's burn-in, `inp.burnin`)
+        warmup (float): days of warm-up (default 5 years; EMOD's own burn-in is `inp.burnin`)
         own_stream (bool): reseed the Numba stream from the module's own generator at each step
     """
-    def __init__(self, inp, risk='emodrisk', warmup=None, own_stream=True, **kwargs):
+    def __init__(self, inp, risk='emodrisk', warmup=5*365, own_stream=True, **kwargs):
         super().__init__(inp, **kwargs)
         self.riskname, self.warmup, self.own_stream = risk, warmup, own_stream
         self.warmed = False

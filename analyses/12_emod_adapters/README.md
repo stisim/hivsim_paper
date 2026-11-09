@@ -22,3 +22,5 @@
 - The epidemic (not a check of fidelity): prevalence 15–49 and new infections per year in each, and how many runs die out after seeding (seeding 2% of HIGH gives few seeds at 10,000 agents).
 
 **Changed after a first run (6 seeds of each):** most hybrid epidemics died out after seeding (1 or 2 seeds at 10,000 agents), so survival curves per seed were too few to compare. Now: the hybrids with HIV have 24 seeds, survival is pooled over seeds (Kaplan–Meier with Greenwood's SE) and in finer age groups (35–44 and 45+, since EMOD′'s older population puts later ages inside 35+), and EMOD′'s network is also run with its mortality read as labelled (`fix_mortality=True`, 6 seeds), to see how much of the network's difference follows from the age structure alone.
+
+**Changed after the second run:** the network checks showed the 15-year warm-up (EMOD's burn-in length) leaving hybrid 7's relationships 17% (median) from EMOD′'s, with marital relationships 1.45× EMOD′'s in 1990 and age gaps off by up to 1.8 years; a warm-up of 5 years brought them within 8% (`run.py --warmup`, `warmup.csv`). The default is now 5 years, and everything is rerun with it.
