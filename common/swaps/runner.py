@@ -74,7 +74,7 @@ def build(choice, cell, config, outputs=True):
     """
     import starsim as ss
     paths = config.get('models', {})
-    models = {m: load_model(m, paths.get(m)) for m in set(choice.values())}
+    models = {m: load_model(m, paths.get(m)) for m in sorted(set(choice.values()))} # Sorted: set order varies between processes, and the load order sets sys.path
     pars = {m: models[m].pars(cell['pids'].get(m)) for m in models}
     ctx = SimpleNamespace(choice=choice, models=models, pars=pars, seed=cell['seed'], stop=config.get('stop'), cell=cell)
     kw = dict(rand_seed=cell['seed'], verbose=0)
