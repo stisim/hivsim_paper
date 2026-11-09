@@ -47,6 +47,7 @@ def setup(root):
 
 def emod_one(job):
     setup(repo)
+    import harness # noqa: F401 (first, so that `cascade` is EMOD′'s: emod_targets puts common/ first on the path)
     pid, seed, variant = job
     if variant == 'interpreted':
         run04 = load_module(A04 / 'run.py', 'run04')
@@ -102,11 +103,14 @@ def arrays(tag, root):
     return
 
 
-def optima(cores):
+def optima_one(variant):
     sys.path.insert(0, str(repo))
-    run08 = load_module(A08 / 'run.py', 'run08')
+    return load_module(A08 / 'run.py', 'run08').optima_one(variant)
+
+
+def optima(cores):
     with Pool(cores) as pool:
-        res = pool.map(run08.optima_one, list(run08.VARIANTS))
+        res = pool.map(optima_one, ['own', 'emodcx', 'emodcx_noflows']) # Analysis 08's VARIANTS
     out = here / 'outputs'
     for r in res:
         (out / f'optima_{r["variant"]}_results.jsonl').write_text(json.dumps(dict(i=0, kind='sample', pars=dict(variant=r['variant']), values=r['values'])) + '\n')
