@@ -10,7 +10,7 @@ import sciris as sc
 import starsim as ss
 
 import inputs
-import components # Also imports cascade.py, before common/ (whose cascade is a package) can hide it
+import components
 from network import KEYS, available_all
 
 AGES = np.arange(0, 70, 5) # Lower edges of the report's age bins, as in the EMOD run
@@ -67,7 +67,7 @@ class Snapshots(ss.Analyzer):
 def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, compiled=False, condensed=False, **kwargs):
     """ EMOD′ for parameter set `pid`: its demography; with `network`, its sexual network and Risk; with `hiv`, HIV;
     with `cascade`, the rest of the campaign (testing, care, ART, VMMC, PrEP, PMTCT), and `EmodReport`; with `compiled`
-    as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (cascade.py); with
+    as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (emod_cascade.py); with
     `condensed` instead, the condensed cascade (common/cascade) with the set's parameters (extract_cascade.py).
     Built from the slot factories (components.py) """
     cx = ('compiled' if compiled else 'condensed' if condensed else 'interpreted') if cascade else None

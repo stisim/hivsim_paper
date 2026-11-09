@@ -15,7 +15,7 @@ KW = dict(seed=4, stop=2010, cascade=True, condensed=True)
 
 
 def setup():
-    sys.path[:0] = [str(EMOD), str(repo)] # EMOD′'s first: its cascade.py, not common/cascade
+    sys.path[:0] = [str(EMOD), str(repo)]
     import harness
     return harness
 

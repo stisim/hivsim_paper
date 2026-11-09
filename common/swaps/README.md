@@ -9,6 +9,7 @@ One file per model, by default `models/emod/v4/components.py` and `models/hivsim
 ```python
 HOST = EmodHost          # the CascadeHost (with cascade_stage()) for when this model's V is in the hybrid; None if none
 SCALE = 100              # people per agent, for counts (optional; default sim.pop_scale)
+SIM = sti.Sim            # the sim class when this model's D is in the hybrid (optional; default ss.Sim)
 
 def pars(pid): ...       # parameter set `pid`: whatever this model's factories read
 

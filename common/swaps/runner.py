@@ -93,7 +93,8 @@ def build(choice, cell, config, outputs=True):
     if host is not None:
         from common.outputs import Outputs
         kw['analyzers'] = kw.get('analyzers', []) + [Outputs(host, scale=getattr(models[choice['D']], 'SCALE', None))]
-    return ss.Sim(**kw)
+    sim = getattr(models[choice['D']], 'SIM', ss.Sim) if 'D' in choice else ss.Sim # A model can need its own sim class for its D (HIVsim: sti.Sim, which builds the location's demography)
+    return sim(**kw)
 
 
 def differences(a, b):

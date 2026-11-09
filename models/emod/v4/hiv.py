@@ -16,7 +16,7 @@ sections 4, 5, 9 (ART), 10 (traditional circumcision), 11 (transmission at birth
    (+15.584 m − 0.2113 m² after m months, at most +287.34, up to its value at infection). People become symptomatic a
    Weibull time (scale 618 days, shape 2) before death, which fires NewlySymptomatic. On ART, failure comes 9 months
    before the death drawn at ART start: the AIDS stage, with no ART effect, and CD4 falling to √31.63 by the death.
-5. The campaign's care cascade (cascade.py), after progression, as EMOD updates interventions after infections.
+5. The campaign's care cascade (emod_cascade.py), after progression, as EMOD updates interventions after infections.
    Steps 1-4 are `step_state()`; the cascade is an intervention, which Starsim runs after it (and after the network);
    step 6 is `step()`.
 6. Exposure: each uninfected person's acts, in random order, until one transmits (RelationshipGroups::ExposeToContagion),

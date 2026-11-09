@@ -1,5 +1,5 @@
 """
-EMOD′ care cascade compiled into Starsim deliveries: the events of Daniel's campaign file (the parts cascade.py runs)
+EMOD′ care cascade compiled into Starsim deliveries: the events of Daniel's campaign file (the parts emod_cascade.py runs)
 become `ss.Delivery` objects, with EMOD's semantics expressed natively where Starsim has them (needs Starsim's
 deliveries with cycles through delays, 4.0.0rc3 or later).
 
@@ -18,11 +18,11 @@ How each part of the campaign maps:
   Disqualifying_Properties are checked when due, as a delay does, and also on each step while waiting, which a delay
   does not: `CompiledCampaign.step()` ends the wait of those disqualified, as EMOD expires the muxer.
 - Decisions on the person's state (HIVRapidHIVDiagnostic, STIIsPostDebut, HIVDrawBlood, the two ART staging
-  diagnostics) → `Decide`, a product with outcomes `positive` and `negative`, using cascade.py's decision code.
+  diagnostics) → `Decide`, a product with outcomes `positive` and `negative`, using emod_cascade.py's decision code.
 - ARTMortalityTable, ARTDropout, PMTCT, MaleCircumcision, ControlledVaccine → `Act`, a product calling the HIV module;
   PMTCT's reset after 280 days is a delivery with a delay.
 - A one-off event (Start_Year) → a delivery `when=` that year. NChooserEventCoordinatorHIV → a delivery at every step
-  whose `who=` is cascade.py's NChooser selection.
+  whose `who=` is emod_cascade.py's NChooser selection.
 - Events from coded modules (STIDebut, NewlySymptomatic, SixWeeksOld, TwelveWeeksPregnant) → deliveries at every step
   with `who=` (the last two a step late, as EMOD first updates what they give on the next step).
 
@@ -35,7 +35,7 @@ import numpy as np
 import starsim as ss
 from starsim.internals.conditions import Cond
 
-from cascade import EmodCascade, sigmoid, piecewise, DELAYS
+from emod_cascade import EmodCascade, sigmoid, piecewise, DELAYS
 
 PEOPLE = ss.person
 
@@ -91,7 +91,7 @@ class SetIP(CampaignProduct):
 
 
 class Decide(CampaignProduct):
-    """ A decision on the person's state: its status, then positive or negative (cascade.py's EmodCascade.decide) """
+    """ A decision on the person's state: its status, then positive or negative (emod_cascade.py's EmodCascade.decide) """
     def outcome_names(self):
         return ['positive', 'negative']
 
@@ -103,7 +103,7 @@ class Decide(CampaignProduct):
 
 
 class Act(CampaignProduct):
-    """ What acts on the person (ART, dropout, PMTCT, circumcision, PrEP): cascade.py's EmodCascade.give, and the status """
+    """ What acts on the person (ART, dropout, PMTCT, circumcision, PrEP): emod_cascade.py's EmodCascade.give, and the status """
     def administer(self, uids):
         cas = self.cas
         cas.give(self.tid, uids)

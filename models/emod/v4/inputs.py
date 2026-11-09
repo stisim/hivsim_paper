@@ -149,7 +149,7 @@ def load(pid):
         p.p_low[n['NodeID'] - 1] = risk['Initial_Distribution'][0]
     p.sexwork = campaign_sexwork(files[run_emod.CAMPAIGN])
     p.campaign = campaign_hiv(files[run_emod.CAMPAIGN])
-    p.events = files[run_emod.CAMPAIGN]['Events'] # The whole campaign, for the cascade (cascade.py)
+    p.events = files[run_emod.CAMPAIGN]['Events'] # The whole campaign, for the cascade (emod_cascade.py)
     ip = next(n for n in ips if n['NodeID'] == 1)['IndividualProperties']
     p.ip_values = {d['Property']: d['Values'] for d in ip}
 

@@ -3,8 +3,8 @@
 | File | What it is |
 |---|---|
 | `malawi/` | HIVsim Malawi (`malawi.py`, `targetfit.py`, `data/`) copied from hivsim_malawi at commit 803b2f7 (3 Nov 2026; since then `make_sim()` is built on `components.py`, with the same runs), while its calibration is still under way. `targetfit.py` measures the common targets in a HIVsim run (pass it `common/targets.csv`, which is the same file) |
-| `components.py` | The slot factories (`docs/swap_design.md` §1.1): `make_D()` … `make_M()`, one per slot, and `make_sim(pars, context)`; `malawi.make_sim()` and `swap.make_sim()` are built on them (identity: `tests/test_components.py`). `make_art()` is the one place HIVsim's ART is made |
-| `cascade_host.py` | `StisimHost`: HIVsim's side of the condensed cascade (`common/cascade/`), the `CascadeHost` interface on `sti.HIV`, `sti.ART`, `ss.Pregnancy` and `sti.StructuredSexual`; and `art_for_cascade()`, an `sti.ART` that only holds ART's states |
+| `components.py` | The slot factories (`docs/swap_design.md` §1.1, in the swap runner's interface, `common/swaps/README.md`): `make_D()` … `make_M()`, one per slot, the coarse `make_RN()` and `make_V()`, `HOST`, `SIM`, `pars(pid)`, and `make_sim(pars, ctx)`; `malawi.make_sim()` and `swap.make_sim()` are built on them (identity, and the runner's endpoint: `tests/test_components.py`). `make_art()` is the one place HIVsim's ART is made |
+| `stisim_host.py` | `StisimHost`: HIVsim's side of the condensed cascade (`common/cascade/`), the `CascadeHost` interface on `sti.HIV`, `sti.ART`, `ss.Pregnancy` and `sti.StructuredSexual`; and `art_for_cascade()`, an `sti.ART` that only holds ART's states |
 | `swap.py` | `make_sim(variant, seed)`: HIVsim Malawi with its own care (`own`), or with the condensed cascade and EMOD's Malawi table (`condensed`); `BEST` is hivsim_malawi experiment 03's best run |
 | `reference/` | Where the finalized HIVsim Malawi will go |
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 import inputs
-from cascade import EmodCascade
+from emod_cascade import EmodCascade
 
 OUT = Path(__file__).resolve().parents[3] / 'common' / 'cascade' / 'tables'
 

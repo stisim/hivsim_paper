@@ -5,7 +5,7 @@ before (at REF, the commit before the factories), same seed: every result array 
     PYTHONPATH=<STIsim rs-v4-art> pytest tests/test_components.py -n 8    # env hp_rc3; about 2 minutes on 8 cores
 
 Each case runs in its own process (`python tests/test_components.py <case>`), since the two models have modules of the
-same name (cascade_host, and EMOD's cascade against common/cascade).
+same name (as they were at REF: cascade_host, and EMOD's cascade against common/cascade).
 """
 import sys
 import types
@@ -18,7 +18,7 @@ REF = '5df2972' # HIVsim migrated to rc3; harness.py, malawi.py and swap.py as t
 EMOD = repo / 'models' / 'emod' / 'v4'
 HIVSIM = repo / 'models' / 'hivsim'
 EMOD_CASES = dict(network={}, hiv=dict(hiv=True), interpreted=dict(cascade=True), compiled=dict(cascade=True, compiled=True), condensed=dict(cascade=True, condensed=True))
-HIVSIM_CASES = ['hivsim_malawi', 'hivsim_own', 'hivsim_condensed']
+HIVSIM_CASES = ['hivsim_malawi', 'hivsim_own', 'hivsim_condensed', 'hivsim_runner']
 
 
 def at_ref(path, **replace):
@@ -36,7 +36,9 @@ def check(case):
     sys.path[:0] = [str(repo), str(repo / 'common')]
     if case in EMOD_CASES:
         sys.path.insert(0, str(EMOD))
-        import harness # (first, so that `cascade` is EMOD′'s)
+        import harness
+        import emod_cascade
+        sys.modules['cascade'] = emod_cascade # Its name at REF
         ref = at_ref(EMOD / 'harness.py')
         kw = dict(seed=3, stop=2010) | EMOD_CASES[case]
         old, new = ref.make_sim(0, **kw), harness.make_sim(0, **kw)
@@ -44,8 +46,17 @@ def check(case):
         sys.path[:0] = [str(HIVSIM / 'malawi'), str(HIVSIM)]
         import malawi
         import swap
+        import stisim_host
+        sys.modules['cascade_host'] = stisim_host # Its name at REF
         ref_malawi = at_ref(HIVSIM / 'malawi' / 'malawi.py')
-        if case == 'hivsim_malawi':
+        if case == 'hivsim_runner': # The runner's endpoint: build(all HIVsim) is swap.make_sim('own'), with the outputs analyzer
+            from common import swaps
+            from common.outputs import Outputs
+            cfg = dict(stop=2010, pairs=dict(hivsim=[0]))
+            cell = swaps.cells(cfg)[0]
+            old = swap.make_sim('own', seed=cell['seed'], stop=2010, analyzers=[Outputs(stisim_host.StisimHost)])
+            new = swaps.build(dict(D='hivsim', RN='hivsim', V='hivsim', C='hivsim'), cell, cfg)
+        elif case == 'hivsim_malawi':
             old, new = ref_malawi.make_sim(seed=2, n_agents=3e3, verbose=0), malawi.make_sim(seed=2, n_agents=3e3, verbose=0)
         else:
             ref = at_ref(HIVSIM / 'swap.py', malawi=ref_malawi)

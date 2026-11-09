@@ -4,7 +4,7 @@ What the condensed cascade needs from the model it runs in: the HIV disease and 
 A model implements `CascadeHost` (one object, bound to the sim when the cascade starts); the cascade uses nothing else.
 EMOD′ implements it in models/emod/v4/cascade_host.py.
 
-HIVsim (STIsim's `sti.HIV` with `sti.ART`) implements it in models/hivsim/cascade_host.py, with WHO stage and first
+HIVsim (STIsim's `sti.HIV` with `sti.ART`) implements it in models/hivsim/stisim_host.py, with WHO stage and first
 symptoms from the CD4 count.
 
 Optima′ is compartmental (counts by CD4 and cascade state, moved by rates), so this per-agent interface can't drive
