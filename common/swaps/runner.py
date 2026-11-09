@@ -139,8 +139,9 @@ def pins():
 
 
 def hybrid_id(choice, config, version):
-    """ A hybrid's ID: a hash of its choice, the stop year, the model files, the code and the pins """
-    key = dict(choice=name(choice), stop=config.get('stop'), models=config.get('models', {}), **version)
+    """ A hybrid's ID: a hash of its choice, the stop year, the model files (by contents, since one can be outside models/), the code and the pins """
+    files = {m: hashlib.sha1((REPO / f).read_bytes()).hexdigest() for m, f in config.get('models', {}).items()}
+    key = dict(choice=name(choice), stop=config.get('stop'), models=files, **version)
     return hashlib.sha1(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
 
 
