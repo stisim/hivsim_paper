@@ -1,0 +1,335 @@
+# Bansi-Matharu et al. 2025 (Lancet Glob Health 13:e1006-19) Figure 3A, Malawi: share (%) of new
+# infections by the source partner's treatment status, digitised by analyses/18_fig3a_emod/digitise_fig3a.py
+# (+-1-2 points; shares under ~1.5 are edge anti-aliasing). Read with pd.read_csv(path, comment='#').
+# Categories: undiagnosed; diagnosed_never_treated (diagnosed, ART-naive); on_art; interrupted_art
+# (not receiving ART after having started).
+# Caption totals, new infections in 2024 (national): EMOD 30582; Optima HIV 8459; Goals 10120; HIV Synthesis 22689.
+model,year,category,share
+EMOD,2000,undiagnosed,97.9
+EMOD,2000,diagnosed_never_treated,0.5
+EMOD,2000,on_art,1.1
+EMOD,2000,interrupted_art,0.5
+EMOD,2001,undiagnosed,95.2
+EMOD,2001,diagnosed_never_treated,3.7
+EMOD,2001,on_art,0.5
+EMOD,2001,interrupted_art,0.5
+EMOD,2002,undiagnosed,89.3
+EMOD,2002,diagnosed_never_treated,9.1
+EMOD,2002,on_art,1.1
+EMOD,2002,interrupted_art,0.5
+EMOD,2003,undiagnosed,85.0
+EMOD,2003,diagnosed_never_treated,13.4
+EMOD,2003,on_art,1.1
+EMOD,2003,interrupted_art,0.5
+EMOD,2004,undiagnosed,80.3
+EMOD,2004,diagnosed_never_treated,17.6
+EMOD,2004,on_art,1.6
+EMOD,2004,interrupted_art,0.5
+EMOD,2005,undiagnosed,73.9
+EMOD,2005,diagnosed_never_treated,23.9
+EMOD,2005,on_art,1.6
+EMOD,2005,interrupted_art,0.5
+EMOD,2006,undiagnosed,68.4
+EMOD,2006,diagnosed_never_treated,28.9
+EMOD,2006,on_art,2.1
+EMOD,2006,interrupted_art,0.5
+EMOD,2007,undiagnosed,64.2
+EMOD,2007,diagnosed_never_treated,31.6
+EMOD,2007,on_art,3.2
+EMOD,2007,interrupted_art,1.1
+EMOD,2008,undiagnosed,61.0
+EMOD,2008,diagnosed_never_treated,30.5
+EMOD,2008,on_art,5.9
+EMOD,2008,interrupted_art,2.7
+EMOD,2009,undiagnosed,59.4
+EMOD,2009,diagnosed_never_treated,28.9
+EMOD,2009,on_art,8.0
+EMOD,2009,interrupted_art,3.7
+EMOD,2010,undiagnosed,57.8
+EMOD,2010,diagnosed_never_treated,26.7
+EMOD,2010,on_art,11.2
+EMOD,2010,interrupted_art,4.3
+EMOD,2011,undiagnosed,57.2
+EMOD,2011,diagnosed_never_treated,23.0
+EMOD,2011,on_art,14.4
+EMOD,2011,interrupted_art,5.3
+EMOD,2012,undiagnosed,55.6
+EMOD,2012,diagnosed_never_treated,19.8
+EMOD,2012,on_art,18.2
+EMOD,2012,interrupted_art,6.4
+EMOD,2013,undiagnosed,54.0
+EMOD,2013,diagnosed_never_treated,15.5
+EMOD,2013,on_art,21.9
+EMOD,2013,interrupted_art,8.6
+EMOD,2014,undiagnosed,51.3
+EMOD,2014,diagnosed_never_treated,12.8
+EMOD,2014,on_art,24.6
+EMOD,2014,interrupted_art,11.2
+EMOD,2015,undiagnosed,48.7
+EMOD,2015,diagnosed_never_treated,9.6
+EMOD,2015,on_art,28.3
+EMOD,2015,interrupted_art,13.4
+EMOD,2016,undiagnosed,46.5
+EMOD,2016,diagnosed_never_treated,7.5
+EMOD,2016,on_art,31.0
+EMOD,2016,interrupted_art,15.0
+EMOD,2017,undiagnosed,43.9
+EMOD,2017,diagnosed_never_treated,6.4
+EMOD,2017,on_art,33.7
+EMOD,2017,interrupted_art,16.0
+EMOD,2018,undiagnosed,41.7
+EMOD,2018,diagnosed_never_treated,5.3
+EMOD,2018,on_art,35.8
+EMOD,2018,interrupted_art,17.1
+EMOD,2019,undiagnosed,40.1
+EMOD,2019,diagnosed_never_treated,4.3
+EMOD,2019,on_art,39.0
+EMOD,2019,interrupted_art,16.6
+EMOD,2020,undiagnosed,38.5
+EMOD,2020,diagnosed_never_treated,3.7
+EMOD,2020,on_art,40.6
+EMOD,2020,interrupted_art,17.1
+EMOD,2021,undiagnosed,36.9
+EMOD,2021,diagnosed_never_treated,3.2
+EMOD,2021,on_art,41.7
+EMOD,2021,interrupted_art,18.2
+EMOD,2022,undiagnosed,34.8
+EMOD,2022,diagnosed_never_treated,2.1
+EMOD,2022,on_art,44.4
+EMOD,2022,interrupted_art,18.7
+EMOD,2023,undiagnosed,33.7
+EMOD,2023,diagnosed_never_treated,2.7
+EMOD,2023,on_art,44.4
+EMOD,2023,interrupted_art,19.3
+EMOD,2024,undiagnosed,32.6
+EMOD,2024,diagnosed_never_treated,2.1
+EMOD,2024,on_art,45.5
+EMOD,2024,interrupted_art,19.8
+EMOD,2025,undiagnosed,32.1
+EMOD,2025,diagnosed_never_treated,2.1
+EMOD,2025,on_art,45.5
+EMOD,2025,interrupted_art,20.3
+EMOD,2026,undiagnosed,30.5
+EMOD,2026,diagnosed_never_treated,1.6
+EMOD,2026,on_art,46.5
+EMOD,2026,interrupted_art,21.4
+EMOD,2027,undiagnosed,29.4
+EMOD,2027,diagnosed_never_treated,1.6
+EMOD,2027,on_art,47.6
+EMOD,2027,interrupted_art,21.4
+EMOD,2028,undiagnosed,29.4
+EMOD,2028,diagnosed_never_treated,1.1
+EMOD,2028,on_art,47.6
+EMOD,2028,interrupted_art,21.9
+EMOD,2029,undiagnosed,28.3
+EMOD,2029,diagnosed_never_treated,1.6
+EMOD,2029,on_art,47.6
+EMOD,2029,interrupted_art,22.5
+EMOD,2030,undiagnosed,27.8
+EMOD,2030,diagnosed_never_treated,1.1
+EMOD,2030,on_art,48.1
+EMOD,2030,interrupted_art,23.0
+EMOD,2031,undiagnosed,27.3
+EMOD,2031,diagnosed_never_treated,1.1
+EMOD,2031,on_art,48.7
+EMOD,2031,interrupted_art,23.0
+EMOD,2032,undiagnosed,26.7
+EMOD,2032,diagnosed_never_treated,1.1
+EMOD,2032,on_art,49.2
+EMOD,2032,interrupted_art,23.0
+EMOD,2033,undiagnosed,25.7
+EMOD,2033,diagnosed_never_treated,1.1
+EMOD,2033,on_art,49.7
+EMOD,2033,interrupted_art,23.5
+EMOD,2034,undiagnosed,25.7
+EMOD,2034,diagnosed_never_treated,1.1
+EMOD,2034,on_art,49.7
+EMOD,2034,interrupted_art,23.5
+EMOD,2035,undiagnosed,25.7
+EMOD,2035,diagnosed_never_treated,1.1
+EMOD,2035,on_art,49.2
+EMOD,2035,interrupted_art,24.1
+EMOD,2036,undiagnosed,25.1
+EMOD,2036,diagnosed_never_treated,1.1
+EMOD,2036,on_art,49.7
+EMOD,2036,interrupted_art,24.1
+EMOD,2037,undiagnosed,24.6
+EMOD,2037,diagnosed_never_treated,0.5
+EMOD,2037,on_art,50.8
+EMOD,2037,interrupted_art,24.1
+EMOD,2038,undiagnosed,23.5
+EMOD,2038,diagnosed_never_treated,1.1
+EMOD,2038,on_art,50.8
+EMOD,2038,interrupted_art,24.6
+EMOD,2039,undiagnosed,23.5
+EMOD,2039,diagnosed_never_treated,1.1
+EMOD,2039,on_art,51.3
+EMOD,2039,interrupted_art,24.1
+EMOD,2040,undiagnosed,23.0
+EMOD,2040,diagnosed_never_treated,1.1
+EMOD,2040,on_art,51.3
+EMOD,2040,interrupted_art,24.6
+Optima HIV,2000,undiagnosed,69.7
+Optima HIV,2000,diagnosed_never_treated,25.0
+Optima HIV,2000,on_art,1.6
+Optima HIV,2000,interrupted_art,3.7
+Optima HIV,2001,undiagnosed,66.0
+Optima HIV,2001,diagnosed_never_treated,29.3
+Optima HIV,2001,on_art,1.1
+Optima HIV,2001,interrupted_art,3.7
+Optima HIV,2002,undiagnosed,62.2
+Optima HIV,2002,diagnosed_never_treated,32.4
+Optima HIV,2002,on_art,1.1
+Optima HIV,2002,interrupted_art,4.3
+Optima HIV,2003,undiagnosed,58.5
+Optima HIV,2003,diagnosed_never_treated,36.7
+Optima HIV,2003,on_art,1.1
+Optima HIV,2003,interrupted_art,3.7
+Optima HIV,2004,undiagnosed,55.3
+Optima HIV,2004,diagnosed_never_treated,39.9
+Optima HIV,2004,on_art,1.6
+Optima HIV,2004,interrupted_art,3.2
+Optima HIV,2005,undiagnosed,53.2
+Optima HIV,2005,diagnosed_never_treated,41.0
+Optima HIV,2005,on_art,2.7
+Optima HIV,2005,interrupted_art,3.2
+Optima HIV,2006,undiagnosed,52.7
+Optima HIV,2006,diagnosed_never_treated,39.9
+Optima HIV,2006,on_art,3.2
+Optima HIV,2006,interrupted_art,4.3
+Optima HIV,2007,undiagnosed,53.2
+Optima HIV,2007,diagnosed_never_treated,37.2
+Optima HIV,2007,on_art,4.8
+Optima HIV,2007,interrupted_art,4.8
+Optima HIV,2008,undiagnosed,54.8
+Optima HIV,2008,diagnosed_never_treated,33.0
+Optima HIV,2008,on_art,7.4
+Optima HIV,2008,interrupted_art,4.8
+Optima HIV,2009,undiagnosed,55.9
+Optima HIV,2009,diagnosed_never_treated,28.7
+Optima HIV,2009,on_art,10.6
+Optima HIV,2009,interrupted_art,4.8
+Optima HIV,2010,undiagnosed,56.4
+Optima HIV,2010,diagnosed_never_treated,23.9
+Optima HIV,2010,on_art,14.4
+Optima HIV,2010,interrupted_art,5.3
+Optima HIV,2011,undiagnosed,57.4
+Optima HIV,2011,diagnosed_never_treated,19.1
+Optima HIV,2011,on_art,18.1
+Optima HIV,2011,interrupted_art,5.3
+Optima HIV,2012,undiagnosed,59.0
+Optima HIV,2012,diagnosed_never_treated,14.4
+Optima HIV,2012,on_art,20.7
+Optima HIV,2012,interrupted_art,5.9
+Optima HIV,2013,undiagnosed,58.0
+Optima HIV,2013,diagnosed_never_treated,12.8
+Optima HIV,2013,on_art,23.4
+Optima HIV,2013,interrupted_art,5.9
+Optima HIV,2014,undiagnosed,56.4
+Optima HIV,2014,diagnosed_never_treated,12.8
+Optima HIV,2014,on_art,24.5
+Optima HIV,2014,interrupted_art,6.4
+Optima HIV,2015,undiagnosed,54.8
+Optima HIV,2015,diagnosed_never_treated,14.4
+Optima HIV,2015,on_art,23.4
+Optima HIV,2015,interrupted_art,7.4
+Optima HIV,2016,undiagnosed,52.7
+Optima HIV,2016,diagnosed_never_treated,14.9
+Optima HIV,2016,on_art,23.9
+Optima HIV,2016,interrupted_art,8.5
+Optima HIV,2017,undiagnosed,49.5
+Optima HIV,2017,diagnosed_never_treated,17.6
+Optima HIV,2017,on_art,23.4
+Optima HIV,2017,interrupted_art,9.6
+Optima HIV,2018,undiagnosed,47.3
+Optima HIV,2018,diagnosed_never_treated,20.2
+Optima HIV,2018,on_art,22.3
+Optima HIV,2018,interrupted_art,10.1
+Optima HIV,2019,undiagnosed,46.3
+Optima HIV,2019,diagnosed_never_treated,24.5
+Optima HIV,2019,on_art,19.1
+Optima HIV,2019,interrupted_art,10.1
+Optima HIV,2020,undiagnosed,45.2
+Optima HIV,2020,diagnosed_never_treated,28.2
+Optima HIV,2020,on_art,17.6
+Optima HIV,2020,interrupted_art,9.0
+Optima HIV,2021,undiagnosed,44.7
+Optima HIV,2021,diagnosed_never_treated,29.8
+Optima HIV,2021,on_art,17.6
+Optima HIV,2021,interrupted_art,8.0
+Optima HIV,2022,undiagnosed,45.2
+Optima HIV,2022,diagnosed_never_treated,28.7
+Optima HIV,2022,on_art,18.1
+Optima HIV,2022,interrupted_art,8.0
+Optima HIV,2023,undiagnosed,50.5
+Optima HIV,2023,diagnosed_never_treated,13.8
+Optima HIV,2023,on_art,27.7
+Optima HIV,2023,interrupted_art,8.0
+Optima HIV,2024,undiagnosed,50.5
+Optima HIV,2024,diagnosed_never_treated,5.3
+Optima HIV,2024,on_art,35.6
+Optima HIV,2024,interrupted_art,8.5
+Optima HIV,2025,undiagnosed,46.3
+Optima HIV,2025,diagnosed_never_treated,4.3
+Optima HIV,2025,on_art,39.4
+Optima HIV,2025,interrupted_art,10.1
+Optima HIV,2026,undiagnosed,42.0
+Optima HIV,2026,diagnosed_never_treated,3.7
+Optima HIV,2026,on_art,43.6
+Optima HIV,2026,interrupted_art,10.6
+Optima HIV,2027,undiagnosed,38.8
+Optima HIV,2027,diagnosed_never_treated,3.2
+Optima HIV,2027,on_art,46.8
+Optima HIV,2027,interrupted_art,11.2
+Optima HIV,2028,undiagnosed,36.7
+Optima HIV,2028,diagnosed_never_treated,3.2
+Optima HIV,2028,on_art,47.9
+Optima HIV,2028,interrupted_art,12.2
+Optima HIV,2029,undiagnosed,35.1
+Optima HIV,2029,diagnosed_never_treated,2.7
+Optima HIV,2029,on_art,50.0
+Optima HIV,2029,interrupted_art,12.2
+Optima HIV,2030,undiagnosed,34.0
+Optima HIV,2030,diagnosed_never_treated,2.7
+Optima HIV,2030,on_art,51.1
+Optima HIV,2030,interrupted_art,12.2
+Optima HIV,2031,undiagnosed,33.5
+Optima HIV,2031,diagnosed_never_treated,2.7
+Optima HIV,2031,on_art,50.5
+Optima HIV,2031,interrupted_art,13.3
+Optima HIV,2032,undiagnosed,33.0
+Optima HIV,2032,diagnosed_never_treated,2.7
+Optima HIV,2032,on_art,51.1
+Optima HIV,2032,interrupted_art,13.3
+Optima HIV,2033,undiagnosed,33.5
+Optima HIV,2033,diagnosed_never_treated,2.7
+Optima HIV,2033,on_art,50.5
+Optima HIV,2033,interrupted_art,13.3
+Optima HIV,2034,undiagnosed,33.5
+Optima HIV,2034,diagnosed_never_treated,2.7
+Optima HIV,2034,on_art,50.5
+Optima HIV,2034,interrupted_art,13.3
+Optima HIV,2035,undiagnosed,33.5
+Optima HIV,2035,diagnosed_never_treated,2.7
+Optima HIV,2035,on_art,50.0
+Optima HIV,2035,interrupted_art,13.8
+Optima HIV,2036,undiagnosed,34.0
+Optima HIV,2036,diagnosed_never_treated,2.1
+Optima HIV,2036,on_art,50.0
+Optima HIV,2036,interrupted_art,13.8
+Optima HIV,2037,undiagnosed,34.6
+Optima HIV,2037,diagnosed_never_treated,2.1
+Optima HIV,2037,on_art,49.5
+Optima HIV,2037,interrupted_art,13.8
+Optima HIV,2038,undiagnosed,35.1
+Optima HIV,2038,diagnosed_never_treated,2.7
+Optima HIV,2038,on_art,48.9
+Optima HIV,2038,interrupted_art,13.3
+Optima HIV,2039,undiagnosed,35.6
+Optima HIV,2039,diagnosed_never_treated,2.7
+Optima HIV,2039,on_art,48.4
+Optima HIV,2039,interrupted_art,13.3
+Optima HIV,2040,undiagnosed,36.2
+Optima HIV,2040,diagnosed_never_treated,2.1
+Optima HIV,2040,on_art,47.9
+Optima HIV,2040,interrupted_art,13.8

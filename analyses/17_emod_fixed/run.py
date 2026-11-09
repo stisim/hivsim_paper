@@ -140,9 +140,14 @@ def tables():
     fig = f.mean().join(f.quantile(0.1).add_suffix('_q10')).join(f.quantile(0.9).add_suffix('_q90')).reset_index()
     fig['order'] = fig.variant.map({m: i for i, m in enumerate(MODELS)})
     fig = fig.sort_values(['pid', 'year', 'order']).drop(columns='order')
+    pub = pd.read_csv(OUT / 'fig3a_published.csv', comment='#') # common/fig3a_malawi.csv (starsim-rc3), copied: a file under common/ would change the runs' hybrid IDs
+    pub = pub[(pub.model == 'EMOD') & pub.year.isin([2020, 2024])].pivot(index='year', columns='category', values='share')/100
+    pub = pub.rename(columns=dict(undiagnosed='src_undiagnosed', diagnosed_never_treated='src_diagnosed_never_treated', on_art='src_on_art', interrupted_art='src_interrupted')).reset_index()
+    pub['new_infections'] = np.where(pub.year == 2024, 30582, np.nan)
+    fig = pd.concat([fig, pub.assign(variant='published EMOD (Fig 3A)', pid=-1)], ignore_index=True)
     fig.to_csv(OUT / 'fig3a.csv', index=False, float_format='%.4g')
     with pd.option_context('display.width', 250, 'display.max_columns', 40):
-        print(fig[fig.pid == 0][['variant', 'year'] + src].round(3).to_string(index=False))
+        print(fig[fig.pid <= 0].sort_values(['year', 'pid'])[['variant', 'year'] + src].round(3).to_string(index=False))
     # Against the UNAIDS series (2020)
     un = targets[(targets.source == 'UNAIDS 2025') & (np.floor(targets.year) == 2020)][['target', 'value']]
     print(un.to_string())
@@ -164,12 +169,12 @@ def plot():
     show = ['emod', 'fix_mortality', 'fix_reenrol', 'emod_fixed', 'fix_all', 'fix_art_male']
     for pid in sorted(s.pid.unique()):
         fig, axes = plt.subplots(2, 4, figsize=(18, 8))
-        d = s[(s.pid == pid) & (s.year >= 1985)]
+        d = s[(s.pid == pid) & (s.year >= 1985) & (s.year < STOP)] # The stop year is a part year
         for ax, (k, title, tg) in zip(axes.flat, panels):
             for m in show:
                 e = d[d.variant == m]
-                ax.plot(e.year, e[f'mean_{k}'], label=LABELS[m])
-                ax.fill_between(e.year, e[f'q10_{k}'], e[f'q90_{k}'], alpha=0.15)
+                ax.plot(e.year, e[f'{k}_mean'], label=LABELS[m])
+                ax.fill_between(e.year, e[f'{k}_q10'], e[f'{k}_q90'], alpha=0.15)
             if tg:
                 t = targets[(targets.target == tg) & (targets.source == 'UNAIDS 2025')]
                 ax.plot(t.yr, t.value, 'k.', label='UNAIDS')
