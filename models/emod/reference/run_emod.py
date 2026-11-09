@@ -128,14 +128,14 @@ def network_reports(cp):
 
 def transmission_reports(cp):
     """Daniel's report settings for transmissions by the source's cascade stage (source/InputFiles/Templates/config_transmission.json),
-    from 1960 so each person's diagnosis and ART history is complete (output only)"""
+    from 1960 so each person's diagnosis and ART history is complete, without ReportHIVInfection (a row per infected person
+    per step, about 1.5 GB a run; not needed for the categories). Output only"""
     cp.update(Report_Transmission=1, Report_Event_Recorder=1, Report_Event_Recorder_Events=['HIVNewlyDiagnosed', 'StartedART', 'StoppedART'],
               Report_Event_Recorder_Ignore_Events_In_List=0, Report_Event_Recorder_Individual_Properties=['ARTStatus'],
               Report_Event_Recorder_Min_Age_Years=0, Report_Event_Recorder_Max_Age_Years=200, Report_Event_Recorder_Must_Have_IP_Key_Value='',
               Report_Event_Recorder_Must_Have_Intervention='', Report_Event_Recorder_Node_IDs_Of_Interest=[],
               Report_Event_Recorder_PropertyChange_IP_Key_Of_Interest='', Report_Event_Recorder_Start_Year=1960, Report_Event_Recorder_End_Year=2100,
               Report_HIV_ART=1, Report_HIV_ART_Start_Year=1960, Report_HIV_ART_Stop_Year=2100,
-              Report_HIV_Infection=1, Report_HIV_Infection_Start_Year=2000, Report_HIV_Infection_Stop_Year=2100,
               Report_HIV_Mortality=1, Report_HIV_Mortality_Start_Year=2000, Report_HIV_Mortality_Stop_Year=2100)
 
 
