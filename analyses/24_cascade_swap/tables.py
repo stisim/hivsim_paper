@@ -18,7 +18,7 @@ import run # noqa: E402
 OUT = HERE / 'outputs'
 YEARS = [2020, 2024]
 SHARES = run.FIG3A
-Q = ['new_infections', 'sexual', 'mtct'] + SHARES + ['plhiv', 'art_coverage']
+Q = ['new_infections', 'sexual', 'mtct'] + SHARES + ['plhiv', 'art_coverage', 'supp_on_art']
 
 
 def ci(x):
@@ -54,6 +54,7 @@ def from_yearly(y, scale):
     out['interrupted'] = 100*y.tx_interrupted
     out['plhiv'] = y.plhiv*scale
     out['art_coverage'] = 100*y.art_coverage
+    out['supp_on_art'] = 100*y.suppressed/y.on_art # On the suppressive arm (EMOD′) or in svl (Optima′)
     return out
 
 
@@ -66,7 +67,7 @@ def emod_cells():
     for (name, cell), d in df.groupby(['name', 'cell']):
         q = from_yearly(d.drop(columns=['name', 'cell']), 100) # EMOD′: 100 people per agent (components.SCALE)
         for yr in YEARS:
-            rows.append(dict(arm='optima_C' if 'C=optima' in name else 'own', cell=cell, pair=d.pair.iloc[0], seed=d.seed.iloc[0], year=yr, **q.loc[yr]))
+            rows.append(dict(arm=name.split('C=')[1].replace('emod_fixed', 'own'), cell=cell, pair=d.pair.iloc[0], seed=d.seed.iloc[0], year=yr, **q.loc[yr]))
     out = pd.DataFrame(rows)
     out.to_csv(OUT / 'emod_cells.csv', index=False)
     return out
@@ -84,7 +85,8 @@ def ode_quantities(o):
         plhiv = np.asarray(o.plhiv).sum(axis=0)[i]
         rows[yr] = dict(new_infections=o.inci_year[i], sexual=o.sexinci_year[i], mtct=o.inci_year[i] - o.sexinci_year[i],
                         undiagnosed=sh.undx[yr], diagnosed_naive=sh.dx[yr] + sh.care[yr], on_art=sh.usvl[yr] + sh.svl[yr], interrupted=sh.lost[yr],
-                        plhiv=plhiv, art_coverage=100*np.asarray(o.treat).sum(axis=0)[i]/plhiv)
+                        plhiv=plhiv, art_coverage=100*np.asarray(o.treat).sum(axis=0)[i]/plhiv,
+                        supp_on_art=100*np.asarray(o.supp).sum(axis=0)[i]/np.asarray(o.treat).sum(axis=0)[i])
     return pd.DataFrame(rows).T
 
 
@@ -126,17 +128,22 @@ def level(m, q):
 def main():
     em, od, ab = emod_cells(), optima_ode(), optima_abm()
     lines, drows = [], []
-    # Direction 1: paired by cell
+    # Direction 1: paired by cell; Optima's C as it is (optima), and the two sensitivity variants
+    D1 = {'optima': '1: Optima C into EMOD′-fixed', 'optima_sw': '1s: ... with arm switching', 'optima_swp': '1sp: ... with arm switching and EMOD VMMC/PrEP'}
     for yr in YEARS:
         a = em[(em.year == yr) & (em.arm == 'own')].set_index('cell')
-        b = em[(em.year == yr) & (em.arm == 'optima_C')].set_index('cell').reindex(a.index)
-        for q in Q:
-            m, lo, hi, n = ci(b[q] - a[q])
-            drows.append(dict(direction='1: Optima C into EMOD′-fixed', basis=f'agents, paired cells (sets {run.PIDS} x {run.EMOD_SEEDS} seeds)', year=yr, quantity=q,
-                              own=a[q].mean(), swapped=b[q].mean(), delta=m, lo=lo, hi=hi, n=n))
-            for pid, (ai, bi) in enumerate(zip([a[a.pair == p] for p in range(3)], [b[a.pair == p] for p in range(3)])):
-                m, lo, hi, n = ci(bi[q] - ai[q])
-                drows.append(dict(direction=f'1, set {run.PIDS[pid]}', basis='agents, paired', year=yr, quantity=q, own=ai[q].mean(), swapped=bi[q].mean(), delta=m, lo=lo, hi=hi, n=n))
+        for arm, lab in D1.items():
+            b = em[(em.year == yr) & (em.arm == arm)].set_index('cell').reindex(a.index)
+            if b[Q[0]].isna().all():
+                continue
+            for q in Q:
+                m, lo, hi, n = ci(b[q] - a[q])
+                drows.append(dict(direction=lab, basis=f'agents, paired cells (sets {run.PIDS} x {run.EMOD_SEEDS} seeds)', year=yr, quantity=q,
+                                  own=a[q].mean(), swapped=b[q].mean(), delta=m, lo=lo, hi=hi, n=n))
+                for pid in range(3):
+                    ai, bi = a[a.pair == pid], b[a.pair == pid]
+                    m, lo, hi, n = ci(bi[q] - ai[q])
+                    drows.append(dict(direction=f'{lab}, set {run.PIDS[pid]}', basis='agents, paired', year=yr, quantity=q, own=ai[q].mean(), swapped=bi[q].mean(), delta=m, lo=lo, hi=hi, n=n))
     # Direction 2: ODE (exact) per table; agents (unpaired: own seeds 1-64 against each table's 16)
     for yr in YEARS:
         own = od[(od.variant == 'own') & (od.year == yr)].iloc[0]
@@ -175,6 +182,10 @@ def main():
                 d2 = o_abm.loc[q]
                 gap_abm = d2.own - E
                 row.update(d2_abm=d2.delta, d2_lo=d2.lo, d2_hi=d2.hi, frac2_abm=d2.delta/-gap_abm, frac2_abm_lo=d2.lo/-gap_abm, frac2_abm_hi=d2.hi/-gap_abm)
+            for k, lab in (('1s', '1s: ... with arm switching'), ('1sp', '1sp: ... with arm switching and EMOD VMMC/PrEP')):
+                r = D[(D.direction == lab) & (D.year == yr) & (D.quantity == q)]
+                if len(r):
+                    row[f'frac{k}'] = r.iloc[0].delta/gap
             grows.append(row)
     G = pd.DataFrame(grows)
     G.to_csv(OUT / 'gap.csv', index=False)
@@ -185,10 +196,14 @@ def main():
         for q in Q:
             r = D[(D.direction == '1: Optima C into EMOD′-fixed') & (D.year == yr) & (D.quantity == q)].iloc[0]
             lines.append(f'  {q:16s} {level(r.own, q):>8s} {level(r.swapped, q):>8s}  {fmt(r.delta, r.lo, r.hi, q)}')
+        for lab in ['1s: ... with arm switching', '1sp: ... with arm switching and EMOD VMMC/PrEP']:
+            r = D[(D.direction == lab) & (D.year == yr)].set_index('quantity')
+            if len(r):
+                lines.append(f'  {lab}: ' + '; '.join(f'{q} {level(r.loc[q, "swapped"], q)}, Δ {fmt(r.loc[q, "delta"], r.loc[q, "lo"], r.loc[q, "hi"], q)}' for q in Q))
         lines.append('Direction 2, Optima′: own cascade → EMOD′-fixed\'s table. ODE per set (exact): own; with EMOD\'s C; Δ.  Agents, sets pooled (unpaired): Δ (95% CI)')
         for q in Q:
             o = [D[(D.direction == f'2: EMOD C into Optima′ (emodfix{p})') & (D.basis == 'ODE') & (D.year == yr) & (D.quantity == q)].iloc[0] for p in run.PIDS]
-            s = f'  {q:16s} {level(o[0].own, q):>8s} ' + ' / '.join(level(x.swapped, q) for x in o) + '  Δ ' + ' / '.join(level(x.delta, q) if q in SHARES + ['art_coverage'] else f'{x.delta/1e3:+.1f}k' for x in o)
+            s = f'  {q:16s} {level(o[0].own, q):>8s} ' + ' / '.join(level(x.swapped, q) for x in o) + '  Δ ' + ' / '.join(level(x.delta, q) if q in SHARES + ['art_coverage', 'supp_on_art'] else f'{x.delta/1e3:+.1f}k' for x in o)
             r = D[(D.direction == '2: EMOD C into Optima′ (emodfix, sets 0/25/50)') & (D.year == yr) & (D.quantity == q)]
             if len(r):
                 r = r.iloc[0]
@@ -201,6 +216,9 @@ def main():
         lines.append('Gap (Optima′ ODE − EMOD′-fixed) and the fraction each swap carries: direction 1 (95% CI); direction 2 ODE (mean of sets); direction 2 agents (95% CI)')
         for _, r in G[G.year == yr].iterrows():
             s = f'  {r.quantity:16s} gap {level(r.gap, r.quantity):>8s}: 1 → {r.frac1:+.2f} ({r.frac1_lo:+.2f}, {r.frac1_hi:+.2f}); 2 ODE → {r.frac2_ode:+.2f}'
+            for k in ('1s', '1sp'):
+                if f'frac{k}' in r and np.isfinite(r[f'frac{k}']):
+                    s += f'; {k} → {r[f"frac{k}"]:+.2f}'
             if 'frac2_abm' in r and np.isfinite(r.frac2_abm):
                 s += f'; 2 agents → {r.frac2_abm:+.2f} ({r.frac2_abm_lo:+.2f}, {r.frac2_abm_hi:+.2f})'
             lines.append(s)
