@@ -84,6 +84,13 @@ if __name__ == '__main__':
     df.loc[df.mapping == 'raw', 'share'] = np.nan
     df['projection'] = df.year > 2020
     df.to_csv(HERE / 'outputs' / 'optima_by_source.csv', index=False)
+    # New infections by acquiring age (Figure 1 shows ages 15-64): Optima's raw_inci by acquiring population
+    pk = list(T['popkeys'])
+    adult = [i for i, k in enumerate(pk) if k in ('FSW', 'Clients', 'MSM') or 15 <= int(k[1:].split('-')[0].rstrip('+')) < 65]
+    acq = annual(pd.DataFrame({'all_ages': T['inci'].sum(0), 'age_15_64': T['inci'][adult].sum(0)}, index=T['tvec']), 'step')
+    acq.index.name = 'year'
+    acq.to_csv(HERE / 'outputs' / 'optima_new_infections.csv')
+    print(acq.loc[[2000, 2010, 2015, 2018, 2020, 2022, 2024]].round(0))
     sel = df[(df.annual == 'step') & (df.mapping != 'raw') & df.year.isin([2000, 2005, 2010, 2015, 2020, 2024])]
     print(sel.pivot_table(index=['counted', 'mapping', 'year'], columns='category', values='share')[CATS].round(1).to_string())
     print(df[(df.annual == 'step') & (df.mapping == 'states')].groupby(['counted', 'year']).number.sum().unstack(0).loc[[2000, 2010, 2020, 2024, 2030]].round(0))

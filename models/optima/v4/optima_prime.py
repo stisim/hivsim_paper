@@ -182,13 +182,16 @@ class Transmission:
         self.bg = sp['death']*REF_DT + sp['propemigrate']*REF_DT
         self.npops = len(pops)
         self._ti, self._rate = None, None
-        self.source_shares = {} # By step: each infected state's share of the force of infection, acquiring pop × circ × infected state
+        self.by_source = {} # By step: infections per year by the infected state of the source, from the compartments at the step's start
 
     def at(self, arr, year):
         """ Linear interpolation of a series over Optima's dt=0.2 time points (last axis) """
         i = int(np.clip(np.searchsorted(self.tvec, year, side='right') - 1, 0, len(self.tvec) - 2))
         w = np.clip((year - self.tvec[i])/(self.tvec[i+1] - self.tvec[i]), 0, 1)
         return arr[..., i]*(1 - w) + arr[..., i+1]*w
+
+    def __deepcopy__(self, memo):
+        return self # One object, shared with the infection rates' functions (which copying a sim does not copy)
 
     def people(self, sim):
         eng = sim.diseases.optima.engine
@@ -214,10 +217,11 @@ class Transmission:
         np.add.at(lognoinf, (self.p1, self.p2), np.log(noinf))
         bg = self.at(self.bg, year)
         part = (1 - np.exp(lognoinf)).sum(axis=1) # Acquiring pop × circ × infected state: Optima's force of infection adds over sources
-        self.source_shares[sim.ti] = part/np.maximum(part.sum(axis=2, keepdims=True), 1e-300)
         prob = part.sum(axis=2).T*self.force*inhomo*(1 - bg) # Circ × acquiring pop
         prob = np.minimum(prob, 1 - self.eps - bg.max())
         self._ti, self._rate = sim.ti, prob/REF_DT
+        share = part/np.maximum(part.sum(axis=2, keepdims=True), 1e-300)
+        self.by_source[sim.ti] = np.einsum('cj,cj,jck->k', people[:2], self._rate, share) # Susceptibles (uncircumcised, circumcised) × rate × share
         return self._rate
 
 
@@ -531,13 +535,12 @@ class CascadeTargets(ss.Intervention):
 
 
 def infections_by_source(sim):
-    """ Sexual infections per year in each step by the source's state, Optima's raw_incibypop summed over source populations: each population's infection flow split by each infected state's share of its force of infection. Rows: steps; columns: infected states """
+    """ Sexual infections per year in each step by the source's infected state (Optima's raw_incibypop summed over source populations): each step's infection flows split by each state's share of the force of infection on the susceptibles at the step's start. Rows: steps; columns: infected states """
     foi, r = sim.diseases.optima.foi, sim.results.optima
     names = [n for n, h in zip(foi.names, foi.hiv) if h]
-    flows = np.stack([np.asarray(r[f'infection_{s}'].by('pop')) for s in ('susreg', 'progcirc')], axis=2) # Steps × pops × circ
-    zero = np.zeros_like(foi.source_shares[0])
-    shares = np.array([foi.source_shares.get(ti, zero) for ti in range(len(flows))])
-    by = np.einsum('tjc,tjck->tk', flows, shares)/sim.pars.dt.years
+    total = sum(np.asarray(r[f'infection_{s}']) for s in ('susreg', 'progcirc'))/sim.pars.dt.years
+    by = np.array([foi.by_source.get(ti, np.zeros(len(names))) for ti in range(len(total))])
+    by *= (total/np.where(by.sum(1) > 0, by.sum(1), 1))[:, None] # Scaled to the flows the solver took
     return pd.DataFrame(by, columns=names, index=np.array([d.years for d in r['infection_susreg'].timevec]))
 
 

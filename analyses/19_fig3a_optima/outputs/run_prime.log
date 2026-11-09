@@ -1,0 +1,10 @@
+check: sum over sources / all infection flows (incl. MTCT) by year 2000, 2020: [0.7561, 0.8549]
+Optima′ vs Optima, % difference by source state (sexual), 2000-2020: max abs {'undx': 1.69, 'dx': 2.02, 'care': 84.81, 'lost': 2.71, 'usvl': 2.57, 'svl': nan}
+total: 2.55
+      undx    dx   care  lost  usvl  svl
+year                                    
+2000 -1.09 -0.94  -0.13 -0.10 -0.03  NaN
+2005 -0.84 -0.76  -0.70  0.32 -0.41  NaN
+2010 -0.93 -0.79  -1.83 -0.13 -0.19  NaN
+2015 -1.24 -1.01  -6.39 -0.25 -1.29  NaN
+2020 -1.43 -2.02 -73.28 -0.99  2.11  NaN
