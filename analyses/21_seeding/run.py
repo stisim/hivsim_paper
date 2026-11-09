@@ -127,7 +127,7 @@ def rates():
     import components_fixed
     cov = components_fixed.pars(0).campaign.seed_coverage
     e['per_capita'] = e.seeds/e.alive
-    e.to_csv(OUT / 'emod_seeds_1983.csv', index=False)
+    e.to_csv(OUT / 'emod_seeds.csv', index=False)
     r = pd.DataFrame([x for rows, _ in hs for x in rows])
     x = pd.DataFrame([x for _, x in hs])
     r.to_csv(OUT / 'hivsim_seeding_by_risk.csv', index=False)
