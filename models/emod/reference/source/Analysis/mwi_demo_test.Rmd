@@ -1,0 +1,312 @@
+---
+title: "MWI_Demo_test"
+output: html_document
+date: "2026-11-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The purpose of this document is to run the baseline Malawi model to see how 
+badly it is affected by the ResultsScaleFactor. Robyn S found that it was
+apparently too small by a factor of 1000.
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.table))
+library(magrittr)
+devtools::install_github("BershteynLab/EMODAnalyzeR", force = TRUE)
+```
+
+
+# Baseline data
+
+```{r}
+input_path = "/gpfs/scratch/citrod01/experiments/Malawi/Baseline-campaign_Malawi_20251215-demo_test_baseline___2026_11_05_15_35_04_472636"
+
+sim.baseline <- EMODAnalyzeR::read.simulation.results.bigpurple(
+  experiment_path = input_path,
+  scenario_name = 'baseline',
+  summarize_columns = c("Newly.Infected", "Newly.Tested.Positive", "Newly.Tested.Negative",
+                        "Population","Infected", "On_ART","Died", "Died_from_HIV",
+                        "Tested.Past.Year.or.On_ART", "Tested.Ever","Diagnosed" ),
+  stratify_columns = c("Year", "Gender", "Age"),
+  min_age_inclusive = 0,
+  max_age_inclusive = 99
+) %>% 
+  ungroup()
+
+
+input_path = "/gpfs/scratch/citrod01/experiments/Malawi/Baseline-campaign_Malawi_20251215-demo_test_1000___2026_11_05_16_06_33_142433"
+
+sim.demo <- EMODAnalyzeR::read.simulation.results.bigpurple(
+  experiment_path = input_path,
+  scenario_name = 'demo',
+  summarize_columns = c("Newly.Infected", "Newly.Tested.Positive", "Newly.Tested.Negative",
+                        "Population","Infected", "On_ART","Died", "Died_from_HIV",
+                        "Tested.Past.Year.or.On_ART", "Tested.Ever","Diagnosed" ),
+  stratify_columns = c("Year", "Gender", "Age"),
+  min_age_inclusive = 0,
+  max_age_inclusive = 99
+) %>% 
+  ungroup()
+
+sim.results <- rbind(sim.baseline, sim.demo)
+
+CENSUS_YEAR = 2018.5
+MALAWI_CENSUS_POP = 17563749
+
+sim.results.pop.scaling <- sim.results %>% 
+      filter(Year == CENSUS_YEAR) %>%
+      group_by(sim.id) %>%
+      summarize(total.pop = sum(Population), .groups = 'keep') %>% 
+      mutate(pop.scaling.factor = MALAWI_CENSUS_POP/total.pop)
+
+sim.results <- sim.results %>% 
+  inner_join(
+    sim.results.pop.scaling,
+    by = c("sim.id")
+  )
+
+```
+
+# Plot Metrics without rescaling
+
+Looks as though population is just 1/2 what it should be.
+
+```{r}
+plot <- sim.results %>% 
+  group_by(sim.ix, scenario_name, Year) %>% 
+  summarize(Population = sum(Population),
+            Died = sum(Died),
+            Infected = sum(Infected),
+            Died_from_HIV = sum(Died_from_HIV),
+            Diagnosed = sum(Diagnosed),
+            On_ART = sum(On_ART)
+            ) %>% 
+  group_by(scenario_name, Year) %>% 
+  summarize(Population = mean(Population),
+            Died = mean(Died),
+            Infected = mean(Infected),
+            Died_from_HIV = mean(Died_from_HIV),
+            Diagnosed = mean(Diagnosed), 
+            On_ART = mean(On_ART)
+            ) %>% 
+  pivot_longer(cols = c(Population, Died, Infected, Died_from_HIV, Diagnosed, On_ART), names_to = "Metric", values_to = "Value") %>% 
+  ggplot() + 
+  geom_point(
+    mapping = aes(x = Year, y = Value, color = scenario_name) 
+  ) + facet_wrap(~ Metric, scales = 'free_y', nrow = 2, ncol = 3)
+
+ggsave(filename = "/gpfs/data/bershteynlab/EMOD/citrod01/hivsim_paper/models/emod/original/Analysis/demo_plot.pdf",
+       width = 12,
+       height = 8,
+       units = 'in')
+
+```
+
+
+# Plot metrics with pop scale factor rescaling
+
+```{r}
+plot <- sim.results %>% 
+  group_by(sim.ix, scenario_name, Year) %>% 
+  summarize(Population = sum(Population * pop.scaling.factor),
+            Died = sum(Died * pop.scaling.factor),
+            Infected = sum(Infected * pop.scaling.factor),
+            Died_from_HIV = sum(Died_from_HIV * pop.scaling.factor),
+            Diagnosed = sum(Diagnosed * pop.scaling.factor),
+            On_ART = sum(On_ART * pop.scaling.factor)
+            ) %>% 
+  group_by(scenario_name, Year) %>% 
+  summarize(Population = mean(Population),
+            Died = mean(Died),
+            Infected = mean(Infected),
+            Died_from_HIV = mean(Died_from_HIV),
+            Diagnosed = mean(Diagnosed), 
+            On_ART = mean(On_ART)
+            ) %>% 
+  pivot_longer(cols = c(Population, Died, Infected, Died_from_HIV, Diagnosed, On_ART), names_to = "Metric", values_to = "Value") %>% 
+  ggplot() + 
+  geom_point(
+    mapping = aes(x = Year, y = Value, color = scenario_name) 
+  ) + facet_wrap(~ Metric, scales = 'free_y', nrow = 2, ncol = 3)
+
+ggsave(filename = "/gpfs/data/bershteynlab/EMOD/citrod01/hivsim_paper/models/emod/original/Analysis/demo_plot_rescaled.pdf",
+       width = 12,
+       height = 8,
+       units = 'in')
+
+```
+
+## See whether the disagreements over baseline mortality rate affects the calibration significantly
+
+```{r}
+#age_bins = c(15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65,99)
+age_bins = c(15, 20, 25, 30, 35, 40, 45, 50, 55, 60)
+subset_years = c(2004, 2010, 2015.5)
+
+# Subset data on years
+data <- sim.results %>% filter(Year %in% subset_years)
+
+# Age bins
+age_labels = c()
+for (i in 1:(length(age_bins) - 1)){
+  age_labels <- append(age_labels, paste0("[",age_bins[i],":",age_bins[i + 1],")"))
+}
+
+# Label each age by its bin
+data <- data %>% mutate(
+  AgeBin = cut(Age, breaks = age_bins, right = FALSE)
+  ) %>%
+  filter(!is.na(AgeBin))
+
+data$AgeBin_index = factor(data$AgeBin,
+                           levels = levels(data$AgeBin),
+                           labels = 1:length(age_labels))
+
+# Calculate prevalence, grouping by age bin
+data.prev <- data %>% EMODAnalyzeR::calculate.prevalence(
+  stratify_columns = c("Year", "AgeBin_index", "AgeBin", "Gender", "scenario_name", "sim.id"),
+  numerator = "Infected",
+  denominator = "Population")
+
+# Calculate mean prevalence across all sim runs
+ageprev.data.mean <- data.prev %>%
+  dplyr::group_by(Year, AgeBin_index, AgeBin, Gender, scenario_name) %>%
+  dplyr::summarize(mean.Prevalence = mean(Prevalence),
+            sd.Prevalence = sd(Prevalence),
+            .groups = 'keep') %>%
+  ungroup() %>%
+  dplyr::mutate(upper = mean.Prevalence + 2*sd.Prevalence,
+                lower = case_when(mean.Prevalence - 2 * sd.Prevalence > 0 ~ mean.Prevalence - 2 * sd.Prevalence,
+                         mean.Prevalence - 2 * sd.Prevalence <= 0 ~ 0)
+                )
+
+# Transform data
+ageprev.data.mean <- ageprev.data.mean %>% mutate(Gender = case_when(Gender==0 ~ "Male", Gender==1 ~ "Female"))
+ageprev.data.mean <- ageprev.data.mean[order(ageprev.data.mean$scenario_name), ]
+ageprev.data.mean$scenario_name <- as.factor(ageprev.data.mean$scenario_name)
+```
+
+```{r}
+ageprev.data.mean %>% 
+  filter(AgeBin_index %in% c(1,2,3,4,5))%>% 
+  arrange(scenario_name, Gender, Year)
+```
+
+Plot prevalence, incidence, ART coverage against calibration targets
+```{r}
+ingest.file.base = "/gpfs/data/bershteynlab/EMOD/citrod01/MWI_calib_20220422/Data/calibration_ingest_form_Malawi_3_node_DTC.xlsm"
+
+obs.prev.sheet.base <- EMODAnalyzeR::read.ingest.sheet(ingest.file.base, "Obs-Prevalence")
+obs.prev.sheet.base <- obs.prev.sheet.base %>% filter(!is.na(AgeBin))
+
+
+obs.prev.sheet.base <- EMODAnalyzeR::read.ingest.sheet(ingest.file.base, "Obs-Prevalence")
+obs.prev.sheet.base <- obs.prev.sheet.base %>% filter(!is.na(AgeBin))
+
+# Reformat the prevalence data:
+obs.prev.sheet.base <- obs.prev.sheet.base %>%
+  filter(AgeBin %in% age_labels) %>%
+  mutate(AgeBin_index = factor(AgeBin, levels = age_labels, labels = 1:length(age_labels)))
+
+obs.prev.sheet.base <- obs.prev.sheet.base %>% filter(AgeBin %in% age_labels) 
+obs.prev.sheet.base <- obs.prev.sheet.base %>% 
+  mutate(AgeBin_index = factor(obs.prev.sheet.base$AgeBin,labels = 1:length(age_labels)))
+
+```
+
+
+```{r, fig.width= 12}
+p.ageprev <- ageprev.data.mean %>% #filter(scenario_name %in% c("carf.m100.f90", "carf.m85.f85")) %>% 
+  mutate(scenario_name = as.factor(scenario_name)) %>% 
+  ggplot() +
+  geom_point(data = obs.prev.sheet.base %>% filter(Year != 2015),
+             mapping = aes(x = AgeBin_index, y = Prevalence), 
+             size = 3, color = 'black', shape = 0,
+             show.legend = FALSE) +
+  geom_errorbar(data = obs.prev.sheet.base %>% filter(Year != 2015),
+             mapping = aes(x = AgeBin_index, ymin = lb, ymax = ub),
+             size = 1, color = 'black',
+             show.legend = FALSE) +
+  # plot means
+  # geom_point(
+  #   mapping = aes(x = AgeBin_index, y = mean.Prevalence, color = scenario_name),
+  #   size=2,
+  #    show.legend = TRUE
+  # ) +
+  geom_line(
+    mapping = aes(x = AgeBin_index, y = mean.Prevalence, color = scenario_name, group = scenario_name),
+    size=1,
+    show.legend = TRUE
+  ) +
+  # geom_errorbar(
+  #   mapping = aes(x=AgeBin_index, ymin=lower, ymax=upper, color=Gender),
+  #   width=.15, size=1,
+  #  show.legend = FALSE) +
+  facet_grid(cols = vars(Gender), rows = vars(Year)) +
+  #xlab("Age") +
+  #ylab("Prevalence") +
+  theme_bw(base_size=24) +
+  guides(fill = guide_legend(keywidth = 2, keyheight = 1)) +
+  scale_x_discrete(
+    breaks = 1:length(age_labels),
+    labels = age_labels
+    #labels = rep("",length(age_labels))
+    ) +
+  #scale_color_manual(values=c("blue", "red"))
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
+  #theme(legend.position="bottom") + 
+  theme(legend.position="bottom",
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        #strip.text.x = element_blank(),
+        #strip.text.y = element_blank()
+        ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(strip.background = element_rect(colour="black", fill="white")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggsave(filename = "/gpfs/data/bershteynlab/EMOD/citrod01/hivsim_paper/models/emod/original/Analysis/age_prevalence_rescaled.pdf",
+       plot = p.ageprev,
+       width = 12,
+       height = 8,
+       units = 'in')
+
+```
+
+
+```{r}
+ingest.file.base = "/gpfs/data/bershteynlab/EMOD/citrod01/MWI_calib_20220422/Data/calibration_ingest_form_Malawi_3_node_DTC.xlsm"
+
+obs.prev.sheet.base <- EMODAnalyzeR::read.ingest.sheet(ingest.file.base, "Obs-Prevalence")
+obs.prev.sheet.base <- obs.prev.sheet.base %>% filter(!is.na(AgeBin))
+
+# Reformat the prevalence data:
+obs.prev.sheet.base <- obs.prev.sheet.base %>% 
+  mutate(AgeBin_index = factor(obs.prev.sheet.base$AgeBin,labels = 1:length(age_labels)))
+
+obs.prev.sheet.base <- obs.prev.sheet.base %>% filter(AgeBin %in% age_labels) 
+obs.prev.sheet.base <- obs.prev.sheet.base %>% 
+  mutate(AgeBin_index = factor(obs.prev.sheet.base$AgeBin,labels = 1:length(age_labels)))
+
+```
+
+
+
+```{r}
+sim.results %>% 
+  filter(Age >= 35) %>% 
+  group_by(scenario_name, sim.ix, Year, Gender, IP_Key.ARTStatus) %>% 
+  summarize(
+    Infected = sum(Infected * pop.scaling.factor),
+    Died_from_HIV = Died_from_HIV * pop.scaling.factor, .groups = 'drop_last') %>% 
+  group_by(scenario_name, Year, Gender, IP_Key.ARTStatus) %>% 
+  summarize(
+    Infected = mean(Infected),
+    Died_from_HIV = mean(Died_from_HIV), .groups = 'drop_last') %>% 
+  mutate(mort = Died_from_HIV/Infected)
+```
+
