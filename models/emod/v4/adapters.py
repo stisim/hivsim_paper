@@ -21,7 +21,10 @@ EMOD′ components on HIVsim's slots (docs/swap_design.md, section 5, steps 6 an
   sex work and STI flag they would have had (`EmodRiskAt.start_history()`), then the network runs a burn-in as a
   warm-up: 5 years of its own steps (end, form, match, acts) with time, ages and the rest of the sim frozen, so the
   queue-entry rates are set from the starting population and frozen before the hybrid's first step, as EMOD's are
-  after its burn-in. The warm-up's relationships carry on into the run. EMOD's own burn-in length (15 years) is too
+  after its burn-in, except that the commercial rates are set from the Risk this history gives each person at the end of
+  EMOD's burn-in (1975.5): with one age bin, they depend only on the available clients per FSW, which were still rising
+  then (sex work began with 1961's debuts), and FSW are the limiting side, so rates from 1985's clients per FSW gave
+  1.25× EMOD′'s commercial relationships per FSW (analysis 12, addendum). The warm-up's relationships carry on into the run. EMOD's own burn-in length (15 years) is too
   long with ages frozen: long relationships pile up in the frozen age groups and the rates set from that population
   stay wrong after it (analysis 12: relationships by type, sex and age within 8% of EMOD′'s at 5 years, 17% at 15). The network reseeds its Numba stream from
   its own generator at each step (`own_stream`), so other Numba code drawing from the shared global stream can't move
@@ -40,7 +43,7 @@ from stisim.data import loaders as stidata
 
 import inputs
 from hiv import EmodHIV
-from network import EmodNetwork, nb_seed
+from network import EmodNetwork, nb_seed, TYPES
 from risk import EmodRisk, LOW, MEDIUM, HIGH
 
 REPO = Path(__file__).resolve().parents[3]
@@ -140,9 +143,10 @@ class EmodHIVOnSti(EmodHIV):
 
 class EmodRiskAt(EmodRisk):
     """ EmodRisk starting in a population that has no history: see `start_history()` """
-    def start_history(self):
+    def start_history(self, then=None):
         """ For those past debut at the start (as the network has drawn it): the STI flag (EMOD's day 1), and the sex
-        work of those whose debut was in or after the year the campaign's listeners start, as if from their debut """
+        work of those whose debut was in or after the year the campaign's listeners start, as if from their debut.
+        With `then` (a year), also returns their uids and the Risk this history gives them in that year """
         ppl, sw, net = self.sim.people, self.inp.sexwork, self.sim.networks[self.netname]
         year = self.t.now('year')
         au = ppl.auids
@@ -160,11 +164,17 @@ class EmodRiskAt(EmodRisk):
         days = np.where(f, sw.dropout[1]['Lambda']*(-np.log(self.rng.random(len(u))))**(1/sw.dropout[1]['Kappa']),
                         sw.dropout[0]['Min'] + self.rng.random(len(u))*(sw.dropout[0]['Max'] - sw.dropout[0]['Min']))
         dropout = uptake + days/365
+        if then is not None:
+            risk_then = self.risk.raw[past].copy()
+            risk_then[np.flatnonzero(ever)[(uptake <= then) & (dropout > then)]] = HIGH
+            risk_then[np.flatnonzero(ever)[dropout <= then]] = MEDIUM
         later, now, done = uptake > year, (uptake <= year) & (dropout > year), dropout <= year
         self.t_uptake[u[later]] = uptake[later]
         self.risk[u[now]] = HIGH
         self.t_dropout[u[now]] = dropout[now]
         self.risk[u[done]] = MEDIUM
+        if then is not None:
+            return past, risk_then
         return
 
 
@@ -177,10 +187,12 @@ class EmodNetworkAt(EmodNetwork):
         risk (str): the name of the `EmodRiskAt` module that gives the starting population its sex work
         warmup (float): days of warm-up (default 5 years; EMOD's own burn-in is `inp.burnin`)
         own_stream (bool): reseed the Numba stream from the module's own generator at each step
+        burnin_risk (bool): set the commercial rates from the sex work the starting population had at the end of EMOD's
+            burn-in (`inp.start` + `inp.burnin`), as EMOD's come from it; else from the sex work at the start, as the other types
     """
-    def __init__(self, inp, risk='emodrisk', warmup=5*365, own_stream=True, **kwargs):
+    def __init__(self, inp, risk='emodrisk', warmup=5*365, own_stream=True, burnin_risk=True, **kwargs):
         super().__init__(inp, **kwargs)
-        self.riskname, self.warmup, self.own_stream = risk, warmup, own_stream
+        self.riskname, self.warmup, self.own_stream, self.burnin_risk = risk, warmup, own_stream, burnin_risk
         self.warmed = False
         return
 
@@ -192,12 +204,20 @@ class EmodNetworkAt(EmodNetwork):
         if self.own_stream:
             nb_seed(int(self.rng.integers(2**31)))
         self.set_people() # Debut ages, so the risk module can give the starting population its history
-        self.sim.interventions[self.riskname].start_history()
+        hist = self.sim.interventions[self.riskname].start_history(then=self.inp.start + self.inp.burnin/365)
         n = int(np.ceil((self.inp.burnin if self.warmup is None else self.warmup)/self.dt_days))
         record, self.record = self.record, False
         for _ in range(n):
             super().step()
         self.record = record
+        if self.burnin_risk: # Commercial rates from the sex work at the end of EMOD's burn-in (flags and maxima drawn for it, then redrawn for the start's)
+            past, risk_then = hist
+            risk_now = self.risk.raw[past].copy()
+            self.risk[past] = risk_then
+            self.set_people()
+            self.set_rates(self.eligible(), types=[TYPES.index('COMMERCIAL')])
+            self.risk[past] = risk_now
+            self.set_people()
         self.burnin_left = 0 # Rates frozen from here, as after EMOD's burn-in
         for k in self.results.keys(): # The warm-up's counts aren't the first step's
             if k.startswith('new_'):
