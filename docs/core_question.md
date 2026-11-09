@@ -23,3 +23,17 @@ Year: Robyn's focus is 2020 (inside the years with treatment data, where Optima�
   - EMOD: our rerun of the PR #1 files gives 50–55% of transmissions from people who interrupted ART in 2020/2024 (analysis 09), against ~18% in the published EMOD. That fits Daniel's view (PR #4) that the dropout trap (and the mortality factor) came in after the calibration. The fixed variant (D10, analysis 17) should be compared with Figure 3A.
   - Optima: Optima′ is verified against our Optima rerun for 2000–2020 (within 2%), but transmissions by source stage have not yet been computed from either.
 - Optima's large "diagnosed, never treated" share around 2015–2023 (the yellow band in Figure 3A) is a structural feature to explain: in Optima, diagnosed people wait in a care state before ART; in EMOD, linkage is fast or people are lost.
+
+## Do our two ends reproduce Figure 3A? (9 Nov, analyses on branch `starsim-rc3`)
+
+| 2020 shares: undiagnosed / diagnosed never treated / on ART / interrupted | New infections | Source |
+|---|---|---|
+| **Published EMOD:** 38.5 / 3.7 / 40.6 / 17.1 | 30,582 (2024) | `common/fig3a_malawi.csv` (digitised) |
+| EMOD′ with Daniel's PR #1 files (dropout trap, mortality bug copied) | 32 / 3 / 14 / 51 | 162k | analysis 17 |
+| **EMOD′ with Daniel's two fixes (`emod_fixed`), uncalibrated:** 35.6 / 3.4 / 48.1 / 12.9 | ~42k (2024, census-rescaled) | analysis 17 |
+| **Published Optima:** 45.2 / 28.2 / 17.6 / 9.0 | 8,459 (2024) | `common/fig3a_malawi.csv` |
+| Our Optima (2022 project) and Optima′ (sexual): 42.3 / 40.7 / 11.4 / 5.7 | 29,191 (2024, projection with inputs frozen at 2020) | analysis 19 |
+
+- **EMOD:** Daniel's two fixes (PR #4) bring the split close to the published one without refitting, and fit the targets far better (score 108 → 7.5). This supports his view that the published model didn't have those bugs. The total is still ~40% high. Pending Daniel's answer on which files were calibrated.
+- **Optima:** our project is a different calibration from MIHPSA's (shares differ from 2000 on; totals 2020 ~30k vs ~22k, and 2024 projections need inputs past 2020). We need MIHPSA's Optima Malawi project from Rowan. Optima's "diagnosed, never treated" band is people diagnosed but not yet linked to care (Optima's `linktocare` rises to 3.16 years by 2020).
+- **The first swap path (HIVsim → EMOD′ copied-bug, analysis 16):** the cascade step carries almost all of the share difference; the HIV and network steps move the shares a lot in opposite directions and nearly cancel; demography multiplies infections without moving shares.
