@@ -85,6 +85,28 @@ class CascadeHost(ABC):
     @abstractmethod
     def start_prep(self, uids, efficacy, days): ...
 
+    # Places in care, for pathways by rate and level (pathways.py). Defaults: the host has no care or lost of its own
+    # (the cascade keeps its own record of them), CD4 bands from cd4(), and the moves change nothing in the host
+    def care_place(self, uids):
+        """ Each one's place in care (an index into pathways.PLACES: 0 uninfected, then undx, dx, care, lost, svl, usvl) if the host keeps it, else None """
+        return None
+    def cd4_band(self, uids):
+        """ Each one's CD4 band (an index into rates.BANDS: acute, gt500, gt350, gt200, gt50, lt50); by default from cd4(), with no acute band """
+        c = self.cd4(uids)
+        return np.select([c >= 500, c >= 350, c >= 200, c >= 50], [1, 2, 3, 4], 5)
+    def rate_scale(self, uids):
+        """ The share of a cascade rate the host applies to each (default 1): a model that moves people only among the survivors of a longer step (Optima's 0.2 years) gives that survival """
+        return np.ones(len(uids))
+    def population(self, uids):
+        """ Each one's Optima population (a name, as models/optima/v4/poplabel.py's), for rows by population """
+        raise NotImplementedError(f'{type(self).__name__} has no Optima populations, which a row by population needs')
+    def link_to_care(self, uids):
+        """ Into care (pre-ART), from diagnosed or lost """
+    def lose_from_care(self, uids):
+        """ Out of care (pre-ART) into lost """
+    def switch_arm(self, uids, arm):
+        """ Those on ART into arm `arm` (failure, or regaining suppression) """
+
     # Measurement (common/transmission.py), not used by the cascade
     def cascade_stage(self, uids):
         """ Each one's place in the cascade now: dict of bool arrays `diagnosed`, `on_art` and `suppressive` (on ART in the suppressive arm) """

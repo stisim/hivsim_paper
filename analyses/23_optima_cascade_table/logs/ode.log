@@ -1,0 +1,10 @@
+ode_own: 49.2 s
+ode_table: 49.1 s
+== ODE: the table against Optima′'s own cascade, 2000-2020 (table/own - 1) ==
+PLHIV                    mean -5.87e-14%, max |%| 1.11e-13; 2020: 1,112,243 vs 1,112,243
+Diagnosed                mean -2.38e-14%, max |%| 1.11e-13; 2020: 1,001,173 vs 1,001,173
+On ART                   mean -4.65e-14%, max |%| 2.78e-13; 2020: 854,992 vs 854,992
+Suppressed               mean -4.71e-14%, max |%| 2.44e-13; 2020: 790,750 vs 790,750
+New infections (year)    mean -1.69e-14%, max |%| 8.22e-13; 2020: 33,564 vs 33,564
+HIV deaths (year)        mean -4.23e-14%, max |%| 9.99e-14; 2020: 9,487 vs 9,487
+Figure 3A source shares (ODE mapping: care with dx, lost = interrupted): max |difference| 6.04e-13 points; 2020 own 42.13 / 39.35 / 12.73 / 5.79; table 42.13 / 39.35 / 12.73 / 5.79

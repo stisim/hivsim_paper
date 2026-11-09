@@ -8,7 +8,8 @@ puts them together in the canonical order; `malawi.make_sim()` and `swap.make_si
           and test_scale, test_rel_m, test_start (testing), condom_scale (condoms)
     ctx:  from the runner, `choice`, `models`, `pars`, `seed`, `stop`, `cell`; from make_sim(), also: n_agents (default
           10,000); `cascade`: 'own' (HIVsim's testing, ART and VMMC; the default) or 'condensed' (the condensed cascade,
-          with `params`, by default EMOD's Malawi table)
+          with `params`, by default EMOD's Malawi table), or 'table' (pathways by rate and level, common/cascade/pathways.py,
+          with `params`, e.g. Optima's table)
 
 Fine slots, and the runner's coarse ones made of them: RN = R + N, V = T + H + S. Where one module covers several
 slots, the first slot it belongs to builds it, and the others give nothing:
@@ -160,6 +161,9 @@ def make_C(pars, ctx):
             intvs.append(sti.VMMC(coverage=vmmc))
         return dict(interventions=intvs)
     import swap
+    if opt(ctx, 'cascade', 'own') == 'table': # A cascade of pathways by rate and level (e.g. Optima's: common/cascade/pathways.py)
+        from common.cascade.pathways import TableCascade
+        return dict(interventions=for_cascade(pars, ctx)['interventions'] + [TableCascade(opt(ctx, 'params', None), StisimHost)])
     from common.cascade.cascade import condensed_cascade
     params = opt(ctx, 'params', None) or swap.emod_table()
     return dict(interventions=for_cascade(pars, ctx)['interventions'] + condensed_cascade(params, StisimHost))

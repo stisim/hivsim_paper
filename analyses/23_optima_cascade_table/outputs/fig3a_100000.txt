@@ -1,0 +1,7 @@
+== Figure 3A source shares (%), agents: table (16 seeds) vs own cascade (analysis 22, 16 seeds), and the ODE (own cascade; lost = interrupted) ==
+2000: undiagnosed: 52.0 vs 51.7 (z +0.5), ODE 52.1; diagnosed_never_treated: 46.5 vs 47.0 (z -0.6), ODE 47.2; on_art: 0.4 vs 0.4 (z +0.7), ODE 0.4; interrupted: 1.0 vs 1.0 (z +0.1), ODE 0.4
+2005: undiagnosed: 38.1 vs 38.1 (z +0.0), ODE 37.6; diagnosed_never_treated: 58.7 vs 59.0 (z -0.3), ODE 59.4; on_art: 2.4 vs 2.2 (z +0.8), ODE 2.2; interrupted: 0.8 vs 0.7 (z +0.2), ODE 0.8
+2010: undiagnosed: 37.2 vs 38.0 (z -1.2), ODE 37.8; diagnosed_never_treated: 43.1 vs 41.2 (z +2.2), ODE 41.2; on_art: 18.2 vs 19.4 (z -1.7), ODE 19.2; interrupted: 1.4 vs 1.4 (z -0.2), ODE 1.8
+2015: undiagnosed: 39.6 vs 40.3 (z -0.7), ODE 39.8; diagnosed_never_treated: 34.0 vs 32.1 (z +1.9), ODE 32.5; on_art: 23.1 vs 24.5 (z -1.9), ODE 23.8; interrupted: 3.3 vs 3.1 (z +0.6), ODE 3.9
+2020: undiagnosed: 39.8 vs 43.3 (z -3.3), ODE 42.1; diagnosed_never_treated: 43.2 vs 39.4 (z +3.3), ODE 39.3; on_art: 11.4 vs 12.2 (z -1.2), ODE 12.7; interrupted: 5.6 vs 5.1 (z +0.9), ODE 5.8
+Over 2000-2020: mean |table - own| 0.75 points, max 3.79; |z| > 2 in 15% of category-years

@@ -18,6 +18,9 @@ How the interface maps onto Optima′ (each agent has a population, `people.pop`
 - Not representable per agent in Optima′ (raise if asked for anyone): pregnancy (Optima's births are a rate per woman,
   with no mother), so `pregnant()` is False and `twelve_weeks_pregnant()` and `six_weeks_old()` are empty; PMTCT and
   PrEP (in Optima, coverages by population inside births and the force of infection).
+- Places in care (common/cascade/pathways.py) are Optima's states: `care_place()`, `cd4_band()` and `population()`
+  read them, and `rate_scale()` is the survival of Optima's 0.2-year step, among whom Optima moves people; `link_to_care` moves dx and lost into care, `lose_from_care` care into lost, `switch_arm` between usvl
+  and svl, each in its CD4 band.
 - `cascade_stage()`: `diagnosed` (not undx), `on_art` (usvl or svl), `suppressive` (svl), `ever_treated`, and
   `category`, Figure 3A's (docs/core_question.md): undiagnosed; diagnosed, never treated (dx, and care and lost
   never on ART); on ART; interrupted (care and lost who have been on ART), analysis 19's mapping D8.
@@ -35,6 +38,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from common.cascade.interface import CascadeHost # noqa: E402
+from common.cascade.pathways import PLACES # noqa: E402
 
 CD4_RANGE = dict(acute=(500, 1000), gt500=(500, 1000), gt350=(350, 500), gt200=(200, 350), gt50=(50, 200), lt50=(0, 50))
 INFECTED = [f'{c}_{k}' for c in opp.UNTREATED + opp.TREATED for k in opp.CD4]
@@ -262,6 +266,45 @@ class OptimaHost(CascadeHost):
     def start_prep(self, uids, efficacy, days):
         if len(uids):
             raise NotImplementedError('Optima′ has no PrEP per person (a coverage by population in its force of infection)')
+
+    # Places in care (common/cascade/pathways.py): Optima′'s own states
+    def care_place(self, uids):
+        out = np.zeros(len(uids), int)
+        for i, c in enumerate(PLACES[1:], 1):
+            out[self.state_in(uids, [c])] = i
+        return out
+
+    def cd4_band(self, uids):
+        out = np.zeros(len(uids), int)
+        for i, k in enumerate(opp.CD4):
+            out[self.state_in(uids, opp.UNTREATED + opp.TREATED, [k])] = i
+        return out
+
+    def population(self, uids):
+        return np.array(pl.POPS)[self.pop(uids)]
+
+    def rate_scale(self, uids):
+        """ Optima′ takes its cascade's moves among those who survive Optima's step of 0.2 years (HIV death by CD4 band, and on ART, then background death by population and year) """
+        if not hasattr(self, '_death'):
+            sp = opp.load().simpars
+            self._tvec, self._bg = sp['tvec'], np.asarray(sp['death'], float)*opp.REF_DT
+            d = np.array([sp[f'death{k}'] for k in opp.CD4])*opp.REF_DT
+            self._death = dict(untreated=d, usvl=d*sp['deathusvl'], svl=d*sp['deathsvl'])
+        band, place = self.cd4_band(uids), self.care_place(uids)
+        d = np.where(place == PLACES.index('svl'), self._death['svl'][band], np.where(place == PLACES.index('usvl'), self._death['usvl'][band], self._death['untreated'][band]))
+        bg = np.array([np.interp(self.sim.t.now('year'), self._tvec, row) for row in self._bg])[self.pop(uids)]
+        return (1 - d)*(1 - bg)
+
+    def link_to_care(self, uids):
+        for c in ('dx', 'lost'):
+            self.move(uids, c, 'care')
+
+    def lose_from_care(self, uids):
+        self.move(uids, 'care', 'lost')
+
+    def switch_arm(self, uids, arm):
+        src, dst = ('usvl', 'svl') if arm == 'suppressive' else ('svl', 'usvl')
+        self.move(uids, src, dst)
 
     # Measurement
     def cascade_stage(self, uids):
