@@ -1,0 +1,16 @@
+# 24: The cascade step (C) between EMOD′-fixed and Optima′, both ways
+
+**Question** (`docs/core_question.md`): how much of the EMOD–Optima difference in Bansi-Matharu 2025 Figure 3A (Malawi, 2020: new infections by the source's status, undiagnosed / diagnosed never treated / on ART / interrupted, and total new infections) does the care cascade carry on its own, and does that depend on which model's other components it sits in?
+
+**Ends.** EMOD′-fixed (`models/emod/v4/components_fixed.py`, analysis 17: Daniel's two fixes, close to the published EMOD split) and Optima′ (our 2022 Optima project; analysis 19: 42.3 / 40.7 / 11.4 / 5.7 in 2020 for our Optima, not the published 45.2 / 28.2 / 17.6 / 9.0). The gap is measured between our two ends with the same measurement, not the published one; the published values are given alongside.
+
+**Runs** (Starsim `/tmp/ss-nov09`, STIsim `/tmp/sti-613` on PYTHONPATH, env `hp_rc3`; outputs for 2020 and 2024):
+1. **Optima's cascade on EMOD′-fixed** (`run.py emod`, through the runner): EMOD′-fixed with its own (condensed) cascade against EMOD′-fixed with Optima's table (`common/cascade/tables/malawi_optima_params.csv`, `pathways.TableCascade` on `EmodHost`). EMOD′ sets 0, 25, 50 × 16 seeds (48 cells), paired seeds (each cell has one seed for both arms). The C slot from Optima is a new slot-factory file, `models/optima/v4/components.py` (only `make_C`). On EMOD′:
+   - Optima's groups by population come from the population label (`poplabel.emod_label`, analysis 22) on EMOD′'s people;
+   - care and lost live only in the table cascade's own record; `switch_arm` is a no-op (the arm drawn at the start stays);
+   - the number on ART is Optima's (people), scaled by the people per agent (EMOD′ runs at 1% with `pop_scale` 1, so `TableCascade` gets a `scale` argument; default unchanged: `sim.current_scale`);
+   - PMTCT, PrEP and PEP coverages are skipped (no per-person form); EMOD's VMMC programme and PrEP, which are part of EMOD's campaign (C), go with it. Reported: mother-to-child infections (new infections − sexual transmissions) by arm.
+2. **EMOD′-fixed's cascade in Optima′** (`run.py ode`, `run.py abm`): Optima′ with its own cascade against Optima′ with EMOD′-fixed's condensed table (`extract_cascade.extract` on `components_fixed.pars(pid)`, which gives `p_restart` = 1 from Daniel's re-enrolment event), sets 0, 25, 50; also with the copied-bug table (set 0, analysis 08's) and without VMMC/PrEP flows for reference. As an ODE (exact) and as agents (100,000 agents, 16 seeds per set; own cascade with the same seeds), with `Outputs(OptimaHost)` for the Figure 3A categories (D8, ever-treated tracer).
+3. **Analysis 23's open item:** Optima′ agents with Optima's table against its own cascade, 64 seeds each at 100,000 agents in the same environment and code, against the ODE: is the ~1% PLHIV / new-infections deficit real?
+
+**Reported:** per direction, paired Δ (95% CI over cells) in new infections (all ages, scaled) and each Figure 3A share, 2020 and 2024; the share of our ends' gap in each quantity that the cascade carries in that direction; whether the effect is symmetric. Counts Δs need care (analyses 14, 21): shares and counts both reported.
