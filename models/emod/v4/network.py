@@ -338,31 +338,40 @@ class EmodNetwork(ss.SexualNet):
             q[k] = q[k][keep]
         return
 
-    def form(self):
-        """ Eligibility, queue entry (rates set during the burn-in) and matching """
-        inp, ppl = self.inp, self.sim.people
+    def eligible(self):
+        """ Those past debut with a Risk, and their relationships, queue entries, maxima, flags, node, sex and age bins """
+        ppl = self.sim.people
         auids = ppl.auids
         uids = auids[(self.risk.raw[auids] >= 0) & (ppl.age.raw[auids] >= self.debut.raw[auids])]
-        a, q, mx = self.n.raw[uids], self.q.raw[uids], self.maxrel.raw[uids]
         flags = self.flags.raw[uids].astype(np.int64)
-        node, female = self.node.raw[uids], ppl.female.raw[uids].astype(int)
-        bins = self.bins(uids)
-        has_flag = (flags[:, None] >> np.arange(NT)) & 1
+        return sc.objdict(uids=uids, a=self.n.raw[uids], q=self.q.raw[uids], mx=self.maxrel.raw[uids], flags=flags, node=self.node.raw[uids],
+                          female=ppl.female.raw[uids].astype(int), bins=self.bins(uids), has_flag=(flags[:, None] >> np.arange(NT)) & 1)
 
+    def set_rates(self, el, types=range(NT)):
+        """ The queue-entry rates per person, from those available now (`el` from `eligible()`), as during the burn-in """
+        avail = available_all(el.a, el.q, el.mx, el.flags)
+        for n in range(3):
+            for t in types:
+                typ = self.inp.types[t]
+                m = avail[:, t] & (el.node == n)
+                nb_ = self.nbins[t]
+                counts = np.zeros((2, nb_, 2)) # Sex, bin, flag
+                np.add.at(counts, (el.female[m], el.bins[m, t], el.has_flag[m, t]), 1)
+                desired = 0.5*typ.rate*counts.sum()*np.array(typ.marginal) # Sex × bin
+                eff = np.array(typ.rate_ratio)[:, None]*counts[:, :, 1] + counts[:, :, 0]
+                low = np.divide(desired, eff, out=np.zeros_like(desired), where=eff > 0)
+                self.rates[n, t, :, :nb_, 0] = low
+                self.rates[n, t, :, :nb_, 1] = np.array(typ.rate_ratio)[:, None]*low
+        return
+
+    def form(self):
+        """ Eligibility, queue entry (rates set during the burn-in) and matching """
+        inp = self.inp
+        el = self.eligible()
+        uids, a, q, mx, flags, node, female, bins, has_flag = el.values()
         if self.burnin_left > 0:
             self.burnin_left -= self.dt_days
-            avail = available_all(a, q, mx, flags)
-            for n in range(3):
-                for t, typ in enumerate(inp.types):
-                    m = avail[:, t] & (node == n)
-                    nb_ = self.nbins[t]
-                    counts = np.zeros((2, nb_, 2)) # Sex, bin, flag
-                    np.add.at(counts, (female[m], bins[m, t], has_flag[m, t]), 1)
-                    desired = 0.5*typ.rate*counts.sum()*np.array(typ.marginal) # Sex × bin
-                    eff = np.array(typ.rate_ratio)[:, None]*counts[:, :, 1] + counts[:, :, 0]
-                    low = np.divide(desired, eff, out=np.zeros_like(desired), where=eff > 0)
-                    self.rates[n, t, :, :nb_, 0] = low
-                    self.rates[n, t, :, :nb_, 1] = np.array(typ.rate_ratio)[:, None]*low
+            self.set_rates(el)
 
         rates = self.rates[node[:, None], np.arange(NT)[None, :], female[:, None], bins, has_flag]
         ei, et = nb_enter(rates, a, q, mx, flags, self.dt_days)
