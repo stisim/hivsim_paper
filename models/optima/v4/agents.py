@@ -151,12 +151,12 @@ class CascadeTargets(opp.CascadeTargets):
 
 
 def make_sim(ref=None, components=('demography', 'natural_history', 'transmission', 'cascade', 'treatment', 'mtct'),
-             dt=0.02, end=2030, n_agents=100_000, solver='abm', rand_seed=1, **kwargs):
-    """ Optima′ (Optima's own cascade) with the agent versions of its forcing and cascade rules: as agents, or with solver='ode' as an ODE """
+             dt=0.02, end=2030, n_agents=100_000, solver='abm', rand_seed=1, interventions=(), **kwargs):
+    """ Optima′ (Optima's own cascade) with the agent versions of its forcing and cascade rules: as agents, or with solver='ode' as an ODE; `interventions` run after them """
     ref = ref or opp.load()
     fp = ForcePopsize(ref) if 'demography' in components and ref.simpars['forcepopsize'] else None
     dis, st = opp.make_disease(ref, components, extra=fp.transitions if fp else None)
-    interventions = [CascadeTargets(ref, name='cascade_targets')] if 'treatment' in components else []
+    interventions = ([CascadeTargets(ref, name='cascade_targets')] if 'treatment' in components else []) + list(interventions)
     total = ref.raw['people'][:, :, 0].sum()
     agents = dict(n_agents=n_agents, rand_seed=rand_seed) if solver == 'abm' else {}
     return ss.Sim(dis, interventions=interventions, solver=solver, start=1990, stop=end, dt=dt, total_pop=total, verbose=0, **agents, **kwargs)
