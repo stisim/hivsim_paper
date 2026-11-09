@@ -150,12 +150,13 @@ def natural_history(files, cp):
               Report_HIV_ByAgeAndGender_Collect_Circumcision_Data=1, Report_Transmission=1, Report_HIV_Mortality=1)
 
 
-def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False, report_ip=(), transmission=False):
-    """Return {filename: json} for one simulation."""
-    config = json.load(open(orig / 'InputFiles' / 'Templates' / 'config.json'))
-    files = {CAMPAIGN: json.load(open(orig / 'InputFiles' / 'Templates' / CAMPAIGN))}
+def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False, report_ip=(), transmission=False, inputs=None):
+    """Return {filename: json} for one simulation; inputs: a copy of source/InputFiles to read instead"""
+    inputs = Path(inputs) if inputs else orig / 'InputFiles'
+    config = json.load(open(inputs / 'Templates' / 'config.json'))
+    files = {CAMPAIGN: json.load(open(inputs / 'Templates' / CAMPAIGN))}
     for f in DEMOG:
-        files[Path(f).name] = json.load(open(orig / 'InputFiles' / f))
+        files[Path(f).name] = json.load(open(inputs / f))
     cp = config['parameters']
     for key, value in table.items():
         tag, *path = key.split('.')
@@ -195,12 +196,12 @@ def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat
 
 
 def run_one(args):
-    pid, table, run_number, years, outdir, network, no_hiv, nat_hist, report_ip, transmission, seed = args
+    pid, table, run_number, years, outdir, network, no_hiv, nat_hist, report_ip, transmission, seed, inputs = args
     simdir = outdir / (f'set{pid:03d}' if seed is None else f'set{pid:03d}_s{seed}')
     if seed is not None:
         run_number = (run_number*10 + seed) % 65536 # As EMOD′'s seeds (analyses 05-06), within EMOD's range
     simdir.mkdir(parents=True, exist_ok=True)
-    for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist, report_ip, transmission).items():
+    for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist, report_ip, transmission, inputs).items():
         json.dump(obj, open(simdir / name, 'w'), indent=1)
     env = dict(os.environ, LD_LIBRARY_PATH=f"{bindir / 'lib'}:{Path.home() / 'miniconda/envs/emod/lib'}",
                UCX_TLS='self,sm,tcp', UCX_NET_DEVICES='lo')  # Azure NIC breaks MPI init otherwise
@@ -223,6 +224,7 @@ def main():
     ap.add_argument('--natural-history', action='store_true', help='campaign reduced to sex work, STI co-infection, traditional circumcision and seeding; report transmissions and HIV deaths')
     ap.add_argument('--transmission', action='store_true', help="Daniel's transmission reports (TransmissionReport, diagnosis and ART events, ReportHIVART), from 1960")
     ap.add_argument('--seeds', type=int, nargs='*', help='run each set with these seeds (Run_Number = (run_number*10 + seed) mod 65536, folders setNNN_sK); default: its own run_number')
+    ap.add_argument('--inputs', help='read model inputs from this copy of source/InputFiles (e.g. with fixes) instead')
     a = ap.parse_args()
 
     sets = pd.read_csv(orig / 'resampled_parameter_sets_20230424.csv')
@@ -231,7 +233,7 @@ def main():
     meta = ['iteration_number', 'likelihood', 'parameterization_id', 'run_number', 'sim_id']
     pmap = load_param_map()
     outdir = outroot / a.out
-    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv, a.natural_history, a.report_ip, a.transmission, seed)
+    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv, a.natural_history, a.report_ip, a.transmission, seed, a.inputs)
             for _, r in sets.iterrows() for seed in (a.seeds or [None])]
     with ProcessPoolExecutor(min(a.cores, len(jobs))) as ex:
         for pid, rc, dt in ex.map(run_one, jobs):
