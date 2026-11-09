@@ -5,12 +5,17 @@ One description of an HIV care cascade (testing, staging and linkage, pre-ART, A
 | File | What it is |
 |---|---|
 | `params.py` | The table (one row per pathway parameter: constants, sigmoids, steps, linear series, delays) and the flows table (VMMC and PrEP numbers by group and period); `Params` reads them |
-| `tables/` | Tables for Malawi: `malawi_emod_set000_{params,flows}.csv`, EMOD's campaign for parameter set 0 (`models/emod/v4/extract_cascade.py`) |
+| `tables/` | Tables for Malawi: `malawi_emod_set000_{params,flows}.csv`, EMOD's campaign for parameter set 0 (`models/emod/v4/extract_cascade.py`); `malawi_optima_params.csv`, Optima's own cascade (`models/optima/v4/extract_cascade.py`) |
 | `interface.py` | `CascadeHost`: what the cascade needs from an agent-based model (people, the events of a step, HIV) |
 | `cascade.py` | The cascade for agents, as Starsim deliveries acting through a `CascadeHost`; one place in care per person |
 | `rates.py` | The cascade for compartmental models: the table as rates between care states, by CD4 band, group and year |
+| `pathways.py` | Pathways by rate and level (`rate`, `target`, `hold` rows: Optima's kind of cascade) for agents, as one intervention acting through a `CascadeHost` |
 
 EMOD′ runs `cascade.py` (`models/emod/v4/cascade_host.py`); Optima′ runs `rates.py` (`optima_prime.make_sim(cascade=Params(...))`).
+
+## Pathways by rate and level (`pathways.py`, `rates.py`)
+
+A table can also give a cascade as rates between places in care and rules on levels (params.py's `rate`, `target`, `hold`; Optima's own cascade is `tables/malawi_optima_params.csv`). Places in care are Optima's states (undx, dx, care, lost, svl, usvl). As agents (`pathways.TableCascade(params, host)`), each step those in a row's places and group (sex, ages, CD4 band, Optima population) move at its rate, through the host (`test`, `link_to_care`, `lose_from_care`, `start_art`, `stop_art`, `switch_arm`), and the number on ART and held shares are then met by moving each person with a share's chance, as Optima′'s `CascadeTargets`. A host that keeps no care or lost of its own (EMOD′, HIVsim) leaves them to the cascade's record, and its moves into and out of care and between arms change nothing in it. As compartments, `CompartmentalCascade.path_rates`, `path_numbers` and `targets` give the same; Optima′ running the table (`optima_prime.make_sim(cascade=Params(...))`) is its own cascade to rounding (analysis 23).
 
 ## The compartmental mapping (`rates.py`)
 
@@ -47,7 +52,7 @@ Care states: **undx**; **dx**, diagnosed but not in care (the cascade's none, up
 
 - Per-person schedules and memory: the next test date, the lowest CD4, the PMTCT window of each mother, repeated first symptoms after ART.
 - Extra event-triggered testing pathways (`testing=` in `cascade.py`) whose trigger isn't a transition of the host.
-- Cascade states that are levels, not rates (the number on ART, proportions held fixed): the table has none; Optima's own (`CascadeTargets`) are off when a table is used.
+- Cascade states that are levels, not rates (the number on ART, proportions held fixed), in the condensed pathways: they are `target` and `hold` rows (below).
 
 ### Other cascades
 

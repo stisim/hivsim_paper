@@ -3,6 +3,8 @@ Analysis 23: Optima's cascade as a table (see README.md)
 
     python run.py ode              # Optima′ as an ODE: its own cascade, and the table (common/cascade/tables/malawi_optima_params.csv)
     python run.py abm SEED [N]     # Optima′ as agents running the table through OptimaHost (common/cascade/pathways.py)
+    python run.py outputs SEED [N] # As abm, with Outputs(OptimaHost): sources by Figure 3A category
+    python run.py fig3a            # Their shares against analysis 22's (own cascade)
     python run.py compare [N]      # Tables: ODE table vs own; agents table vs analysis 20's agents with the own cascade
     PYTHONPATH=/tmp/sti-613:/tmp/ss-nov09 python run.py smoke    # The table on HIVsim's people (runs; not interpreted)
 """
@@ -95,6 +97,39 @@ def compare(n=100_000):
     print('\n'.join(lines))
 
 
+def run_outputs(seed, n=100_000):
+    """ As run_abm, with Outputs(OptimaHost): each year's sexual transmissions by the source's Figure 3A category (as analysis 22's, with Optima's own cascade) """
+    import host as H
+    from common.cascade.pathways import TableCascade
+    from common.outputs import Outputs
+    T = sc.timer()
+    P = Params(TABLE)
+    sim = ag.make_sim(n_agents=n, rand_seed=seed, end=END, cascade=P, interventions=[TableCascade(P, H.OptimaHost), H.OptimaTracker()], analyzers=[Outputs(H.OptimaHost)])
+    sim.run()
+    srcs = sim.analyzers.outputs.host.sources
+    yr = np.floor(np.concatenate([np.full(len(st), t) for t, st, _ in srcs]) + 1e-9).astype(int)
+    cat = pd.crosstab(yr, np.concatenate([c for _, _, c in srcs])).reindex(columns=FIG3A, fill_value=0)
+    sc.save(OUT / f'outputs_{n}_{seed}.obj', sc.objdict(by_category=cat, time=T.toc(output=True)))
+    print(f'outputs seed {seed}: {T.toc(output=True):.0f} s')
+
+
+def compare_fig3a(n=100_000):
+    """ Figure 3A source shares (D8) as agents: the table against analysis 22's own cascade (16 seeds), and the ODE """
+    sh = lambda d: 100*d.div(d.sum(axis=1), axis=0)
+    tb = np.array([sh(sc.load(f).by_category.loc[YRS]).to_numpy() for f in sorted(OUT.glob(f'outputs_{n}_*.obj'))])
+    ow = np.array([sh(sc.load(f).by_category.loc[YRS]).to_numpy() for f in sorted((REPO / 'analyses' / '22_optima_host' / 'outputs').glob(f'outputs_{n}_*.obj'))])
+    ode = shares(sc.load(OUT / 'ode_own.obj').by_state.loc[YRS]).to_numpy()
+    se = np.sqrt(tb.var(0, ddof=1)/len(tb) + ow.var(0, ddof=1)/len(ow))
+    z = (tb.mean(0) - ow.mean(0))/np.maximum(se, 1e-9)
+    lines = [f'== Figure 3A source shares (%), agents: table ({len(tb)} seeds) vs own cascade (analysis 22, {len(ow)} seeds), and the ODE (own cascade; lost = interrupted) ==']
+    for y in (2000, 2005, 2010, 2015, 2020):
+        i = list(YRS).index(y)
+        lines.append(f'{y}: ' + '; '.join(f'{c}: {tb[:, i, j].mean():.1f} vs {ow[:, i, j].mean():.1f} (z {z[i, j]:+.1f}), ODE {ode[i, j]:.1f}' for j, c in enumerate(FIG3A)))
+    lines.append(f'Over 2000-2020: mean |table - own| {np.abs(tb.mean(0) - ow.mean(0)).mean():.2f} points, max {np.abs(tb.mean(0) - ow.mean(0)).max():.2f}; |z| > 2 in {np.mean(np.abs(z) > 2)*100:.0f}% of category-years')
+    (OUT / f'fig3a_{n}.txt').write_text('\n'.join(lines) + '\n')
+    print('\n'.join(lines))
+
+
 def smoke_hivsim(n=10_000):
     """ The table on HIVsim's people (StisimHost, which has no care or lost of its own and keeps the ART arm): it runs; not interpreted """
     sys.path.insert(0, str(REPO / 'models' / 'hivsim'))
@@ -119,5 +154,9 @@ if __name__ == '__main__':
         run_abm(int(sys.argv[2]), int(sys.argv[3]) if len(sys.argv) > 3 else 100_000)
     elif cmd == 'compare':
         compare(int(sys.argv[2]) if len(sys.argv) > 2 else 100_000)
+    elif cmd == 'outputs':
+        run_outputs(int(sys.argv[2]), int(sys.argv[3]) if len(sys.argv) > 3 else 100_000)
+    elif cmd == 'fig3a':
+        compare_fig3a()
     elif cmd == 'smoke':
         smoke_hivsim()
