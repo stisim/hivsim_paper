@@ -10,11 +10,8 @@ import sciris as sc
 import starsim as ss
 
 import inputs
-from demography import EmodDemography
-from network import EmodNetwork, KEYS, available_all
-from risk import EmodRisk
-from hiv import EmodHIV
-from cascade import EmodCascade
+import components # Also imports cascade.py, before common/ (whose cascade is a package) can hide it
+from network import KEYS, available_all
 
 AGES = np.arange(0, 70, 5) # Lower edges of the report's age bins, as in the EMOD run
 
@@ -71,28 +68,11 @@ def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cas
     """ EMOD′ for parameter set `pid`: its demography; with `network`, its sexual network and Risk; with `hiv`, HIV;
     with `cascade`, the rest of the campaign (testing, care, ART, VMMC, PrEP, PMTCT), and `EmodReport`; with `compiled`
     as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (cascade.py); with
-    `condensed` instead, the condensed cascade (common/cascade) with the set's parameters (extract_cascade.py) """
-    inp = inputs.load(pid)
-    mods = dict(networks=EmodNetwork(inp, record=record), interventions=[EmodRisk(inp)]) if network or hiv or cascade else {}
-    if hiv or cascade:
-        mods['diseases'] = EmodHIV(inp, record=record)
-    if cascade and compiled:
-        from compile_campaign import compile_campaign
-        holder, deliveries = compile_campaign(inp)
-        mods['interventions'] += [holder] + deliveries
-    elif cascade and condensed:
-        from cascade_host import EmodHost
-        from extract_cascade import extract
-        from common.cascade.cascade import condensed_cascade
-        from common.cascade.params import Params
-        mods['interventions'] += condensed_cascade(Params(*extract(inp)), EmodHost)
-    elif cascade:
-        mods['interventions'].append(EmodCascade(inp))
-    if cascade:
-        kwargs['analyzers'] = [Snapshots(), EmodReport()] + sc.tolist(kwargs.get('analyzers'))
-    kwargs.setdefault('analyzers', Snapshots())
-    return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0, aging=False, # EmodDemography ages people as EMOD does
-                  demographics=EmodDemography(inp), **mods, **kwargs)
+    `condensed` instead, the condensed cascade (common/cascade) with the set's parameters (extract_cascade.py).
+    Built from the slot factories (components.py) """
+    cx = ('compiled' if compiled else 'condensed' if condensed else 'interpreted') if cascade else None
+    return components.make_sim(inputs.load(pid), seed=seed, stop=stop, record=record, network=network, hiv=hiv, cascade=cx,
+                               analyzers=kwargs.pop('analyzers', None), sim_kwargs=kwargs)
 
 
 class EmodReport(ss.Analyzer):

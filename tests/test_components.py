@@ -1,0 +1,71 @@
+"""
+Identity: each model's make_sim, rebuilt on its slot factories (models/*/components.py), gives exactly the runs it gave
+before (at REF, the commit before the factories), same seed: every result array and every analyzer's table.
+
+    PYTHONPATH=<STIsim rs-v4-art> pytest tests/test_components.py -n 8    # env hp_rc3; about 2 minutes on 8 cores
+
+Each case runs in its own process (`python tests/test_components.py <case>`), since the two models have modules of the
+same name (cascade_host, and EMOD's cascade against common/cascade).
+"""
+import sys
+import types
+import subprocess
+from pathlib import Path
+import pytest
+
+repo = Path(__file__).resolve().parents[1]
+REF = '5df2972' # HIVsim migrated to rc3; harness.py, malawi.py and swap.py as they were before the factories
+EMOD = repo / 'models' / 'emod' / 'v4'
+HIVSIM = repo / 'models' / 'hivsim'
+EMOD_CASES = dict(network={}, hiv=dict(hiv=True), interpreted=dict(cascade=True), compiled=dict(cascade=True, compiled=True), condensed=dict(cascade=True, condensed=True))
+HIVSIM_CASES = ['hivsim_malawi', 'hivsim_own', 'hivsim_condensed']
+
+
+def at_ref(path, **replace):
+    """ The module at `path` as it was at REF (with its own __file__, so its data paths hold), with some globals replaced """
+    src = subprocess.check_output(['git', 'show', f'{REF}:{path.relative_to(repo)}'], cwd=repo, text=True)
+    mod = types.ModuleType(path.stem + '_ref')
+    mod.__file__ = str(path)
+    exec(compile(src, str(path), 'exec'), mod.__dict__)
+    mod.__dict__.update(replace)
+    return mod
+
+
+def check(case):
+    """ Run one case before and after; print the arrays that differ, and exit 1 if any do """
+    sys.path[:0] = [str(repo), str(repo / 'common')]
+    if case in EMOD_CASES:
+        sys.path.insert(0, str(EMOD))
+        import harness # (first, so that `cascade` is EMOD′'s)
+        ref = at_ref(EMOD / 'harness.py')
+        kw = dict(seed=3, stop=2010) | EMOD_CASES[case]
+        old, new = ref.make_sim(0, **kw), harness.make_sim(0, **kw)
+    else:
+        sys.path[:0] = [str(HIVSIM / 'malawi'), str(HIVSIM)]
+        import malawi
+        import swap
+        ref_malawi = at_ref(HIVSIM / 'malawi' / 'malawi.py')
+        if case == 'hivsim_malawi':
+            old, new = ref_malawi.make_sim(seed=2, n_agents=3e3, verbose=0), malawi.make_sim(seed=2, n_agents=3e3, verbose=0)
+        else:
+            ref = at_ref(HIVSIM / 'swap.py', malawi=ref_malawi)
+            variant = case.removeprefix('hivsim_')
+            old, new = ref.make_sim(variant, seed=2, n_agents=3e3), swap.make_sim(variant, seed=2, n_agents=3e3)
+    from common.identity import arrays, differences
+    a, b = arrays(old.run()), arrays(new.run())
+    d = differences(a, b)
+    print(f'{case}: {len(a)} arrays, {len(d)} differ')
+    if len(d):
+        print(d.head(20).to_string())
+    sys.exit(int(len(d) > 0))
+
+
+@pytest.mark.parametrize('case', list(EMOD_CASES) + HIVSIM_CASES)
+def test_identity(case):
+    r = subprocess.run([sys.executable, __file__, case], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    print(r.stdout.strip().splitlines()[-1])
+
+
+if __name__ == '__main__':
+    check(sys.argv[1])

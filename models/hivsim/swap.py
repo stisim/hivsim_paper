@@ -6,17 +6,13 @@ in its place, with EMOD's Malawi table (set 0).
 """
 import sys
 from pathlib import Path
-import numpy as np
 import pandas as pd
-import starsim as ss
 import stisim as sti
 
 here = Path(__file__).resolve().parent
 repo = here.parents[1]
 sys.path[:0] = [str(here / 'malawi'), str(here), str(repo)]
 import malawi # noqa: E402
-from cascade_host import StisimHost, art_for_cascade # noqa: E402
-from common.cascade.cascade import condensed_cascade # noqa: E402
 from common.cascade.params import Params # noqa: E402
 
 TABLES = repo / 'common' / 'cascade' / 'tables'
@@ -46,12 +42,7 @@ def traditional_vmmc():
 
 
 def make_sim(variant='own', seed=1, pars=None, params=None, n_agents=10e3, stop=2022, **kwargs):
-    """ HIVsim Malawi with its own testing, ART and VMMC (`own`), or with the condensed cascade (`condensed`, with `params`, by default emod_table()) """
+    """ HIVsim Malawi with its own testing, ART and VMMC (`own`), or with the condensed cascade (`condensed`, with `params`, by default emod_table()); from the slot factories (components.py) """
+    import components
     pars = BEST if pars is None else pars
-    hiv_pars = {k[4:]: v for k, v in pars.items() if k.startswith('hiv_')}
-    nw_pars = {k[3:]: v for k, v in pars.items() if k.startswith('nw_')}
-    other = {k: v for k, v in pars.items() if not k.startswith(('hiv_', 'nw_'))}
-    sim = malawi.make_sim(seed=seed, n_agents=n_agents, stop=stop, verbose=0, hiv_pars=hiv_pars, nw_pars=nw_pars, **other, **kwargs)
-    if variant == 'condensed':
-        sim.pars.interventions = [art_for_cascade(), traditional_vmmc()] + condensed_cascade(params or emod_table(), StisimHost)
-    return sim
+    return components.make_sim(pars, seed=seed, n_agents=n_agents, stop=stop, verbose=0, cascade=variant, params=params, sim_kwargs=kwargs)

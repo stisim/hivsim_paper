@@ -6,11 +6,11 @@ marked "to calibrate" are placeholders until the P3 target set is agreed.
 
     python malawi.py          # short check run
 """
+import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import sciris as sc
-import starsim as ss
 import stisim as sti
 
 datadir = Path(__file__).parent / 'data'
@@ -58,40 +58,12 @@ def make_testing(test_scale=1, test_rel_m=1, test_start=2004):
 
 
 def make_sim(seed=1, n_agents=10e3, stop=2021, verbose=1/12, hiv_pars=None, nw_pars=None, test_scale=1, test_rel_m=1, test_start=2004, condom_scale=1, **kwargs):
-    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual; condom_scale multiplies condom use (at most 1); see make_testing for the others """
-    check_data()
-
-    condoms = read('condom_use.csv')
-    if condoms is not None:
-        condoms = condoms.set_index('partnership').mul(condom_scale).clip(upper=1).reset_index()
-    nw = sti.StructuredSexual(condom_data=condoms, **(nw_pars or {}))
-    hiv = sti.HIV(**{
-        'beta_m2f': 0.01, # To calibrate
-        'init_prev_data': read('init_prev_hiv.csv'),
-        'age_bins': [0, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 100], # The surveys' age groups
-    } | (hiv_pars or {}))
-
-    n_art = read('n_art.csv', index_col='year')
-    vmmc = read('vmmc.csv') # Share of men circumcised, by age
-    vls = read('vls.csv', index_col='year')
-    intvs = make_testing(test_scale, test_rel_m, test_start) + [sti.ART(coverage=n_art, vls_coverage=vls)]
-    if vmmc is not None:
-        intvs.append(sti.VMMC(coverage=vmmc))
-
-    sim = sti.Sim(
-        n_agents=n_agents,
-        start=start,
-        stop=stop,
-        datafolder=datadir,
-        demographics=location,
-        diseases=hiv,
-        networks=[nw, ss.PrenatalNet()],
-        interventions=intvs,
-        rand_seed=seed,
-        verbose=verbose,
-        **kwargs,
-    )
-    return sim
+    """ Make the Malawi sim; hiv_pars and nw_pars are parameter values for sti.HIV and sti.StructuredSexual; condom_scale multiplies condom use (at most 1); see make_testing for the others. Built from the slot factories (../components.py) """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import components
+    pars = {f'hiv_{k}': v for k, v in (hiv_pars or {}).items()} | {f'nw_{k}': v for k, v in (nw_pars or {}).items()}
+    pars |= dict(test_scale=test_scale, test_rel_m=test_rel_m, test_start=test_start, condom_scale=condom_scale)
+    return components.make_sim(pars, seed=seed, n_agents=n_agents, stop=stop, verbose=verbose, sim_kwargs=kwargs)
 
 
 if __name__ == '__main__':
