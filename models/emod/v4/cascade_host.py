@@ -5,6 +5,7 @@ demography and the risk module. ART arms are the campaign's ARTMortalityTable in
 import sys
 from pathlib import Path
 import numpy as np
+import starsim as ss
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from common.cascade.interface import CascadeHost # noqa: E402
@@ -31,6 +32,7 @@ class EmodHost(CascadeHost):
         self.ppl = sim.people
         self.tables = art_tables(self.hiv.inp.events)
         self.prev_twelve = np.zeros(0, np.int64)
+        self.ppl.add_state(ss.IntArr('arm', default=0)) # The arm of the last ART start (as the condensed cascade's Holder; idempotent)
         return
 
     # People
@@ -102,6 +104,7 @@ class EmodHost(CascadeHost):
         for sex, mask in (('f', self.ppl.female.raw[uids]), ('m', ~self.ppl.female.raw[uids])):
             t = self.tables[(arm, sex)]
             self.hiv.go_on_art(uids[mask], t, t['ART_Multiplier_On_Transmission_Prob_Per_Act'], t['Days_To_Achieve_Viral_Suppression'])
+        self.ppl.arm[uids] = 1 if arm == 'suppressive' else 2 # As cascade.ARMS (the condensed cascade sets the same)
         return
 
     def stop_art(self, uids):

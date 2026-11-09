@@ -37,10 +37,11 @@ class TableCascade(ss.Intervention):
     Args:
         params (Params): the table
         host (class): the model's `CascadeHost`
+        scale (float): people per agent, for the table's numbers (default: `sim.current_scale`)
     """
-    def __init__(self, params, host, name='table_cascade', seed_offset=2311):
+    def __init__(self, params, host, name='table_cascade', seed_offset=2311, scale=None):
         super().__init__(name=name)
-        self.params, self.host_class, self.seed_offset = params, host, seed_offset
+        self.params, self.host_class, self.seed_offset, self.scale = params, host, seed_offset, scale
         P = params
         self.rates = []
         for r in P.rows('rate'):
@@ -117,7 +118,7 @@ class TableCascade(ss.Intervention):
 
     def step(self):
         sim = self.sim
-        self.year, dt, scale = self.t.now('year'), self.t.dt_year, sim.current_scale
+        self.year, dt, scale = self.t.now('year'), self.t.dt_year, self.scale or sim.current_scale
         au = sim.people.auids
         au = au[~np.asarray(self.host.dying(au), bool)]
         place = self.places(au)
