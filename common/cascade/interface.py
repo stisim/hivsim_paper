@@ -84,3 +84,8 @@ class CascadeHost(ABC):
         """ Circumcise men (others are ignored); returns those circumcised now """
     @abstractmethod
     def start_prep(self, uids, efficacy, days): ...
+
+    # Measurement (common/transmission.py), not used by the cascade
+    def cascade_stage(self, uids):
+        """ Each one's place in the cascade now: dict of bool arrays `diagnosed`, `on_art` and `suppressive` (on ART in the suppressive arm) """
+        raise NotImplementedError(f'{type(self).__name__} has no cascade_stage(), which the transmission log needs')
