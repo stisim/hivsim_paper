@@ -18,7 +18,10 @@ Each step, after the host's own step:
 
 Moves through the host: undx → dx `test`; dx or lost → care `link_to_care`; care → lost `lose_from_care`; on ART →
 lost `stop_art`; on ART → care `stop_art` then `link_to_care`; into svl or usvl `start_art` (arm suppressive or
-nonsuppressive), or `switch_arm` if on ART. Coverages (pmtct, prep, pep rows) are not applied here: a model applies them itself.
+nonsuppressive), or `switch_arm` if on ART. Coverages (pmtct, prep, pep rows) are not applied here: a model applies them
+itself, except PMTCT with `pmtct=True`: at 12 weeks of pregnancy, a diagnosed woman not on ART starts PMTCT (`start_pmtct`,
+the table's efficacy, to the end of pregnancy) with Optima's share, the table's number a year over the diagnosed women
+giving birth a year (on ART or not, as Optima counts them; those pregnant now over the length of a pregnancy), at most 1.
 """
 import numpy as np
 import starsim as ss
@@ -30,6 +33,7 @@ UNDX, DX, CARE, LOST, SVL, USVL = range(1, 7)
 ON_ART = [SVL, USVL]
 ARM = {SVL: 'suppressive', USVL: 'nonsuppressive'}
 EPS = 1e-3 # People (Optima's eps)
+PREGNANCY = 280 # Days
 
 
 class TableCascade(ss.Intervention):
@@ -38,10 +42,12 @@ class TableCascade(ss.Intervention):
         params (Params): the table
         host (class): the model's `CascadeHost`
         scale (float): people per agent, for the table's numbers (default: `sim.current_scale`)
+        pmtct (bool): apply the table's PMTCT number per person (see above; default False, PMTCT left to the model)
     """
-    def __init__(self, params, host, name='table_cascade', seed_offset=2311, scale=None):
+    def __init__(self, params, host, name='table_cascade', seed_offset=2311, scale=None, pmtct=False):
         super().__init__(name=name)
         self.params, self.host_class, self.seed_offset, self.scale = params, host, seed_offset, scale
+        self.pmtct = pmtct and params.has('pmtct', 'number')
         P = params
         self.rates = []
         for r in P.rows('rate'):
@@ -124,6 +130,26 @@ class TableCascade(ss.Intervention):
         place = self.places(au)
         self.step_rates(au, place, dt, scale)
         self.step_levels(au, scale)
+        if self.pmtct:
+            self.step_pmtct(au, scale)
+        return
+
+    def step_pmtct(self, au, scale):
+        """ Optima's PMTCT share for the diagnosed women at 12 weeks of pregnancy who are not on ART """
+        h = self.host
+        new = ss.uids(np.asarray(h.twelve_weeks_pregnant(), dtype=np.int64))
+        if not len(new):
+            return
+        f = au[np.asarray(h.female(au), bool)]
+        preg = f[np.asarray(h.pregnant(f), bool)]
+        dx = preg[np.asarray(h.infected(preg), bool) & np.asarray(h.cascade_stage(preg)['diagnosed'], bool)]
+        births = len(dx)*scale/(PREGNANCY/365) # Diagnosed women giving birth a year
+        p = min(self.params.value('pmtct', 'number', self.year)/(EPS + births), 1)
+        new = new[np.isin(new, au)]
+        new = new[np.asarray(h.infected(new), bool)]
+        st = h.cascade_stage(new)
+        new = new[np.asarray(st['diagnosed'], bool) & ~np.asarray(st['on_art'], bool)]
+        h.start_pmtct(new[self.rng.random(len(new)) < p], self.params.value('pmtct', 'efficacy'), PREGNANCY)
         return
 
     def step_rates(self, au, place, dt, scale):

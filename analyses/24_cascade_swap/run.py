@@ -7,6 +7,7 @@ STIsim on PYTHONPATH: PYTHONPATH=/tmp/sti-613:/tmp/ss-nov09 conda run -n hp_rc3 
     python run.py abm VARIANT SEED      # 2./3. Optima′ as agents (100,000) with Outputs(OptimaHost): own, optima (its table), emodfix0/25/50
     python run.py abms CORES            # every agent run below, in a pool (one process per run)
     python run.py tables                # outputs/*.csv and outputs/report.txt
+    python run.py emod_pm [CORES]       # Addendum: own, Optima's table, and both with Optima's PMTCT per person (early.py)
 """
 import os
 os.environ.setdefault('NUMBA_NUM_THREADS', '1')
@@ -43,11 +44,22 @@ def emod_config():
                         'optima_sw': 'analyses/24_cascade_swap/variants/optima_c_switch.py', 'optima_swp': 'analyses/24_cascade_swap/variants/optima_c_switch_prev.py'})
 
 
-def run_emod(cores=96):
+def emod_pm_config():
+    """ The addendum's: EMOD′-fixed own; Optima's table as it is (`optima`); with Optima's PMTCT number per person
+    (`optima_pm`); and with arm switching, EMOD′'s VMMC and PrEP and Optima's PMTCT (`optima_swp_pm`) """
+    c = emod_config()
+    e = dict(D='emod_fixed', RN='emod_fixed', V='emod_fixed')
+    c['hybrids'] = [dict(e, C=k) for k in ('emod_fixed', 'optima', 'optima_pm', 'optima_swp_pm')]
+    c['models'] = {k: v for k, v in c['models'].items() if k in ('emod_fixed', 'optima')} | {
+        'optima_pm': 'analyses/24_cascade_swap/variants/optima_c_pmtct.py', 'optima_swp_pm': 'analyses/24_cascade_swap/variants/optima_c_switch_prev_pmtct.py'}
+    return c
+
+
+def run_emod(cores=96, config=None):
     from common import swaps
     import starsim, stisim
     print(starsim.__file__, stisim.__file__, flush=True)
-    rows = swaps.run(emod_config(), cores=cores)
+    rows = swaps.run(config or emod_config(), cores=cores)
     print(pd.DataFrame(rows).groupby('name').error.apply(lambda e: (e.fillna('') != '').sum()), flush=True)
 
 
@@ -155,6 +167,8 @@ if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'emod':
         run_emod(int(sys.argv[2]) if len(sys.argv) > 2 else 96)
+    elif cmd == 'emod_pm':
+        run_emod(int(sys.argv[2]) if len(sys.argv) > 2 else 96, emod_pm_config())
     elif cmd == 'ode':
         run_ode()
     elif cmd == 'abm':
