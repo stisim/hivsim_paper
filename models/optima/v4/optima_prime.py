@@ -222,7 +222,8 @@ class Transmission:
         lognoinf = np.zeros((self.npops, self.npops) + q.shape[1:]) # Acquiring pop × partner pop × circ × infected state
         np.add.at(lognoinf, (self.p1, self.p2), np.log(noinf))
         bg = self.at(self.bg, year)
-        part = (1 - np.exp(lognoinf)).sum(axis=1) # Acquiring pop × circ × infected state: Optima's force of infection adds over sources
+        self.parts = 1 - np.exp(lognoinf) # Acquiring pop × partner pop × circ × infected state: each source's part, for drawing the sources of infections as agents (host.py)
+        part = self.parts.sum(axis=1) # Acquiring pop × circ × infected state: Optima's force of infection adds over sources
         prob = part.sum(axis=2).T*self.force*inhomo*(1 - bg) # Circ × acquiring pop
         prob = np.minimum(prob, 1 - self.eps - bg.max())
         self._ti, self._rate = sim.ti, prob/REF_DT

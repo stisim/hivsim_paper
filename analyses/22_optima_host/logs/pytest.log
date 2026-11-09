@@ -1,0 +1,32 @@
+bringing up nodes...
+bringing up nodes...
+
+.........................                                                [100%]
+=============================== warnings summary ===============================
+common/swaps/tests/test_runner.py::test_toy_swap_identity
+common/swaps/tests/test_runner.py::test_toy_run_store_resume
+common/swaps/tests/test_runner.py::test_toy_burnin
+  /tmp/ss-nov09/starsim/solvers/choose.py:803: RuntimeWarning: 
+  dt=0.0833333 is read in years, since start and stop are years, though the model's unit is days (from the typed values in the model); give dt=ss.days(...) or unit= to say otherwise
+    ss.warn(f'dt={pars.dt:n} is read in years, since start and stop are years, though the model\'s unit is {unit}s (from {source}); give dt=ss.{unit}s(...) or unit= to say otherwise')
+
+common/swaps/tests/test_runner.py::test_toy_run_store_resume
+common/swaps/tests/test_runner.py::test_toy_run_store_resume
+common/swaps/tests/test_runner.py::test_toy_run_store_resume
+common/swaps/tests/test_runner.py::test_toy_run_store_resume
+common/swaps/tests/test_runner.py::test_emod_run_and_outputs
+common/swaps/tests/test_runner.py::test_toy_burnin
+common/swaps/tests/test_runner.py::test_toy_burnin
+  /home/robyn/miniconda/envs/hp_rc3/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=3723140) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+common/swaps/tests/test_runner.py::test_path_hybrids
+common/swaps/tests/test_runner.py::test_path_hybrids
+common/swaps/tests/test_runner.py::test_path_hybrids
+common/swaps/tests/test_runner.py::test_path_hybrids
+common/swaps/tests/test_runner.py::test_path_hybrids
+  /home/robyn/miniconda/envs/hp_rc3/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=3723129) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+25 passed, 15 warnings in 154.90s (0:02:34)

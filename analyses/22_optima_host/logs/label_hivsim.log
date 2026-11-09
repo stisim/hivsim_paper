@@ -1,0 +1,21 @@
+Sim: hiv, as 103,305 agents, each 76 people, years 1985 to 2021
+  Running as agents: n_agents was given
+  Note: the beta of "hiv.infection" names mfnetwork, swnetwork, sexualnet, sexualnetwork, msm, msmscalefreenetwork, which are not routes of the sim, so they are not used; the routes are structuredsexual, prenatalnet, and those not named take the default
+  Note: the beta of "hiv.mtct_postnatal" names breastfeedingnet, which is not a route of the sim, so it is not used; the routes are structuredsexual, prenatalnet, and those not named take the default
+  Note: the dwell time of "post_art_death" comes from post_art_dwell, whose numbers are read in months, the sim's unit; if they are in another unit, give it on the distribution, e.g. unit="month"
+  Note: consider a shorter step (e.g. dt=ss.months(0.25)): each step is 1 month, and people leave acute after 1.7 months on average, so 44% leave in a step. Taking whole steps, agents may differ from the ODE by an amount of that order; sim.check_dt() shows how much it matters
+  Note: pregnancy: women pregnant at the start, conceived over the 9 steps before it (burnin=True)
+  ━━━───────────────────────────   9%  year 1988  1.2 s
+  ━━━━━─────────────────────────  17%  year 1991  2.7 s
+  ━━━━━━━━──────────────────────  25%  year 1994  5.0 s
+  ━━━━━━━━━━────────────────────  33%  year 1997  7.5 s
+  ━━━━━━━━━━━━━─────────────────  42%  year 2000  10.4 s
+  ━━━━━━━━━━━━━━━───────────────  50%  year 2003  13.6 s
+  ━━━━━━━━━━━━━━━━━━────────────  58%  year 2006  18.9 s
+  ━━━━━━━━━━━━━━━━━━━━──────────  67%  year 2009  25.9 s
+  ━━━━━━━━━━━━━━━━━━━━━━━───────  75%  year 2012  34.6 s
+  ━━━━━━━━━━━━━━━━━━━━━━━━━─────  83%  year 2015  43.8 s
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━──  92%  year 2018  53.6 s
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%  year 2021  63.9 s
+  Done in 64.2 s; hiv: 3,482,039 infections; at most 2,298,193 infectious, on year 2021
+hivsim: 65 s; pop_scale 76.20508

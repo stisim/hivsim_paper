@@ -1,0 +1,30 @@
+16 seeds at 100,000 agents; years 2000-2020; sexual transmissions summed over each year
+
+== Share (%) by the source's state: agents mean (SE) vs ODE; z = (agents - ODE)/SE ==
+                               undx                             dx                           care                         lost                           usvl                          svl
+2000  51.66 (0.60) vs 52.12, z -0.8    2.47 (0.19) vs 2.54, z -0.4  45.13 (0.64) vs 44.62, z +0.8  0.37 (0.06) vs 0.36, z +0.2    0.37 (0.05) vs 0.36, z +0.2  0.00 (0.00) vs 0.00, z +0.0
+2005  38.13 (0.59) vs 37.55, z +1.0    5.00 (0.36) vs 5.13, z -0.4  53.91 (0.33) vs 54.32, z -1.2  0.78 (0.11) vs 0.76, z +0.2    2.18 (0.18) vs 2.25, z -0.4  0.00 (0.00) vs 0.00, z +0.0
+2010  38.02 (0.53) vs 37.79, z +0.4  12.85 (0.37) vs 12.90, z -0.1  27.82 (0.50) vs 28.30, z -1.0  1.94 (0.20) vs 1.78, z +0.8  19.36 (0.33) vs 19.23, z +0.4  0.00 (0.00) vs 0.00, z +0.0
+2015  40.27 (0.73) vs 39.84, z +0.6  25.11 (0.54) vs 25.46, z -0.6    6.46 (0.41) vs 7.06, z -1.5  3.67 (0.26) vs 3.89, z -0.9  24.50 (0.44) vs 23.75, z +1.7  0.00 (0.00) vs 0.00, z +0.0
+2020  43.29 (0.70) vs 42.13, z +1.6  35.84 (0.66) vs 38.81, z -4.5    2.90 (1.10) vs 0.53, z +2.2  5.75 (0.48) vs 5.79, z -0.1  12.22 (0.49) vs 12.73, z -1.0  0.00 (0.00) vs 0.00, z +0.0
+                               undx                             dx                         care                         lost                           usvl                          svl
+2020  43.29 (0.70) vs 42.13, z +1.6  35.84 (0.66) vs 38.81, z -4.5  2.90 (1.10) vs 0.53, z +2.2  5.75 (0.48) vs 5.79, z -0.1  12.22 (0.49) vs 12.73, z -1.0  0.00 (0.00) vs 0.00, z +0.0
+|z| > 2: 6% of state-years; mean |agents - ODE| 0.35 points, max 2.97
+
+== Figure 3A categories (%), D8: agents (host flag; transmission log), Optima′ ODE with lost = interrupted, Optima (analysis 19, step at the whole year: D8; lost = interrupted) ==
+2000: undiagnosed: 51.7±0.6, 51.7 | ODE 52.1 | Optima 54.6, 54.6; diagnosed_never_treated: 47.0±0.6, 47.0 | ODE 47.2 | Optima 44.9, 44.7; on_art: 0.4±0.0, 0.4 | ODE 0.4 | Optima 0.4, 0.4; interrupted: 1.0±0.1, 1.0 | ODE 0.4 | Optima 0.2, 0.4
+2005: undiagnosed: 38.1±0.6, 38.1 | ODE 37.5 | Optima 38.0, 38.0; diagnosed_never_treated: 59.0±0.5, 59.0 | ODE 59.4 | Optima 60.4, 60.0; on_art: 2.2±0.2, 2.2 | ODE 2.2 | Optima 1.5, 1.5; interrupted: 0.7±0.1, 0.7 | ODE 0.8 | Optima 0.2, 0.6
+2010: undiagnosed: 38.0±0.5, 38.0 | ODE 37.8 | Optima 37.6, 37.6; diagnosed_never_treated: 41.2±0.5, 41.2 | ODE 41.2 | Optima 44.2, 43.7; on_art: 19.4±0.3, 19.4 | ODE 19.2 | Optima 17.1, 17.1; interrupted: 1.4±0.1, 1.4 | ODE 1.8 | Optima 1.1, 1.6
+2015: undiagnosed: 40.3±0.7, 40.3 | ODE 39.8 | Optima 39.1, 39.1; diagnosed_never_treated: 32.1±0.7, 32.1 | ODE 32.5 | Optima 34.0, 33.5; on_art: 24.5±0.4, 24.5 | ODE 23.8 | Optima 23.9, 23.9; interrupted: 3.1±0.3, 3.1 | ODE 3.9 | Optima 3.0, 3.5
+2020: undiagnosed: 43.3±0.7, 43.3 | ODE 42.1 | Optima 42.3, 42.3; diagnosed_never_treated: 39.4±0.9, 39.4 | ODE 39.3 | Optima 40.7, 40.6; on_art: 12.2±0.5, 12.2 | ODE 12.7 | Optima 11.4, 11.4; interrupted: 5.1±0.4, 5.1 | ODE 5.8 | Optima 5.7, 5.8
+Host flag vs transmission log: max difference 0.03 points
+
+== Sexual infections per year: logged sources × scale (agents here), the disease's results (here), analysis 20 agents (48 seeds), ODE ==
+2000: 59,773 ± 896; 59,773; 61,176; ODE 61,025
+2005: 54,192 ± 609; 54,192; 54,870; ODE 54,867
+2010: 51,420 ± 587; 51,420; 51,329; ODE 51,511
+2015: 46,371 ± 622; 46,371; 45,816; ODE 45,962
+2018: 33,964 ± 463; 33,964; 34,511; ODE 34,348
+2020: 31,097 ± 748; 31,097; 30,337; ODE 28,693
+The same seeds of analysis 20 (no host or Outputs): sexual infections identical every year in 16 of 16 seeds
+Agents here / ODE - 1, mean over years +0.13%, max |%| 8.38 (2020); logged = results exactly: True
