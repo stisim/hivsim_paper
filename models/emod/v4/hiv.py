@@ -326,11 +326,14 @@ class EmodHIV(ss.Disease):
         supp = np.select([art == RAMP, art == SUPPRESSED], [1 - (1 - m)/183*(183 - self.supp_timer.raw[uids]), m], 1.0)
         return h.Base_Infectivity*stage_mult*supp
 
+    def contacts(self):
+        """ This step's edges: `p1` the man, `p2` the woman, `acts` (whole acts this step), `condoms` (the chance each act has a condom), `type` (EMOD's order) """
+        return self.sim.networks[self.netname].edges
+
     def acts(self):
         """ The coital acts of this step between an infected and an uninfected partner, with the infected side's part of their probability """
-        net, h = self.sim.networks[self.netname], self.inp.hiv
-        e = net.edges
-        if not len(net):
+        e, h = self.contacts(), self.inp.hiv
+        if e is None or not len(e.p1):
             return None
         inf = self.infected.raw
         idx = np.flatnonzero((inf[e.p1] != inf[e.p2]) & (e.acts > 0))
@@ -338,14 +341,14 @@ class EmodHIV(ss.Disease):
         src = np.where(inf[p1], p1, p2)
         dst = np.where(inf[p1], p2, p1)
         sti = np.maximum(np.where(self.sti.raw[src], h.STI_Coinfection_Transmission_Multiplier, 1), np.where(self.sti.raw[dst], h.STI_Coinfection_Acquisition_Multiplier, 1))
-        return dict(idx=idx, src=src, dst=dst, p=self.p_act.raw[src]*sti, stage=self.stage0.raw[src], days=self.days0.raw[src], type=e.type[idx])
+        return dict(idx=idx, src=src, dst=dst, p=self.p_act.raw[src]*sti, stage=self.stage0.raw[src], days=self.days0.raw[src], type=e.type[idx], edges=e)
 
     def exposures(self, a):
         """ Who is infected by the acts, and by which """
         none = ss.uids(), np.zeros(0, int)
         if a is None or not len(a['idx']):
             return none
-        h, ppl, e = self.inp.hiv, self.sim.people, self.sim.networks[self.netname].edges
+        h, ppl, e = self.inp.hiv, self.sim.people, a['edges']
         dst = a['dst']
         ok = ppl.alive.raw[dst] & ~self.infected.raw[dst]
         female = ppl.female.raw[dst]
