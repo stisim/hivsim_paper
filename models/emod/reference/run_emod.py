@@ -12,6 +12,7 @@ Setup (once): see README.md in this folder.
     python run_emod.py                              # all 250 sets
     python run_emod.py --sets 0 25 --network --out net   # with relationship reports
     python run_emod.py --sets 0 100 200 --natural-history --out nh3   # only what EMOD′ has so far
+    python run_emod.py --sets 0 25 --seeds 1 2 --transmission --out tr   # transmissions by the source's cascade stage
 """
 import argparse
 import copy
@@ -125,6 +126,19 @@ def network_reports(cp):
               Report_Relationship_Start_Node_IDs_Of_Interest=[], Report_Relationship_End=1)
 
 
+def transmission_reports(cp):
+    """Daniel's report settings for transmissions by the source's cascade stage (source/InputFiles/Templates/config_transmission.json),
+    from 1960 so each person's diagnosis and ART history is complete, without ReportHIVInfection (a row per infected person
+    per step, about 1.5 GB a run; not needed for the categories). Output only"""
+    cp.update(Report_Transmission=1, Report_Event_Recorder=1, Report_Event_Recorder_Events=['HIVNewlyDiagnosed', 'StartedART', 'StoppedART'],
+              Report_Event_Recorder_Ignore_Events_In_List=0, Report_Event_Recorder_Individual_Properties=['ARTStatus'],
+              Report_Event_Recorder_Min_Age_Years=0, Report_Event_Recorder_Max_Age_Years=200, Report_Event_Recorder_Must_Have_IP_Key_Value='',
+              Report_Event_Recorder_Must_Have_Intervention='', Report_Event_Recorder_Node_IDs_Of_Interest=[],
+              Report_Event_Recorder_PropertyChange_IP_Key_Of_Interest='', Report_Event_Recorder_Start_Year=1960, Report_Event_Recorder_End_Year=2100,
+              Report_HIV_ART=1, Report_HIV_ART_Start_Year=1960, Report_HIV_ART_Stop_Year=2100,
+              Report_HIV_Mortality=1, Report_HIV_Mortality_Start_Year=2000, Report_HIV_Mortality_Stop_Year=2100)
+
+
 NATURAL_HISTORY = ['Commercial_', 'ModifyStiCoInfectionStatus', 'TraditionalMaleCircumcision', 'OutbreakIndividual'] # Campaign events EMOD′ has so far
 
 
@@ -136,7 +150,7 @@ def natural_history(files, cp):
               Report_HIV_ByAgeAndGender_Collect_Circumcision_Data=1, Report_Transmission=1, Report_HIV_Mortality=1)
 
 
-def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False, report_ip=()):
+def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False, report_ip=(), transmission=False):
     """Return {filename: json} for one simulation."""
     config = json.load(open(orig / 'InputFiles' / 'Templates' / 'config.json'))
     files = {CAMPAIGN: json.load(open(orig / 'InputFiles' / 'Templates' / CAMPAIGN))}
@@ -167,6 +181,8 @@ def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat
         network_reports(cp)
     if nat_hist:
         natural_history(files, cp)
+    if transmission:
+        transmission_reports(cp)
     if report_ip:
         cp['Report_HIV_ByAgeAndGender_Collect_IP_Data'] = cp['Report_HIV_ByAgeAndGender_Collect_IP_Data'] + list(report_ip)
     if no_hiv: # Drop the seeding, the only source of infection, for comparisons of the network without HIV
@@ -179,10 +195,12 @@ def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat
 
 
 def run_one(args):
-    pid, table, run_number, years, outdir, network, no_hiv, nat_hist, report_ip = args
-    simdir = outdir / f'set{pid:03d}'
+    pid, table, run_number, years, outdir, network, no_hiv, nat_hist, report_ip, transmission, seed = args
+    simdir = outdir / (f'set{pid:03d}' if seed is None else f'set{pid:03d}_s{seed}')
+    if seed is not None:
+        run_number = (run_number*10 + seed) % 65536 # As EMOD′'s seeds (analyses 05-06), within EMOD's range
     simdir.mkdir(parents=True, exist_ok=True)
-    for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist, report_ip).items():
+    for name, obj in build_inputs(table, run_number, years, network, no_hiv, nat_hist, report_ip, transmission).items():
         json.dump(obj, open(simdir / name, 'w'), indent=1)
     env = dict(os.environ, LD_LIBRARY_PATH=f"{bindir / 'lib'}:{Path.home() / 'miniconda/envs/emod/lib'}",
                UCX_TLS='self,sm,tcp', UCX_NET_DEVICES='lo')  # Azure NIC breaks MPI init otherwise
@@ -190,7 +208,7 @@ def run_one(args):
     with open(simdir / 'stdout.txt', 'w') as log:
         rc = subprocess.run([str(bindir / 'Eradication'), '-C', 'config.json', '-I', '.', '-O', 'output'],
                             cwd=simdir, env=env, stdout=log, stderr=subprocess.STDOUT).returncode
-    return pid, rc, time.time() - t0
+    return f'{pid:3d}' + ('' if seed is None else f' seed {seed}'), rc, time.time() - t0
 
 
 def main():
@@ -203,6 +221,8 @@ def main():
     ap.add_argument('--no-hiv', action='store_true', help='without the epidemic seeding, so nobody is infected')
     ap.add_argument('--report-ip', nargs='*', default=[], help='more individual properties to split the report by, e.g. InterventionStatus')
     ap.add_argument('--natural-history', action='store_true', help='campaign reduced to sex work, STI co-infection, traditional circumcision and seeding; report transmissions and HIV deaths')
+    ap.add_argument('--transmission', action='store_true', help="Daniel's transmission reports (TransmissionReport, diagnosis and ART events, ReportHIVART), from 1960")
+    ap.add_argument('--seeds', type=int, nargs='*', help='run each set with these seeds (Run_Number = (run_number*10 + seed) mod 65536, folders setNNN_sK); default: its own run_number')
     a = ap.parse_args()
 
     sets = pd.read_csv(orig / 'resampled_parameter_sets_20230424.csv')
@@ -211,11 +231,11 @@ def main():
     meta = ['iteration_number', 'likelihood', 'parameterization_id', 'run_number', 'sim_id']
     pmap = load_param_map()
     outdir = outroot / a.out
-    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv, a.natural_history, a.report_ip)
-            for _, r in sets.iterrows()]
+    jobs = [(int(r.parameterization_id), map_sample(r.drop(meta).to_dict(), pmap), r.run_number, a.years, outdir, a.network, a.no_hiv, a.natural_history, a.report_ip, a.transmission, seed)
+            for _, r in sets.iterrows() for seed in (a.seeds or [None])]
     with ProcessPoolExecutor(min(a.cores, len(jobs))) as ex:
         for pid, rc, dt in ex.map(run_one, jobs):
-            print(f'set {pid:3d}: {"ok" if rc == 0 else f"FAILED rc={rc}"} ({dt / 60:.1f} min)', flush=True)
+            print(f'set {pid}: {"ok" if rc == 0 else f"FAILED rc={rc}"} ({dt / 60:.1f} min)', flush=True)
 
 
 if __name__ == '__main__':

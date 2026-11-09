@@ -29,7 +29,7 @@ Planned: both originals rerun with reference outputs, and draft prompts P1–P4.
 | **4** | 10–16 Nov | **P4** with Daniel: component map and interfaces (mechanism, inputs, parameters). Optima′ by population; sign-off | **P4** with Robyn; then start **P1:** EMOD′ rebuild loop | Review P4 for fit with v4 | **Checkpoint:** component boundaries and interfaces approved by all three; Robyn signs off Optima′ |
 | **5** | 17–23 Nov | Verify Optima′ as an ABM against its own ODE (time-step study). Add the explicit re-engagement mechanism to HIVsim. Score EMOD and Optima on the target set | P1 continues | Unblock v4 issues from the rebuilds | Optima′ verified both ways; fit scorecard for all three models |
 | **6** | 24–30 Nov | Refactor HIVsim and Optima′ to the interfaces. Swap runner and endpoint unit test (with Cliff) | First fidelity pass for EMOD′ (median inside the original's 90% interval) | Swap runner and endpoint unit test (with Robyn) | Swap runner with endpoint test passing on a trivial swap |
-| **7** | 1–7 Dec | First substitution path, HIVsim ↔ Optima′, uncalibrated | Finish verifying EMOD′, or escalate | Support the swap runner | **Checkpoint:** Daniel signs off EMOD′; first path with endpoint identity confirmed |
+| **7** | 1–7 Dec | First substitution path, HIVsim → EMOD′, compensated (refit transmission scale and ART uptake to the P3 targets; decided 9 Nov) | Finish verifying EMOD′, or escalate | Support the swap runner | **Checkpoint:** Daniel signs off EMOD′; first path with endpoint identity confirmed |
 | **8** | 8–15 Dec | Results outline and interim figures; plan for the January sprints | Paths EMOD′ ↔ Optima′ (the published gap) and HIVsim ↔ EMOD′ | Interim review | **Interim deliverable (15 Dec):** three verified models, first decompositions, interim figures, January plan |
 
 Changes from the 27 Oct plan (agreed with Robyn, 3 Nov): P2 and P3 moved earlier (done or under way); P4 moved from sprint 3 to sprint 4, so P1 starts a week later; Optima′ sign-off moved from sprint 6 to sprint 4. EMOD′ is now the critical path.
@@ -37,7 +37,6 @@ Changes from the 27 Oct plan (agreed with Robyn, 3 Nov): P2 and P3 moved earlier
 ## Still to schedule
 
 These are left for January:
-- the compensated (tier-2) pathway;
 - the treatment-interruption scenarios;
 - final swap design and orderings;
 - the full manuscript, co-author round and submission (by 31 March 2027).

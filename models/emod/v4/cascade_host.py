@@ -120,3 +120,6 @@ class EmodHost(CascadeHost):
     def start_prep(self, uids, efficacy, days):
         self.hiv.prep_eff[uids] = efficacy
         self.hiv.prep_until[uids] = self.hiv.t.now('year') + days/365
+
+    def cascade_stage(self, uids):
+        return dict(diagnosed=self.hiv.diagnosed.raw[uids], on_art=self.hiv.on_art(uids), suppressive=self.ppl.arm.raw[uids] == 1) # people.arm: the cascade's arm of the last start

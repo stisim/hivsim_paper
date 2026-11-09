@@ -394,6 +394,7 @@ class EmodHIV(ss.Disease):
         dead = self.dead_uids
         new, k = self.exposures(a)
         new = self.infect(new)
+        self.sexual = new, (a['src'][k] if a is not None else np.zeros(0, int)) # This step's sexual transmissions: recipients and sources
         if a is not None:
             self.log_infections(new, src=a['src'][k], kind=a['type'][k], src_stage=a['stage'][k], src_days=a['days'][k])
         self.n_new, self.n_dead = len(new), len(dead)
