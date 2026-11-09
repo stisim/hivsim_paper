@@ -1,0 +1,5 @@
+comparison,points,within2,within3,z_mean,z_sd,z_max
+compiled: rc3 vs ebd52c1a,345,337,341,0.238,0.923,11.41
+condensed: rc3 vs ebd52c1a,345,337,342,0.238,0.912,11.41
+interpreted: rc3 vs ebd52c1a,345,337,341,0.235,0.925,11.41
+"condensed vs compiled, rc3 (06)",345,345,345,0.05,0.43,1.96

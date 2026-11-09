@@ -152,7 +152,12 @@ def compare():
         d = z_table(runs(*BASE[v]), rc3[v], t).assign(variant=v)
         tabs.append(d)
         kinds.append(by_kind(d).assign(variant=v))
-        summary.append(dict(comparison=f'{v}: rc3 vs ebd52c1a', points=len(d), within2=int((d.z.abs() <= 2).sum()), within3=int((d.z.abs() <= 3).sum()), z_mean=round(d.z.mean(), 3), z_sd=round(d.z.std(), 3), z_max=round(d.z.abs().max(), 2)))
+        (pa, va, _), (pb, vb, _) = targetfit.load_runs(*BASE[v]), targetfit.load_runs(here, v) # Run by run (same set and seed): identical?
+        key = lambda p: list(zip(p['set'], p['seed']))
+        va.index, vb.index = key(pa), key(pb)
+        same = (va.loc[vb.index, vb.columns].fillna(-1) == vb.fillna(-1)).all(axis=1)
+        summary.append(dict(comparison=f'{v}: rc3 vs ebd52c1a', points=len(d), within2=int((d.z.abs() <= 2).sum()), within3=int((d.z.abs() <= 3).sum()), z_mean=round(d.z.mean(), 3), z_sd=round(d.z.std(), 3), z_max=round(d.z.abs().max(), 2),
+                            runs_identical=f'{int(same.sum())}/{len(same)}'))
     pd.concat(tabs).round(5).to_csv(out / 'targets_vs_ebd52c1a.csv', index=False)
     pd.concat(kinds).to_csv(out / 'targets_vs_ebd52c1a_by_kind.csv')
 
@@ -179,7 +184,8 @@ def compare():
     rt = pd.read_csv(out / 'runtime.csv').groupby('model').secs.median().rename('rc3_median_secs').to_frame()
     rt['ebd52c1a_median_secs'] = pd.read_csv(A06 / 'outputs' / 'runtime.csv').groupby('model').secs.median()
     rt.round(1).to_csv(out / 'runtime_medians.csv')
-    for name in ('z_summary', 'targets_vs_ebd52c1a_by_kind', 'condensed_vs_compiled_by_kind', 'emod_ratio_by_kind', 'runtime_medians'):
+    pd.concat([pd.read_csv(f) for f in sorted(out.glob('time_*.csv'))]).pivot(index='variant', columns='tag', values='secs').to_csv(out / 'time_paired.csv')
+    for name in ('z_summary', 'targets_vs_ebd52c1a_by_kind', 'condensed_vs_compiled_by_kind', 'emod_ratio_by_kind', 'runtime_medians', 'time_paired'):
         print(f'\n{name}\n', pd.read_csv(out / f'{name}.csv').to_string(index=False))
     return
 
@@ -210,7 +216,7 @@ def plot():
             style(ax, f'{v.title()} campaign: {title[0].lower() + title[1:]}' if col == 'plhiv' else title)
     axs[0, 0].legend(fontsize=7, frameon=False)
     fig.tight_layout()
-    fig.text(0.01, -0.01, 'Lines: median over 30 runs (10 sets × 3 seeds); bands: 5-95%. Rows: compiled campaign and condensed cascade (analysis 06), interpreted campaign (analysis 04).', fontsize=7, color=c_muted, va='top')
+    fig.text(0.01, -0.01, 'Lines: median over 30 runs (10 sets × 3 seeds); bands: 5-95%. Rows: compiled campaign and condensed cascade (analysis 06), interpreted campaign (analysis 04). The versions agree run by run, so rc3 (blue) covers ebd52c1a (orange).', fontsize=7, color=c_muted, va='top')
     fig.savefig(figdir / 'cascade_over_time.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 

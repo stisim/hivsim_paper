@@ -1,0 +1,3 @@
+Starsim kernels: Numba, NOT COMPILED (the compartmental solvers, the draws), so the first runs are slow: run "starsim init compile" or ss.compile()
+{'tag': 'ebd52c1a', 'starsim': '4.0.0rc2', 'variant': 'condensed', 'secs': 87.4}
+{'tag': 'ebd52c1a', 'starsim': '4.0.0rc2', 'variant': 'compiled', 'secs': 107.2}
