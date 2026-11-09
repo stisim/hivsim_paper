@@ -37,8 +37,10 @@ SLOTS = ['D', 'RN', 'V', 'C', 'M'] # The order make_sim() calls them in (the run
 LISTS = ['demographics', 'networks', 'diseases', 'interventions', 'connectors', 'analyzers'] # The keywords that hold lists of modules
 
 
-def pars(pid):
-    return inputs.load(pid)
+def pars(pid, fixes=()):
+    """ Parameter set `pid`, with the named fixes of the published model (inputs.FIXES; none by default, as EMOD′ is the
+    published model). components_fixed.py is the variant with Daniel's fixes """
+    return inputs.load(pid, fixes)
 
 
 def own(ctx, slot):

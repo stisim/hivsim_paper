@@ -57,7 +57,12 @@ def extract(inp):
     c, s = find('NewlySymptomatic'); row('symptomatic', 'p_present', *pw(c), s, default=0)
     row('symptomatic', 'start', 'const', 1990, 'Start_Year of its listener')
     c, s = find('ARTStaging8'); row('symptomatic', 'p_present_again', *pw(c), s + ' (those who did not present go straight to staging)', default=0)
-    c, s = find('TwelveWeeksPregnant'); row('anc', 'p_test', 'sigmoid', sig(c), s + ': its Time_Value_Map is ignored by the class, so the default sigmoid applies (as in EMOD)')
+    fixes = getattr(inp, 'fixes', ())
+    c, s = find('TwelveWeeksPregnant')
+    if 'anc' in fixes:
+        row('anc', 'p_test', *pw(c), s + ': its Time_Value_Map (fix anc; EMOD ignores it)', default=0)
+    else:
+        row('anc', 'p_test', 'sigmoid', sig(c), s + ': its Time_Value_Map is ignored by the class, so the default sigmoid applies (as in EMOD)')
     row('anc', 'start', 'const', next(li['start'] for li in cas.listeners if 'TwelveWeeksPregnant' in li['triggers']), 'Start_Year of its listener')
     c, s = find('HIV_Positive_at_ANC', 'HIVPiecewiseByYearAndSexDiagnostic'); row('anc', 'p_stage', *pw(c), s, default=0)
     c, s = find('SixWeeksOld'); row('infant', 'p_test', *pw(c), s, default=0)
@@ -69,7 +74,10 @@ def extract(inp):
     for name, trig in (('eff_sdnvp', 'Needs_sdNVP_PMTCT'), ('eff_option_a', 'Needs_Option_A'), ('eff_option_b', 'Needs_Option_B')):
         c, s = find(trig); row('pmtct', name, 'const', c['Efficacy'], s)
     row('pmtct', 'days', 'const', 280, 'PMTCT::Update: the efficacy ends after 40 weeks')
-    row('pmtct', 'blocked_if_staged', 'const', 1, 'the combination decision is disqualified by ARTStaging, set first by staging (EMOD update order)')
+    if 'pmtct' in fixes:
+        row('pmtct', 'blocked_if_staged', 'const', 0, 'fix pmtct: the combination decision is not disqualified by ARTStaging')
+    else:
+        row('pmtct', 'blocked_if_staged', 'const', 1, 'the combination decision is disqualified by ARTStaging, set first by staging (EMOD update order)')
 
     # Staging, eligibility, linkage, pre-ART
     c, s = find('ARTStaging1'); row('staging', 'p_lost', 'const', c['Choice_Probabilities'][c['Choice_Names'].index('HCTUptakePostDebut3')], s)
@@ -98,7 +106,10 @@ def extract(inp):
     c, s = find('OnART3', 'HIVRandomChoice'); lost = c['Choice_Probabilities'][c['Choice_Names'].index('LostForever9')]
     c2, s2 = find('LostForever9'); row('dropout', 'p_lost', 'const', lost*(1 - piecewise0(c2)), s + ' × (1 - ' + s2 + ')')
     c, s = find('HCTUptakePostDebut8'); row('dropout', 'p_out', *pw(c), s + ': positive is OnART1, whose start of ART is disqualified by InterventionStatus OnEffective/NonSuppressiveART (the dropout trap); negative, back to uptake', default=0)
-    row('dropout', 'p_restart', 'const', 0, 'the dropout trap: those who decide to restart (p_out) get no ART, and are offered dropout and return again')
+    if any(T[li['tid']]['class'] == 'PropertyValueChanger' and T[li['tid']]['Target_Property_Key'] == 'InterventionStatus' for li in cas.listeners if 'OnART3' in li['triggers']):
+        row('dropout', 'p_restart', 'const', 1, 'listener on OnART3 (PropertyValueChanger, fix reenrol): InterventionStatus None at dropout, so p_out start ART again at OnART1')
+    else:
+        row('dropout', 'p_restart', 'const', 0, 'the dropout trap: those who decide to restart (p_out) get no ART, and are offered dropout and return again')
 
     # Prevention
     pc = next(ch for ch in cas.choosers if T[ch['tid']]['class'] == 'ControlledVaccine')

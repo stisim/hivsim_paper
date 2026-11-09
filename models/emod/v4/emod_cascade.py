@@ -91,6 +91,7 @@ class EmodCascade(ss.Intervention):
 
     def init_pre(self, sim):
         super().init_pre(sim)
+        assert not {'anc', 'pmtct'} & set(getattr(self.inp, 'fixes', ())), 'the anc and pmtct fixes are in the condensed cascade only'
         self.istatus = sim.people.add_state(ss.IntArr('istatus', default=0))
         self.artstatus = sim.people.add_state(ss.IntArr('artstatus', default=0))
         self.onprep = sim.people.add_state(ss.BoolArr('onprep', default=False))

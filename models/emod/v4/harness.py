@@ -64,14 +64,14 @@ class Snapshots(ss.Analyzer):
         return
 
 
-def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, compiled=False, condensed=False, **kwargs):
+def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cascade=False, compiled=False, condensed=False, fixes=(), **kwargs):
     """ EMOD′ for parameter set `pid`: its demography; with `network`, its sexual network and Risk; with `hiv`, HIV;
     with `cascade`, the rest of the campaign (testing, care, ART, VMMC, PrEP, PMTCT), and `EmodReport`; with `compiled`
     as well, that campaign as Starsim deliveries (compile_campaign.py) rather than interpreted (emod_cascade.py); with
     `condensed` instead, the condensed cascade (common/cascade) with the set's parameters (extract_cascade.py).
-    Built from the slot factories (components.py) """
+    `fixes`: fixes of the published model (inputs.FIXES). Built from the slot factories (components.py) """
     cx = ('compiled' if compiled else 'condensed' if condensed else 'interpreted') if cascade else None
-    return components.make_sim(inputs.load(pid), seed=seed, stop=stop, record=record, network=network, hiv=hiv, cascade=cx,
+    return components.make_sim(components.pars(pid, fixes), seed=seed, stop=stop, record=record, network=network, hiv=hiv, cascade=cx,
                                analyzers=kwargs.pop('analyzers', None), sim_kwargs=kwargs)
 
 

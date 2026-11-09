@@ -93,13 +93,65 @@ def campaign_hiv(camp):
     return out
 
 
-def load(pid):
-    """ Parameters of the EMOD′ network, risk and demography for parameter set `pid` """
+FIXES = dict( # Fixes of the published model's input files, by name (see fix()); none by default
+    mortality='Demographics_Malawi.json: the mortality tables\' ResultScaleFactor 1/365 (deaths per person per year, as labelled), not 1/365,000',
+    reenrol='the campaign: on OnART3 (ART dropout), InterventionStatus to None from 1990, so those who drop out can start ART again',
+    art_male='the campaign: the male non-suppressive ART mortality table\'s 182-365-day rows from CD4 25 (about 7 times the female ones) as the female table has them',
+    risk_nodes='the Risk overlay: each region\'s LOW-risk fraction on its own node (the overlay lists them as Southern, Northern, Central)',
+    # Fixes of how EMOD reads the campaign, in the condensed cascade only (extract_cascade.py; EmodCascade refuses them)
+    anc='ANC testing uptake from its Time_Value_Map (EMOD\'s sigmoid class ignores the table and uses its default curve)',
+    pmtct='combination PMTCT (Option B) not blocked for women sent to ART staging by the same positive ANC test',
+)
+REENROL = { # The `reenrol` fix's campaign event, as in Daniel's fix (hivsim_paper PR #4)
+    'Event_Name': 'OnART: switch InterventionStatus off so people can reenroll', 'class': 'CampaignEventByYear',
+    'Nodeset_Config': {'class': 'NodeSetAll'}, 'Start_Year': 1990,
+    'Event_Coordinator_Config': {'class': 'StandardInterventionDistributionEventCoordinator', 'Intervention_Config': {
+        'class': 'NodeLevelHealthTriggeredIV', 'Trigger_Condition_List': ['OnART3'],
+        'Actual_IndividualIntervention_Config': {'class': 'PropertyValueChanger', 'Target_Property_Key': 'InterventionStatus', 'Target_Property_Value': 'None'}}},
+}
+
+
+def fix(files, fixes):
+    """ The EMOD input files with the named FIXES applied (in place) """
+    assert set(fixes) <= set(FIXES), f'unknown fixes {set(fixes) - set(FIXES)}'
+    if 'mortality' in fixes:
+        ia = files['Demographics_Malawi.json']['Defaults']['IndividualAttributes']
+        for k in ('MortalityDistributionMale', 'MortalityDistributionFemale'):
+            assert ia[k]['ResultScaleFactor'] == 2.7397260273972604e-06
+            ia[k]['ResultScaleFactor'] = 2.7397260273972604e-03
+    events = files[run_emod.CAMPAIGN]['Events']
+    if 'reenrol' in fixes: # Where Daniel put it: before "OnART: switch ARTStatus off"
+        events.insert(next(i for i, ev in enumerate(events) if ev.get('Event_Name') == 'OnART: switch ARTStatus off'), sc.dcp(REENROL))
+    if 'art_male' in fixes:
+        tables = {}
+        for ev in events:
+            ic = ev['Event_Coordinator_Config'].get('Intervention_Config', {})
+            act = ic.get('Actual_IndividualIntervention_Config', {})
+            if act.get('class') == 'ARTMortalityTable' and 'NonSuppressiveART' in ic['Trigger_Condition_List']:
+                tables[ic['Target_Gender']] = act['MortalityTable']
+        assert tables['Male'][1][0][2] == 0.56
+        for m, f in zip(tables['Male'][1], tables['Female'][1]): # By age; CD4 from 25 (the row below 25 matches)
+            m[2:] = f[2:]
+    if 'risk_nodes' in fixes:
+        nodes = {n['NodeID']: n for n in files['Accessibility_and_Risk_IP_Overlay_Malawi.json']['Nodes']}
+        risk = {i: next(ip for ip in n['IndividualProperties'] if ip['Property'] == 'Risk') for i, n in nodes.items()}
+        dist = {i: r['Initial_Distribution'] for i, r in risk.items()}
+        for node, listed in ((1, 2), (2, 3), (3, 1)): # NodeID 1 is Northern in every other file; the overlay's 2 is its Northern, 3 Central, 1 Southern
+            risk[node]['Initial_Distribution'] = dist[listed]
+    return files
+
+
+def load(pid, fixes=()):
+    """ Parameters of the EMOD′ network, risk and demography for parameter set `pid`, with the named FIXES of its input files """
     files, run_number = build(pid)
+    if fixes:
+        files = fix(files, fixes)
     cp = files['config.json']['parameters']
     pfa, assort = files['PFA_Overlay_Malawi.json'], files['Risk_Assortivity_Overlay_Malawi.json']
     socs = [society(pfa, assort, n) for n in (1, 2, 3)]
     p = sc.objdict(pid=pid, run_number=run_number, dt=cp['Simulation_Timestep'], start=cp['Base_Year'], scale=cp['x_Base_Population'])
+    if fixes:
+        p.fixes = tuple(fixes)
     assert abs(p.dt - DT) < 1e-6
 
     # Network: one entry per relationship type, in EMOD's order
