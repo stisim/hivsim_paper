@@ -11,6 +11,13 @@ non-suppressive arm). Groups are dicts with `sex` ('f' or 'm'), `age_lo` and `ag
     cx.on_progression[('undx', 'care')]    # probability, on entering the symptomatic band, groups × years
     cx.births['care']                      # probability for an infected birth (the infant test), groups × years
     cx.mtct_averted                        # share of mother-to-child transmission averted by ANC testing and PMTCT, for mothers in undx or dx, years
+
+Pathways by rate and level (params.py: `rate`, `target`, `hold`; e.g. Optima's own cascade), when the table has them:
+
+    cx.path_rates[('undx', 'dx')]          # per year, bands × groups × years: the `rate` rows (rows on the same move add)
+    cx.path_numbers                        # `rate` rows given as people a year: (sources, destination, per places, people a year by year)
+    cx.targets                             # the `target` and `hold` rows (see TARGETS), for a rule applied to the levels each step
+    cx.coverage('prep')                    # a coverage by group, groups × years (prep, pep), and cx.value('pmtct', 'number', year) etc.
 """
 import numpy as np
 
@@ -19,6 +26,33 @@ ARMS = dict(svl='suppressive', usvl='nonsuppressive')
 OPTIMA_BANDS = [(np.inf, np.inf), (500, np.inf), (350, 500), (200, 350), (50, 200), (0, 50)] # CD4 bounds: acute (at the post-infection CD4), >500, ..., <50
 EMOD_NH = dict(cd4_post=540.55, cd4_death=31.63, who_kappa=[0.9664, 0.9916, 0.9356], who_lambda=[0.26596, 0.19729, 0.34721]) # EMOD-HIV's CD4 and WHO stages (models/emod/v4/hiv.py)
 GESTATION = 280/365
+BANDS = ['acute', 'gt500', 'gt350', 'gt200', 'gt50', 'lt50'] # Names of OPTIMA_BANDS, as a table's `cd4` group
+PLACES = ['undx', 'dx', 'care', 'lost', 'svl', 'usvl'] # Places in care of rate pathways (STATES)
+HOLDS = ['diagnosed', 'in_care', 'on_art', 'suppressed'] # Shares a `hold` row keeps, in the order applied
+
+
+def group_weight(group, g):
+    """ The share of population group `g` (a dict: sex, age_lo, age_hi, and optionally pop) in a row's group (params.parse_group), ages spread evenly """
+    w = 1.0
+    for key, vals in group.items():
+        if key == 'sex':
+            w *= float(g['sex'] in vals)
+        elif key == 'pop':
+            w *= float(g.get('pop') in vals)
+        elif key == 'age':
+            share = 0
+            for v in vals:
+                lo, hi = (float(x) for x in v.split('-'))
+                share += max(0, min(hi, g['age_hi']) - max(lo, g['age_lo']))/(g['age_hi'] - g['age_lo'])
+            w *= min(share, 1)
+        elif key != 'cd4':
+            raise ValueError(f'Unknown group key {key}')
+    return w
+
+
+def band_mask(group, bands=BANDS):
+    """ Which CD4 bands a row's group covers """
+    return np.array([('cd4' not in group) or (b in group['cd4']) for b in bands], dtype=float)
 
 
 class Eligibility:
@@ -84,9 +118,12 @@ class CompartmentalCascade:
         self.lo, self.hi = (np.array([float(g[k]) for g in groups]) for k in ('age_lo', 'age_hi'))
         self.pregnancy = np.zeros((G, T)) if pregnancy is None else np.asarray(pregnancy, dtype=float)*(self.sex == 'f')[:, None]
         self.post_debut = (self.lo >= 15).astype(float) if post_debut is None else np.asarray(post_debut, dtype=float)
-        self.elig = Eligibility(bands, nh)
-        self.hidden_states(other_exit, debut_turnover, lost_exit)
-        self.build()
+        self.rates, self.on_progression, self.births, self.mtct_averted = {}, {}, {}, np.zeros(T)
+        if params.has('hct'): # The condensed cascade's pathways
+            self.elig = Eligibility(bands, nh)
+            self.hidden_states(other_exit, debut_turnover, lost_exit)
+            self.build()
+        self.build_pathways()
 
     # Table values
     def p(self, pathway, parameter, year, sex='all'):
@@ -243,6 +280,45 @@ class CompartmentalCascade:
                 self.mtct_averted[self.ti] = self.p('anc', 'p_test', y)*((1 - blocked)*comb*e_comb + (1 - comb)*eff('eff_sdnvp'))
         self.rates, self.on_progression, self.births = R, prog, births
         del self.ti
+
+    @property
+    def has_pathways(self):
+        """ Whether the table has pathways by rate and level (Optima's kind) """
+        return bool(self.path_rates or self.path_numbers or self.targets)
+
+    def build_pathways(self):
+        """ The `rate` rows as rates by band × group × year (or numbers a year), and the `target` and `hold` rows """
+        B, G, T = len(self.bands), len(self.groups), len(self.years)
+        self.path_rates, self.path_numbers = {}, []
+        for r in self.P.rows('rate'):
+            srcs, dst = r['places'].split('>')
+            values = np.array([r['fn'](y) for y in self.years])
+            if r['per']:
+                assert not r['group'], 'A rate given as a number is for everyone in its places'
+                self.path_numbers.append((srcs.split('|'), dst, r['per'].split('|'), values))
+                continue
+            w = np.array([group_weight(r['group'], g) for g in self.groups])
+            for src in srcs.split('|'):
+                arr = self.path_rates.setdefault((src, dst), np.zeros((B, G, T)))
+                arr += band_mask(r['group'], BANDS[:B])[:, None, None]*w[None, :, None]*values[None, None, :]
+        t = {}
+        if self.P.has('target', 'on_art'):
+            t.update(on_art=lambda y: self.P.value('target', 'on_art', y), lowest_cd4_before=self.v('target', 'lowest_cd4_before', default=-np.inf),
+                     p_suppressive=self.v('target', 'p_suppressive', default=1.0))
+        hold = {h: self.v('hold', h) for h in HOLDS if self.P.has('hold', h)}
+        if hold:
+            t['hold'] = hold
+        self.targets = t
+
+    def coverage(self, pathway, parameter='coverage'):
+        """ A coverage by group from the rows by group (missing groups 0), groups × years """
+        out = np.zeros((len(self.groups), len(self.years)))
+        if self.P.has(pathway, parameter) and not any(r['parameter'] == parameter for r in self.P.rows(pathway)): # One row for everyone
+            return out + np.array([self.P.value(pathway, parameter, y) for y in self.years])[None, :]
+        for r in self.P.rows(pathway):
+            if r['parameter'] == parameter:
+                out += np.array([group_weight(r['group'], g) for g in self.groups])[:, None]*np.array([r['fn'](y) for y in self.years])[None, :]
+        return out
 
     def flow_rows(self, intervention, year):
         """ The flows (VMMC, PrEP) of `year`: (sex, age_lo, age_hi, people a year at full scale, restrict) """
