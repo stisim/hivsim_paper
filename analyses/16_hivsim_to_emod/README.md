@@ -33,3 +33,11 @@ Step 11 of the first milestone (`docs/swap_design.md` §5): run the path and dec
 **Not interpreted as findings:** HIVsim's parameters are provisional and uncalibrated on this STIsim, there is no refit (the compensated, tier 2 results are the headline later, `swap_design` §3), and EMOD′ is one parameter set. The Δs describe these two builds, not the models' published fits.
 
 **What counts as done:** every run finishes without error; both endpoint identities hold exactly at the full horizon; every output has a Δ with an interval for every step and year, both unconditional and conditional (or the number of cells is too small to give one, and that is stated); take-off probabilities with intervals; waterfalls for every output; a SUMMARY with the Δ table and the effect of conditioning.
+
+## Addendum: the path to `emod_fixed` (added 9 Nov, before running)
+
+**Question:** with the EMOD′ end that matches the published figure, `emod_fixed` (analysis 17: Daniel's two fixes, `mortality` and `reenrol`; `models/emod/v4/components_fixed.py`), which steps of the path change, against the copied-bug EMOD′ above?
+
+**Method:** as above (`run.py <cmd> --fixed`): config `to: emod_fixed`, `models: {emod_fixed: models/emod/v4/components_fixed.py}`, pair (hivsim 0, emod_fixed 0), the same 200 cells, order C, V, RN, D, from the `starsim-rc3` head. The fixes travel with the slots' parameter sets: `reenrol` with C (from HHHE on), `mortality` with D (EEEE only). So V and RN should be close to analysis 16's apart from what they inherit from C. Endpoint identity: EEEE-fixed (resumed from its burn-in) against `harness.make_sim(0, cascade=True, condensed=True, fixes=('mortality', 'reenrol'))`, and HHHH as before. Outputs and figures as above, with a `_fixed` suffix. Comparison: the 2020 headline (new infections and the four Fig 3A shares; all runs and conditional; take-off) for each step, against analysis 16's.
+
+**What counts as done:** no run errors; both identities exact; the headline table with its comparison to analysis 16.
