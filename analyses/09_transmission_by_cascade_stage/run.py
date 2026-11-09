@@ -3,7 +3,7 @@ Analysis 09: transmissions by the source's cascade stage, EMOD against EMOD′ (
 Needs Starsim at ebd52c1a on PYTHONPATH, and the EMOD runs (models/emod/reference/run_emod.py --transmission
 --seeds 1 2 3 4 5 --out tr10x5 for the sets below).
 
-    python run.py          # EMOD′ runs, and both classified, to outputs/
+    python run.py          # EMOD′ runs (unless their logs are in raw_results/), and both classified, to outputs/
     python run.py --plot   # figures/ and tables
 """
 import sys
@@ -34,11 +34,14 @@ def run_prime(job):
     import harness, inputs
     from cascade_host import EmodHost
     pid, seed = job
+    f = RAW / f'set{pid:03d}_s{seed}.csv.gz'
+    if f.exists(): # Already run: classify again only
+        return summarize(pd.read_csv(f), 'EMOD′', pid, seed)
     sim = harness.make_sim(pid, seed=inputs.load(pid).run_number*10 + seed, cascade=True, condensed=True, record=False,
                            analyzers=[tx.TransmissionLog(EmodHost, sexual)])
     sim.run()
     log = sim.analyzers.transmissionlog.df
-    log.to_csv(RAW / f'set{pid:03d}_s{seed}.csv.gz', index=False)
+    log.to_csv(f, index=False)
     return summarize(log, 'EMOD′', pid, seed)
 
 
