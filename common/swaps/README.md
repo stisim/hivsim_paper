@@ -91,6 +91,8 @@ Each factory checks which model fills the other slots with its `own(ctx, slot)` 
 
 The sim class is D's model's (`sti.Sim` for HIVsim's D). With EMOD's V it changes nothing: sti.Sim's `process_stis()` keeps a disease instance as it is, and adds connectors only for pairs of STIsim diseases.
 
+**Seeding** (analysis 21). EmodHIV takes a `seeding` rule (`seeding(hiv)` → uids, at its seeding step); None, the default, is EMOD's (`seed_coverage` of Risk HIGH), so every hybrid above is unchanged. A parameter set can carry one as `inp.seeding` (`components_fixed_scaled.py`: `adapters.seed_per_capita`, EMOD′'s seeds per person at the hybrid's scale; `components_fixed_seed5.py` scales `seed_coverage` instead). With an explicit S slot from HIVsim (`S=hivsim` in the choice) on EMOD's V, EmodHIV seeds by HIVsim's `init_prev_data` (`components.seeding_for()`: by StructuredSexual's groups, or by EMOD's Risk class on EMOD′'s network). Another model's S on HIVsim's V, and EMOD's S on another V, raise.
+
 Not built (other paths): HIVsim's C, V or RN on EMOD′'s D, and EMOD′'s V on EMOD′'s D with HIVsim's RN (`make_H` raises).
 
 **Burn-in.** If D's model has `BURNIN` (EMOD′: 1985), `run_one` runs each hybrid and cell to the step before it once, saves `<hybrid id>/<cell>.burnin.sim`, and resumes from it on later calls (`runner.start()`). Resumed equals continuous exactly (`tests/test_resume.py`), so it changes no result, only saves EMOD′'s 1960.5–1985 (10 s) on reruns. It is per hybrid: sharing one burn-in between hybrids would need their slots to be swapped in at 1985 (§1.4), which the EMOD′ → HIVsim path will need.
