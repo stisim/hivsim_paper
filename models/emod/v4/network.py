@@ -46,6 +46,15 @@ def nb_seed(seed):
     np.random.seed(seed)
 
 
+def nb_state():
+    """ The state of Numba's random generator (this thread's), which the network's compiled functions draw from """
+    return nb._helperlib.rnd_get_state(nb._helperlib.rnd_get_np_state_ptr())
+
+
+def nb_set_state(state):
+    nb._helperlib.rnd_set_state(nb._helperlib.rnd_get_np_state_ptr(), state)
+
+
 def available_all(a, q, mx, flags):
     """ Availability of each person (rows) for each type (columns) """
     eff = a + q
@@ -219,6 +228,20 @@ class EmodNetwork(ss.SexualNet):
         self.starts, self.ends = [], []
         self.rng = np.random.default_rng(sim.pars.rand_seed + 1)
         nb_seed(sim.pars.rand_seed + 2)
+        return
+
+    def __getstate__(self):
+        """ Saved with Numba's generator state, which lives outside the sim, so that a sim loaded in another process (e.g. after a burn-in) goes on with the same draws """
+        state = self.__dict__.copy()
+        if getattr(self, 'initialized', False):
+            state['_nb_state'] = nb_state()
+        return state
+
+    def __setstate__(self, state):
+        rng = state.pop("_nb_state", None)
+        self.__dict__.update(state)
+        if rng is not None:
+            nb_set_state(rng)
         return
 
     def init_results(self):
