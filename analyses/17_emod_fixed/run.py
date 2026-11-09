@@ -132,6 +132,17 @@ def tables():
     eff['order'] = eff.variant.map({m: i for i, m in enumerate(MODELS)})
     eff = eff.sort_values(['pid', 'order']).drop(columns='order')
     eff.to_csv(OUT / 'effects.csv', index=False, float_format='%.4g')
+    # Bansi-Matharu 2025 Figure 3A: sources of new infections in four groups, and new infections (national, at 1% scale x 100)
+    y['src_undiagnosed'], y['src_diagnosed_never_treated'] = y.tx_undiagnosed, y.tx_diagnosed_naive
+    y['src_on_art'], y['src_interrupted'] = y.tx_art_lt6m + y.tx_art_supp + y.tx_art_nonsupp, y.tx_interrupted
+    src = ['src_undiagnosed', 'src_diagnosed_never_treated', 'src_on_art', 'src_interrupted', 'new_infections']
+    f = y[y.year.isin([2020, 2024])].groupby(['pid', 'variant', 'year'])[src]
+    fig = f.mean().join(f.quantile(0.1).add_suffix('_q10')).join(f.quantile(0.9).add_suffix('_q90')).reset_index()
+    fig['order'] = fig.variant.map({m: i for i, m in enumerate(MODELS)})
+    fig = fig.sort_values(['pid', 'year', 'order']).drop(columns='order')
+    fig.to_csv(OUT / 'fig3a.csv', index=False, float_format='%.4g')
+    with pd.option_context('display.width', 250, 'display.max_columns', 40):
+        print(fig[fig.pid == 0][['variant', 'year'] + src].round(3).to_string(index=False))
     # Against the UNAIDS series (2020)
     un = targets[(targets.source == 'UNAIDS 2025') & (np.floor(targets.year) == 2020)][['target', 'value']]
     print(un.to_string())
