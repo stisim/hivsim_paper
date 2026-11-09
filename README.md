@@ -15,6 +15,7 @@ This repository holds the work for decomposing disagreement between HIV models. 
 | [docs/emod_inventory.md](docs/emod_inventory.md) | EMOD-HIV Malawi: components, Malawi values, problems found, and notes for EMOD′ |
 | [docs/optima_prime_plan.md](docs/optima_prime_plan.md) | Optima′ build plan and acceptance |
 | [docs/swap_design.md](docs/swap_design.md) | Design of the component swaps (P5): components and interfaces, swap paths, attribution, calibration and endpoint identity, runner, first milestone |
+| [docs/status_2026-11-09.md](docs/status_2026-11-09.md) | Status at the end of sprint 3: analyses 11–15, fixes found, decisions pending |
 | [analyses/](analyses/) | Every result, numbered, each with a README (before running) and a SUMMARY (after) |
 | [docs/prompts.md](docs/prompts.md) | Agent prompt plan (P0–P5), human checkpoints, decisions, notes on Starsim v4, and a record of prompts run |
 
