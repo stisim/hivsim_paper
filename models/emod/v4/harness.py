@@ -28,7 +28,7 @@ class Snapshots(ss.Analyzer):
         return
 
     def step(self):
-        if (self.ti - 5) % 12: # EMOD reports at 1960.92, 1961.92, ...
+        if (self.ti - 4) % 12: # EMOD reports at 1960.92, 1961.92, ... (the step from 1960.83, the fifth: the first step is ti 0)
             return
         ppl, net = self.sim.people, self.sim.networks.get(self.netname)
         uids = ppl.alive.uids
@@ -118,7 +118,7 @@ class EmodReport(ss.Analyzer):
         for col, uids in (('Newly Infected', hiv.new_uids), ('Died', dead), ('Died_from_HIV', hiv.dead_uids)):
             if len(uids):
                 self.flows.append(self.keys(uids).assign(col=col))
-        if (self.ti - 5) % 6 or self.t.now('year') < self.start - 0.5:
+        if (self.ti - 4) % 6 or self.t.now('year') < self.start - 0.5: # As Snapshots
             return
         uids = ppl.alive.uids
         uids = uids[~np.isin(uids, self.sim.demographics.emoddemog.born)]
