@@ -12,7 +12,8 @@ import pytest
 
 here = Path(__file__).resolve().parent
 repo = here.parents[2]
-sys.path[:0] = [str(repo), str(repo / 'models' / 'emod' / 'v4')]
+sys.path[:0] = [str(repo / 'models' / 'emod' / 'v4'), str(repo)]
+import harness # noqa: E402,F401 (first: pytest puts common/ on the path, where `cascade` is common/cascade, not EMOD′'s)
 from common import swaps # noqa: E402
 
 TOY = dict(models=dict(a='common/swaps/tests/toy_a.py', b='common/swaps/tests/toy_b.py'), stop=2003)

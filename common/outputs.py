@@ -75,7 +75,7 @@ class Outputs(TransmissionLog):
 
     def key(self, uids):
         """ Stratum of each: (female, risk HIGH, age band) as one index """
-        age = np.minimum(np.searchsorted(BANDS, self.host.age_years(uids), side='right') - 1, len(BANDS) - 1)
+        age = np.clip(np.searchsorted(BANDS, self.host.age_years(uids), side='right') - 1, 0, len(BANDS) - 1) # Unborn (infected in pregnancy) in the first
         high = self.host.risk(uids) == 2 if self.has_risk else np.zeros(len(uids), bool)
         return (self.host.female(uids).astype(int)*2 + high)*len(BANDS) + age
 
@@ -83,7 +83,7 @@ class Outputs(TransmissionLog):
         super().step() # The log, and self.on: who is on ART now (as before for those dying)
         sim, ppl = self.sim, self.sim.people
         au = ppl.auids
-        au = au[ppl.ti_dead.raw[au] != self.ti] # At the end of the step
+        au = au[(ppl.ti_dead.raw[au] != self.ti) & (self.host.age_years(au) >= 0)] # At the end of the step, and born
         inf = self.host.infected(au)
         st = self.host.cascade_stage(au)
         new, dead = ss.uids(new_infections(sim)), ss.uids(hiv_deaths(sim))
