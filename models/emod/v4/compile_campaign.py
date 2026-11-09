@@ -1,10 +1,10 @@
 """
 EMOD′ care cascade compiled into Starsim deliveries: the events of Daniel's campaign file (the parts cascade.py runs)
 become `ss.Delivery` objects, with EMOD's semantics expressed natively where Starsim has them (needs Starsim's
-deliveries with cycles through `delay=`, v4 after 4.0.0rc1).
+deliveries with cycles through delays, 4.0.0rc3 or later).
 
 How each part of the campaign maps:
-- A listener (NodeLevelHealthTriggeredIV) → deliveries triggered by the event (`who=` the deliveries that broadcast it,
+- A listener (NodeLevelHealthTriggeredIV) → deliveries triggered by the event (`when=` the deliveries that broadcast it,
   joined with `|`), with its node, sex and age as conditions on people, `& ~` its Disqualifying_Properties as
   conditions on `people.istatus`, and not dying this step.
 - HIVSigmoidByYearAndSexDiagnostic, HIVPiecewiseByYearAndSexDiagnostic → `coverage=` a function of the year (the yes
@@ -14,17 +14,17 @@ How each part of the campaign maps:
 - New_Property_Value and PropertyValueChanger → `SetIP`, a product that sets `istatus`, `artstatus` or `onprep`.
 - BroadcastEvent → a delivery with no product but its status, whose event is the broadcast.
 - HIVMuxer → two deliveries: on the trigger, `MuxEntry`, which sets the status for those not already waiting (EMOD
-  refuses a second entry, Max_Entries 1), then the delay as `delay=`, whose event is the muxer's broadcast. Its
-  Disqualifying_Properties are checked when due, as `delay=` does, and also on each step while waiting, which `delay=`
+  refuses a second entry, Max_Entries 1), then the delay as `when=ss.on(..., delay=)`, whose event is the muxer's broadcast. Its
+  Disqualifying_Properties are checked when due, as a delay does, and also on each step while waiting, which a delay
   does not: `CompiledCampaign.step()` ends the wait of those disqualified, as EMOD expires the muxer.
 - Decisions on the person's state (HIVRapidHIVDiagnostic, STIIsPostDebut, HIVDrawBlood, the two ART staging
   diagnostics) → `Decide`, a product with outcomes `positive` and `negative`, using cascade.py's decision code.
 - ARTMortalityTable, ARTDropout, PMTCT, MaleCircumcision, ControlledVaccine → `Act`, a product calling the HIV module;
-  PMTCT's reset after 280 days is a delivery with `delay=`.
-- A one-off event (Start_Year) → a delivery `at=` that year. NChooserEventCoordinatorHIV → a delivery whose `deliver=`
-  is cascade.py's NChooser selection.
-- Events from coded modules (STIDebut, NewlySymptomatic, SixWeeksOld, TwelveWeeksPregnant) → deliveries with
-  `deliver=` (the last two a step late, as EMOD first updates what they give on the next step).
+  PMTCT's reset after 280 days is a delivery with a delay.
+- A one-off event (Start_Year) → a delivery `when=` that year. NChooserEventCoordinatorHIV → a delivery at every step
+  whose `who=` is cascade.py's NChooser selection.
+- Events from coded modules (STIDebut, NewlySymptomatic, SixWeeksOld, TwelveWeeksPregnant) → deliveries at every step
+  with `who=` (the last two a step late, as EMOD first updates what they give on the next step).
 
 Deliveries are given in the order EMOD would update them for one person (breadth first along the chains, in campaign
 order), which Starsim keeps where its triggers allow, so that, e.g., ART staging's status disqualifies the
@@ -37,7 +37,7 @@ from starsim.internals.conditions import Cond
 
 from cascade import EmodCascade, sigmoid, piecewise, DELAYS
 
-PEOPLE = ss.ppl
+PEOPLE = ss.person
 
 
 def ref(name, outcome=None):
@@ -195,13 +195,13 @@ def compile_campaign(inp):
     adapters = dict(STIDebut=lambda sim: sim.interventions.emodrisk.new_debuts, NewlySymptomatic=lambda sim: sim.diseases.hiv.newly_symptomatic,
                     SixWeeksOld=lambda sim: sim.interventions.emodcascade.six, TwelveWeeksPregnant=lambda sim: sim.interventions.emodcascade.twelve)
     for ev, fn in adapters.items():
-        spec(f'ev_{ev}', None, None, emits={None: ev}, deliver=fn)
+        spec(f'ev_{ev}', None, None, emits={None: ev}, who=fn, when=each_step())
     for k, o in enumerate(cas.oneoffs):
         c = T[o['tid']]
         assert c['class'] == 'BroadcastEvent'
-        spec(f'once{k}', None, conditions(cas, o['target'], o['tid'], o['nodes']), emits={None: c['Broadcast_Event']}, at=[o['start']], what=SetIP(o['tid'], f'once{k}_p'))
+        spec(f'once{k}', None, conditions(cas, o['target'], o['tid'], o['nodes']), emits={None: c['Broadcast_Event']}, when=[o['start']], what=SetIP(o['tid'], f'once{k}_p'))
     for k, ch in enumerate(cas.choosers_state):
-        spec(f'nchooser{k}', None, None, deliver=lambda sim, k=k: sim.interventions.emodcascade.choosers_state[k].select(sim.interventions.emodcascade.year), what=Act(ch.cfg['tid'], f'nchooser{k}_p'))
+        spec(f'nchooser{k}', None, None, when=each_step(), who=lambda sim, k=k: sim.interventions.emodcascade.choosers_state[k].select(sim.interventions.emodcascade.year), what=Act(ch.cfg['tid'], f'nchooser{k}_p'))
 
     # Listeners
     for k, li in enumerate(cas.listeners):
@@ -270,7 +270,11 @@ def compile_campaign(inp):
         t = any_of(trig[name])
         if extra.get(name) and t is not None: # Runs after the deliveries before it in EMOD's order: event terms that select nobody
             t = t | any_of([ref(p) & ~ref(p) for p in extra[name]])
-        out.append(ss.Delivery(name=name, who=all_of([t, x['cond']]), disease='hiv', **x['kw']))
+        kw = dict(x['kw'])
+        trigger, cond = ss.conditions.split_events(all_of([t, x['cond']])) if t is not None or x['cond'] is not None else (None, None) # Its events trigger it, the rest says who is eligible
+        delay = kw.pop('delay', None)
+        when = kw.pop('when', None) or (ss.on(trigger, delay=delay) if delay is not None else trigger)
+        out.append(ss.Delivery(name=name, when=when, who=kw.pop('who', None) or cond, disease='hiv', **kw))
     return cas, out
 
 
@@ -350,6 +354,11 @@ def after_previous(seq, specs, trig, cas, depth=4):
                     deps[name].add(prev)
                     extra[name].append(prev)
     return dict(extra)
+
+
+def each_step():
+    """ Rounds at every step (EMOD′'s steps are months), for a delivery to those a function of the sim chooses """
+    return ss.schedule(every=ss.months(1))
 
 
 def delay_dist(c):
