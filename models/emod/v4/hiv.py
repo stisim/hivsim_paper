@@ -85,7 +85,7 @@ class EmodHIV(ss.Disease):
     def init_results(self):
         super().init_results()
         self.define_results(ss.Result('new_infections', dtype=int, scale=True, label='New infections'),
-                            ss.Result('hiv_deaths', dtype=int, scale=True, label='HIV deaths'),
+                            ss.Result('hiv_deaths', dtype=int, scale=True, kind='flow', label='HIV deaths'),
                             ss.Result('n_infected', dtype=int, scale=True, label='People with HIV'),
                             ss.Result('n_on_art', dtype=int, scale=True, label='On ART'))
         return
@@ -410,17 +410,21 @@ class EmodHIV(ss.Disease):
                                     src_age=np.where(src >= 0, ppl.emod_age.raw[np.maximum(src, 0)]/365, np.nan)))
         return
 
-    def step_die(self, uids):
-        super().step_die(uids)
+    def on_death(self, uids):
+        super().on_death(uids)
         self.infected[uids] = False
         self.art[uids] = OFF
         return
 
-    def update_results(self):
-        super().update_results()
-        au = self.sim.people.auids
+    def record_flows(self):
+        super().record_flows()
         self.results.new_infections[self.ti] = getattr(self, 'n_new', 0)
         self.results.hiv_deaths[self.ti] = getattr(self, 'n_dead', 0)
+        return
+
+    def record_stocks(self):
+        super().record_stocks()
+        au = self.sim.people.auids
         self.results.n_infected[self.ti] = np.count_nonzero(self.infected.raw[au])
         self.results.n_on_art[self.ti] = np.count_nonzero(self.art.raw[au] != OFF)
         return

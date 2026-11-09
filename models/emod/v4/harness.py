@@ -91,7 +91,7 @@ def make_sim(pid=0, seed=1, stop=2025, record=True, network=True, hiv=False, cas
     if cascade:
         kwargs['analyzers'] = [Snapshots(), EmodReport()] + sc.tolist(kwargs.get('analyzers'))
     kwargs.setdefault('analyzers', Snapshots())
-    return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0, use_aging=False, # EmodDemography ages people as EMOD does
+    return ss.Sim(n_agents=int(inp.init_pop.sum()), start=inp.start, stop=stop, dt=1/12, rand_seed=seed, verbose=0, aging=False, # EmodDemography ages people as EMOD does
                   demographics=EmodDemography(inp), **mods, **kwargs)
 
 

@@ -408,8 +408,8 @@ class EmodNetwork(ss.SexualNet):
         e.condoms = cond[e.type, self.node.raw[e.p1]]
         return
 
-    def update_results(self):
-        super().update_results()
+    def record_stocks(self):
+        super().record_stocks()
         for t, k in enumerate(KEYS):
             self.results[f'n_{k}'][self.ti] = np.count_nonzero(self.edges.type == t) if len(self) else 0
         return

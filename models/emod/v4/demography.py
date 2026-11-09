@@ -62,8 +62,8 @@ class EmodDemography(ss.Demographics):
 
     def init_results(self):
         super().init_results()
-        self.define_results(ss.Result('births', dtype=int, scale=True, label='Births'),
-                            ss.Result('deaths', dtype=int, scale=True, label='Background deaths'))
+        self.define_results(ss.Result('births', dtype=int, scale=True, kind='flow', label='Births'),
+                            ss.Result('deaths', dtype=int, scale=True, kind='flow', label='Background deaths'))
         return
 
     def init_post(self):
@@ -124,8 +124,8 @@ class EmodDemography(ss.Demographics):
         self.n_births, self.n_deaths = len(born), len(dead)
         return
 
-    def update_results(self):
-        super().update_results()
+    def record_flows(self):
+        super().record_flows()
         self.results.births[self.ti] = self.n_births
         self.results.deaths[self.ti] = self.n_deaths
         return
