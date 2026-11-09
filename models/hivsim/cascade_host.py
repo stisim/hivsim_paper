@@ -118,3 +118,6 @@ class StisimHost(CascadeHost):
 
     def start_prep(self, uids, efficacy, days):
         self.hiv.start_prep(uids[~self.hiv.infected.raw[uids]], eff=efficacy, dur=ss.days(days))
+
+    def cascade_stage(self, uids):
+        return dict(diagnosed=self.hiv.diagnosed.raw[uids], on_art=self.on_art(uids), suppressive=self.hiv.on_effective_art.raw[uids])
