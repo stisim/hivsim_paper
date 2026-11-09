@@ -76,3 +76,21 @@ conda run -n hp_rc3 python -m pytest common/swaps/tests -k toy                  
 - EMOD′ endpoint: `build(all EMOD′)` equals `harness.make_sim(cascade=True, condensed=True)`. That covers every result array, both reports' tables, and the outputs' counts and transmission log, to 2005.
 - Trivial swap: C and RN from `emod_b` (EMOD′'s factories under another name) still equal EMOD′.
 - Toy models (`tests/toy_a.py`, `toy_b.py`: SIS on a random network): hybrid lists, a swap for an alias changes nothing while a swap for the other model does, and pool, store, manifest and resume.
+
+## Hybrids of the first path (HIVsim → EMOD′: C, V, RN, D)
+
+Each factory checks which model fills the other slots with its `own(ctx, slot)` (the slot's factory is defined in its own file; an alias of the file, or a file re-exporting the factory, counts as its own), and fits them with the bridges in `models/emod/v4/adapters.py` (analysis 12). With every slot from one model, none of this is used, so `build(all HIVsim)` and `build(all EMOD′)` still equal their `make_sim` (`tests/test_components.py`, `tests/test_runner.py`).
+
+| Hybrid (D, RN, V, C) | What's foreign, and the bridges |
+|---|---|
+| H, H, H, H | none |
+| H, H, H, E | EMOD's C on `StisimHost`: the condensed cascade with this set's table (`extract_cascade.extract`), flows summed over EMOD's nodes and scaled by the sim's people per agent (the table's `flows` scale dropped), after HIVsim's `for_cascade()` (sti.ART as ART's holder, circumcision held at its pre-2010 level). For set 0 this is `swap.make_sim('condensed')` exactly (test `hivsim_runner_emod_c`) |
+| H, H, E, E | EMOD's V on HIVsim's RN and D: `EmodHIVOnSti` (StructuredSexual's edges) and `EmodPeople(risk_net='structuredsexual')` (people fields, Risk and STI flag from HIVsim's network, debuts). HIVsim's D gives its demography as modules (`sti.Sim.process_demographics()`) so `EmodPeople` can follow them; HIVsim's RN leaves out `ss.PrenatalNet` (sti.HIV's MTCT only). C: condensed on `EmodHostOnSti` (pregnancy from `ss.Pregnancy`, debut from StructuredSexual), flows by node, scaled by the sim |
+| H, E, E, E | EMOD's RN on HIVsim's D: `EmodNetworkAt` (warmed up at the start), `EmodRiskAt` (the starting population's sex-work history) and `EmodPeople(warm='emodnet')`; V is plain `EmodHIV`; C as above, `EmodHostOnSti` reading `EmodNetworkAt`'s debut |
+| E, E, E, E | none; resumed from the burn-in (below) |
+
+The sim class is D's model's (`sti.Sim` for HIVsim's D). With EMOD's V it changes nothing: sti.Sim's `process_stis()` keeps a disease instance as it is, and adds connectors only for pairs of STIsim diseases.
+
+Not built (other paths): HIVsim's C, V or RN on EMOD′'s D, and EMOD′'s V on EMOD′'s D with HIVsim's RN (`make_H` raises).
+
+**Burn-in.** If D's model has `BURNIN` (EMOD′: 1985), `run_one` runs each hybrid and cell to the step before it once, saves `<hybrid id>/<cell>.burnin.sim`, and resumes from it on later calls (`runner.start()`). Resumed equals continuous exactly (`tests/test_resume.py`), so it changes no result, only saves EMOD′'s 1960.5–1985 (10 s) on reruns. It is per hybrid: sharing one burn-in between hybrids would need their slots to be swapped in at 1985 (§1.4), which the EMOD′ → HIVsim path will need.

@@ -43,6 +43,15 @@ def pars(pid):
     return dict(swap.BEST)
 
 
+def own(ctx, slot):
+    """ Whether the hybrid's `slot` is HIVsim's: its factory's code is in this file (an alias of this file, or a file
+    that re-exports the factory, counts). True without a choice (make_sim) or if the choice has no such slot """
+    choice = getattr(ctx, 'choice', None)
+    if not choice or slot not in choice:
+        return True
+    return Path(getattr(ctx.models[choice[slot]], f'make_{slot}').__code__.co_filename).resolve() == Path(__file__).resolve()
+
+
 def opt(ctx, key, default):
     """ A make_sim() option; the runner gives none, so the defaults are HIVsim Malawi with its own care """
     return getattr(ctx, key, default)
@@ -53,9 +62,15 @@ def sub(pars, prefix):
 
 
 def make_D(pars, ctx):
-    """ Demography: STIsim's Malawi demographics (pregnancy, deaths, the 1985 age structure), from 1985 """
+    """ Demography: STIsim's Malawi demographics (pregnancy, deaths, the 1985 age structure), from 1985. As the
+    location, for sti.Sim to build; or, when another model's RN or V is in the hybrid, as the modules it builds, so that
+    model's demographic bridge (e.g. EMOD′'s `EmodPeople`) can follow them """
     malawi.check_data()
-    return dict(n_agents=opt(ctx, 'n_agents', 10e3), start=malawi.start, datafolder=malawi.datadir, location=malawi.location)
+    kw = dict(n_agents=opt(ctx, 'n_agents', 10e3), start=malawi.start, datafolder=malawi.datadir, location=malawi.location)
+    if own(ctx, 'RN') and own(ctx, 'V'):
+        return kw
+    dem, people, total_pop = SIM(**kw).process_demographics() # STIsim's own construction of the location's modules
+    return dict(n_agents=kw['n_agents'], start=kw['start'], demographics=list(dem), people=people, total_pop=total_pop)
 
 
 def make_R(pars, ctx):
@@ -64,11 +79,12 @@ def make_R(pars, ctx):
 
 
 def make_N(pars, ctx):
-    """ Sexual contact: sti.StructuredSexual with Malawi's condom use (times condom_scale, at most 1), and the prenatal network (mother to fetus) """
+    """ Sexual contact: sti.StructuredSexual with Malawi's condom use (times condom_scale, at most 1), and the prenatal
+    network (mother to fetus, for sti.HIV's MTCT: only with HIVsim's V; without it, fetuses aren't agents) """
     condoms = malawi.read('condom_use.csv')
     if condoms is not None:
         condoms = condoms.set_index('partnership').mul(pars.get('condom_scale', 1)).clip(upper=1).reset_index()
-    return dict(networks=[sti.StructuredSexual(condom_data=condoms, **sub(pars, 'nw_')), ss.PrenatalNet()])
+    return dict(networks=[sti.StructuredSexual(condom_data=condoms, **sub(pars, 'nw_'))] + ([ss.PrenatalNet()] if own(ctx, 'V') else []))
 
 
 def make_T(pars, ctx):
@@ -109,7 +125,15 @@ def make_C(pars, ctx):
     import swap
     from common.cascade.cascade import condensed_cascade
     params = opt(ctx, 'params', None) or swap.emod_table()
-    return dict(interventions=[make_art('cascade'), swap.traditional_vmmc()] + condensed_cascade(params, StisimHost))
+    return dict(interventions=for_cascade(pars, ctx)['interventions'] + condensed_cascade(params, StisimHost))
+
+
+def for_cascade(pars, ctx):
+    """ What a cascade other than HIVsim's own needs from HIVsim's V, before it (another model's C calls this): sti.ART
+    as the holder of ART's states (ART's biology is H's), and circumcision before the programmes, held at its pre-2010
+    level (HIVsim's VMMC data include traditional circumcision; EMOD′'s V has its own) """
+    import swap
+    return dict(interventions=[make_art('cascade'), swap.traditional_vmmc()])
 
 
 def make_M(pars, ctx):

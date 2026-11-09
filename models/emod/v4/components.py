@@ -10,7 +10,14 @@ parameter set's inputs (`pars(pid)`, i.e. `inputs.load(pid)`). `make_sim()` puts
 
 Fine slots, and the runner's coarse ones made of them: RN = R + N, V = T + H + S. Where one module covers several
 slots, the first slot it belongs to builds it and the others give nothing: T and S are inside H's `EmodHIV`.
+
+In a hybrid (`ctx.choice`), the factories fit the slots that aren't EMOD′'s with the bridges in adapters.py
+(common/swaps/README.md, "Hybrids of the first path"): on HIVsim's D, RN is `EmodNetworkAt` and `EmodRiskAt` and the
+first of RN and V adds `EmodPeople`; on HIVsim's RN, V is `EmodHIVOnSti`; C runs the condensed cascade on the host of
+V's model, with what that model's `for_cascade()` gives, flows summed over nodes if V isn't EMOD′'s and scaled by the
+sim's people per agent if D isn't.
 """
+from pathlib import Path
 from types import SimpleNamespace
 import sciris as sc
 import starsim as ss
@@ -25,12 +32,22 @@ from cascade_host import EmodHost
 
 HOST = EmodHost # The CascadeHost, when EMOD′'s V is in the hybrid
 SCALE = 100 # People per agent (1% scale)
+BURNIN = 1985 # With EMOD′'s D, the runner runs each hybrid and cell to here once, saves it and resumes from it (swap_design D1)
 SLOTS = ['D', 'RN', 'V', 'C', 'M'] # The order make_sim() calls them in (the runner's canonical order)
 LISTS = ['demographics', 'networks', 'diseases', 'interventions', 'connectors', 'analyzers'] # The keywords that hold lists of modules
 
 
 def pars(pid):
     return inputs.load(pid)
+
+
+def own(ctx, slot):
+    """ Whether the hybrid's `slot` is EMOD′'s: its factory's code is in this file (an alias of this file, or a file
+    that re-exports the factory, counts). True without a choice (make_sim) or if the choice has no such slot """
+    choice = getattr(ctx, 'choice', None)
+    if not choice or slot not in choice:
+        return True
+    return Path(getattr(ctx.models[choice[slot]], f'make_{slot}').__code__.co_filename).resolve() == Path(__file__).resolve()
 
 
 def opt(ctx, key, default):
@@ -56,13 +73,24 @@ def make_D(inp, ctx):
 
 
 def make_R(inp, ctx):
-    """ Risk and sex work, and the STI flag: EmodRisk (an intervention, first of them) """
-    return dict(interventions=[EmodRisk(inp)]) if with_network(ctx) else {}
+    """ Risk and sex work, and the STI flag: EmodRisk (an intervention, first of them); on another model's D, EmodRiskAt
+    (with the starting population's history) """
+    if not with_network(ctx):
+        return {}
+    if own(ctx, 'D'):
+        return dict(interventions=[EmodRisk(inp)])
+    from adapters import EmodRiskAt
+    return dict(interventions=[EmodRiskAt(inp)])
 
 
 def make_N(inp, ctx):
-    """ Sexual contact: EmodNetwork """
-    return dict(networks=[EmodNetwork(inp, record=opt(ctx, 'record', False))]) if with_network(ctx) else {}
+    """ Sexual contact: EmodNetwork; on another model's D, EmodNetworkAt (warmed up at the start) and the D bridge EmodPeople """
+    if not with_network(ctx):
+        return {}
+    if own(ctx, 'D'):
+        return dict(networks=[EmodNetwork(inp, record=opt(ctx, 'record', False))])
+    from adapters import EmodNetworkAt, EmodPeople
+    return dict(networks=[EmodNetworkAt(inp, record=opt(ctx, 'record', False))], demographics=[EmodPeople(inp, warm='emodnet')])
 
 
 def make_T(inp, ctx):
@@ -71,8 +99,17 @@ def make_T(inp, ctx):
 
 
 def make_H(inp, ctx):
-    """ Natural history (and, as EmodHIV, transmission and the 1983 seeding) """
-    return dict(diseases=[EmodHIV(inp, record=opt(ctx, 'record', False))]) if with_hiv(ctx) else {}
+    """ Natural history (and, as EmodHIV, transmission and the 1983 seeding); on another model's RN (StructuredSexual),
+    EmodHIVOnSti, with EmodPeople reading EMOD's Risk and STI flag from that network """
+    if not with_hiv(ctx):
+        return {}
+    record = opt(ctx, 'record', False)
+    if own(ctx, 'RN'):
+        return dict(diseases=[EmodHIV(inp, record=record)])
+    if own(ctx, 'D'):
+        raise NotImplementedError("EMOD′'s V on another model's RN needs that RN on EMOD′'s D (no bridge yet)")
+    from adapters import EmodHIVOnSti, EmodPeople
+    return dict(diseases=[EmodHIVOnSti(inp, record=record)], demographics=[EmodPeople(inp, risk_net='structuredsexual')])
 
 
 def make_S(inp, ctx):
@@ -82,7 +119,8 @@ def make_S(inp, ctx):
 
 def make_C(inp, ctx):
     """ Care cascade and prevention: the campaign interpreted (EmodCascade), compiled into deliveries, or as the condensed
-    cascade (on the host of V's model, in a hybrid); with EMOD's reports (Snapshots, EmodReport), as harness.make_sim has """
+    cascade (on the host of V's model, in a hybrid); with EMOD's reports (Snapshots, EmodReport), as harness.make_sim has,
+    when V is EMOD′'s """
     cx = cascade(ctx)
     if not cx:
         return {}
@@ -92,17 +130,42 @@ def make_C(inp, ctx):
         holder, deliveries = compile_campaign(inp)
         intvs = [holder] + deliveries
     elif cx == 'condensed':
-        from extract_cascade import extract
-        from common.cascade.cascade import condensed_cascade
-        from common.cascade.params import Params
-        choice = opt(ctx, 'choice', {})
-        host = ctx.models[choice['V']].HOST if 'V' in choice else HOST
-        intvs = condensed_cascade(Params(*extract(inp)), host)
+        return condensed(inp, ctx)
     elif cx == 'interpreted':
         intvs = [EmodCascade(inp)]
     else:
         raise ValueError(f'Unknown cascade {cx!r}')
     return dict(interventions=intvs, analyzers=[Snapshots(), EmodReport()])
+
+
+def condensed(inp, ctx):
+    """ The condensed cascade with this parameter set's table. On EMOD′'s V, on EmodHost (or, on another model's D,
+    adapters.EmodHostOnSti), with EMOD's reports; on another model's V, on that model's HOST, after what its
+    `for_cascade()` gives, with the flows summed over EMOD's nodes. On another model's D, the flows' scale (EMOD's
+    agents per person) is dropped, so the cascade scales by the sim's """
+    from extract_cascade import extract
+    from common.cascade.cascade import condensed_cascade
+    from common.cascade.params import Params
+    params, flows = extract(inp)
+    if not own(ctx, 'D'):
+        params = params[params.pathway != 'flows']
+    pre, analyzers = {}, []
+    if own(ctx, 'V'):
+        from harness import Snapshots, EmodReport
+        analyzers = [Snapshots(), EmodReport()]
+        if own(ctx, 'D'):
+            host = HOST
+        else:
+            from adapters import EmodHostOnSti
+            host = EmodHostOnSti
+    else:
+        vm = ctx.models[ctx.choice['V']]
+        host = vm.HOST
+        if hasattr(vm, 'for_cascade'):
+            pre = vm.for_cascade(ctx.pars[ctx.choice['V']], ctx)
+        keys = [c for c in flows.columns if c not in ('node', 'n')]
+        flows = flows.groupby(keys, as_index=False, dropna=False).n.sum().assign(node='all')
+    return join(pre, dict(interventions=condensed_cascade(Params(params, flows), host), analyzers=analyzers))
 
 
 def make_M(inp, ctx):

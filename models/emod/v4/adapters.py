@@ -16,6 +16,8 @@ EMOD′ components on HIVsim's slots (docs/swap_design.md, section 5, steps 6 an
   (drawn once per partnership), taken as they are; `condoms` is the chance an act has a condom, as EMOD′'s; types are
   mapped stable → MARITAL, casual → INFORMAL, one-time → TRANSITORY, sex work → COMMERCIAL (only the infection log
   reads them).
+- `EmodHostOnSti`: EmodHost (the condensed cascade's host) on STIsim's demography: pregnancy from `ss.Pregnancy`, and
+  debut from the network (StructuredSexual's, with `EmodPeople`'s debuts, if EMOD's RN isn't there).
 - `EmodNetworkAt` and `EmodRiskAt` (step 7): EmodNetwork and EmodRisk starting in a population that has no
   sexual history. At its first step the network draws debut ages, then EmodRisk gives those already past debut the
   sex work and STI flag they would have had (`EmodRiskAt.start_history()`), then the network runs a burn-in as a
@@ -45,6 +47,7 @@ import inputs
 from hiv import EmodHIV
 from network import EmodNetwork, nb_seed, TYPES
 from risk import EmodRisk, LOW, MEDIUM, HIGH
+from cascade_host import EmodHost
 
 REPO = Path(__file__).resolve().parents[3]
 DATADIR = REPO / 'models' / 'hivsim' / 'malawi' / 'data'
@@ -77,7 +80,7 @@ class EmodPeople(ss.Demographics):
         super().__init__(name=name, **kwargs)
         self.inp, self.pregname, self.risk_net, self.warm = inp, preg, risk_net, warm
         self.define_states(ss.BoolArr('sti_drawn', default=False))
-        self.born = self.mothers = self.twelve_weeks = ss.uids()
+        self.born = self.mothers = self.twelve_weeks = self.new_debuts = ss.uids()
         return
 
     def init_pre(self, sim):
@@ -123,6 +126,7 @@ class EmodPeople(ss.Demographics):
         sw = net.fsw.raw[uids] | net.client.raw[uids]
         self.risk[uids] = np.where(sw, HIGH, np.where(net.risk_group.raw[uids] == 0, LOW, MEDIUM))
         new = uids[~self.sti_drawn.raw[uids] & (self.sim.people.age.raw[uids] >= net.debut.raw[uids])]
+        self.new_debuts = new if self.ti else ss.uids() # Those past debut at the start aren't debuting (as EmodRiskAt's start history)
         self.sti_drawn[new] = True
         self.sti[new[self.rng.random(len(new)) < self.inp.campaign.p_sti[self.risk.raw[new]]]] = True
         return
@@ -139,6 +143,27 @@ class EmodHIVOnSti(EmodHIV):
         if not len(e.p1):
             return None
         return sc.objdict(p1=e.p1, p2=e.p2, acts=np.asarray(e.acts).astype(int), condoms=e.condoms, type=TYPE_MAP[np.asarray(e.edge_type).astype(int)])
+
+
+class EmodHostOnSti(EmodHost):
+    """ EmodHost (the condensed cascade's host on EmodHIV) on STIsim's demography with `EmodPeople`: pregnancy from
+    `ss.Pregnancy`; debut from EmodNetworkAt's, or else StructuredSexual's (with debuts from `EmodPeople`) """
+    def __init__(self, sim):
+        super().__init__(sim)
+        self.preg = sim.demographics.pregnancy
+        self.emodnet = 'emodnet' in sim.networks
+        self.net = sim.networks['emodnet' if self.emodnet else 'structuredsexual']
+        return
+
+    def pregnant(self, uids):
+        return self.preg.P.raw[uids]
+
+    def post_debut(self, uids):
+        age = self.ppl.emod_age.raw[uids]/365 if self.emodnet else self.ppl.age.raw[uids] # As each network reads debut
+        return age >= self.net.debut.raw[uids]
+
+    def debuts(self):
+        return super().debuts() if self.emodnet else self.sim.demographics.emoddemog.new_debuts
 
 
 class EmodRiskAt(EmodRisk):

@@ -18,7 +18,7 @@ REF = '5df2972' # HIVsim migrated to rc3; harness.py, malawi.py and swap.py as t
 EMOD = repo / 'models' / 'emod' / 'v4'
 HIVSIM = repo / 'models' / 'hivsim'
 EMOD_CASES = dict(network={}, hiv=dict(hiv=True), interpreted=dict(cascade=True), compiled=dict(cascade=True, compiled=True), condensed=dict(cascade=True, condensed=True))
-HIVSIM_CASES = ['hivsim_malawi', 'hivsim_own', 'hivsim_condensed', 'hivsim_runner']
+HIVSIM_CASES = ['hivsim_malawi', 'hivsim_own', 'hivsim_condensed', 'hivsim_runner', 'hivsim_runner_emod_c']
 
 
 def at_ref(path, **replace):
@@ -56,6 +56,14 @@ def check(case):
             cell = swaps.cells(cfg)[0]
             old = swap.make_sim('own', seed=cell['seed'], stop=2010, analyzers=[Outputs(stisim_host.StisimHost)])
             new = swaps.build(dict(D='hivsim', RN='hivsim', V='hivsim', C='hivsim'), cell, cfg)
+        elif case == 'hivsim_runner_emod_c': # The path's first step: EMOD′'s C on HIVsim is swap.make_sim('condensed') (EMOD's table set 0 on StisimHost)
+            del sys.modules['cascade_host'] # EMOD′'s, from here
+            from common import swaps
+            from common.outputs import Outputs
+            cfg = dict(stop=2010, pairs=dict(hivsim=[0], emod=[0]))
+            cell = swaps.cells(cfg)[0]
+            old = swap.make_sim('condensed', seed=cell['seed'], stop=2010, analyzers=[Outputs(stisim_host.StisimHost)])
+            new = swaps.build(dict(D='hivsim', RN='hivsim', V='hivsim', C='emod'), cell, cfg)
         elif case == 'hivsim_malawi':
             old, new = ref_malawi.make_sim(seed=2, n_agents=3e3, verbose=0), malawi.make_sim(seed=2, n_agents=3e3, verbose=0)
         else:

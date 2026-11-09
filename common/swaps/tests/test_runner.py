@@ -102,3 +102,33 @@ def test_emod_run_and_outputs(tmp_path):
     folder = next(p for p in tmp_path.iterdir() if p.is_dir())
     t = json.loads((folder / 'p0_s1.targets.json').read_text())
     assert np.isfinite(t['88']) and np.isnan(t['212']) # plhiv 1990.5; diagnosed 2020.5 is after the run
+
+
+def test_toy_burnin(tmp_path, monkeypatch):
+    """ With D's model's BURNIN, a run is burnt in, saved, and resumed from it the next time; both equal a continuous run """
+    cfg = toy(pairs=dict(a=[0], b=[0]), hybrids=[dict(D='a', N='a', V='b')])
+    monkeypatch.setattr(swaps.load_model('a', cfg['models']['a']), 'BURNIN', 2001.5, raising=False)
+    choice, cell = cfg['hybrids'][0], swaps.cells(cfg)[0]
+    ref = swaps.build(choice, cell, cfg).run().to_df()['sis_I'].to_numpy()
+    for _ in range(2): # Burnt in, then resumed
+        swaps.run(cfg, out=tmp_path, cores=1)
+        folder = next(p for p in tmp_path.iterdir() if p.is_dir())
+        assert (folder / 'p0_s1.burnin.sim').exists()
+        np.testing.assert_array_equal(swaps.load(cfg, out=tmp_path)['sis_I'].to_numpy(), ref)
+        (folder / 'p0_s1.csv.gz').unlink()
+
+
+PATH_CFG = {'from': 'hivsim', 'to': 'emod', 'slots': ['C', 'V', 'RN', 'D'], 'pairs': {'hivsim': [0], 'emod': [0]}, 'stop': STOP}
+
+
+def test_path_hybrids(tmp_path):
+    """ The five hybrids of the first path (HIVsim → EMOD′: C, V, RN, D) build from the factories, with their bridges, and
+    run through the pool to a short horizon (EMOD′'s D resumed from its burn-in), with finite outputs """
+    hs = swaps.hybrids(PATH_CFG)
+    rows = swaps.run(PATH_CFG, out=tmp_path, cores=len(hs))
+    assert len(rows) == 5 and not any(r['error'] for r in rows), [r['error'] for r in rows]
+    y = swaps.load(PATH_CFG, out=tmp_path)
+    assert y.groupby('name').ngroups == 5
+    for col in ('new_infections', 'hiv_deaths', 'incidence_15_49_f', 'incidence_15_49_m'):
+        assert np.isfinite(y[col]).all(), col
+    assert len(list(tmp_path.glob('*/p0_s1.burnin.sim'))) == 1 # All EMOD′ only

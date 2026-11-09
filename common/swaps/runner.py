@@ -159,13 +159,36 @@ def save(sim, folder, cell):
     os.replace(t, folder / f'{cell}.csv.gz') # Last: its existence marks the run done
 
 
+def start(choice, cell, config, folder):
+    """ The sim of a run, ready to run. If D's model has `BURNIN` (a year after the sim's start), the run is resumed from
+    its burn-in to then, `<folder>/<cell>.burnin.sim`, which is run and saved the first time (swap_design D1). Resumed
+    equals continuous exactly (tests/test_resume.py), so this changes no result """
+    sim = build(choice, cell, config)
+    year = getattr(load_model(choice['D'], config.get('models', {}).get(choice['D'])), 'BURNIN', None) if 'D' in choice else None
+    if year is None:
+        return sim
+    import starsim as ss
+    f = Path(folder) / f'{cell["cell"]}.burnin.sim'
+    if f.exists():
+        return ss.load(f)
+    sim.init()
+    years = np.asarray(sim.t.yearvec, dtype=float)
+    k = int(np.argmin(np.abs(years - year)))
+    if k > 0 and k < len(years) - 1:
+        sim.run(until=float(years[k - 1])) # Its last step is the one before `year`'s
+        t = f.parent / f'{f.name}.tmp'
+        sim.save(t)
+        os.replace(t, f)
+    return sim
+
+
 def run_one(job):
-    """ One run in a worker: build, run, save; returns its manifest row """
+    """ One run in a worker: build (or resume from the burn-in), run, save; returns its manifest row """
     config, choice, cell, hid, out, meta = job
     t0 = time.time()
     row = dict(hybrid=hid, name=name(choice), cell=cell['cell'], pids=json.dumps(cell['pids']), seed=cell['seed'], **meta)
     try:
-        sim = build(choice, cell, config)
+        sim = start(choice, cell, config, out / hid)
         sim.run()
         save(sim, out / hid, cell['cell'])
         row['error'] = ''
