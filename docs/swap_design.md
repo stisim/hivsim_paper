@@ -258,7 +258,7 @@ Compute doesn't constrain this design; adapters do.
 
 | # | Work | Who (proposed) | Depends on |
 |---|---|---|---|
-| 0 | Decisions below (D4 still open) | Robyn | |
+| 0 | Decisions below | Robyn | Done, 9 Nov |
 | 1 | Re-pin Starsim (post-#1538) and STIsim for both models; rerun the checks (`acceptance.py`, analysis 06 at a short horizon, an HIVsim run) | Cliff, Robyn | |
 | 2 | HIVsim's reference sets copied in, with their hivsim_malawi commit | Robyn | P3 stopping rule (9 Nov) |
 | 3 | Slot factories: `models/emod/v4/components.py` (from `harness.make_sim`, already modular) and `models/hivsim/components.py` (from `malawi.make_sim`); each `make_sim` calls them; identity tests | agent | 1 |
@@ -293,7 +293,7 @@ Then, for sprint 8: the other direction (EMOD′ → HIVsim, which needs the rat
 | D1 | One time frame for all hybrids (from 1960.5), with HIVsim's and Optima's initial states applied as events in 1985 and 1990, so their swap endpoints are re-expressions checked in distribution | Robyn | Yes | Start all hybrids in 1985, with an EMOD′ burn-in from 1960.5 saved and resumed (1.4) |
 | D2 | HIVsim's cascade expressed as a condensed-cascade table (with new rate and stock-target pathways), so all cascades share one mechanism; this also serves Optima's | Robyn, Cliff | Yes | Yes |
 | D3 | First path HIVsim → EMOD′ instead of HIVsim ↔ Optima′ | Robyn | Yes | Yes |
-| D4 | Order C, V, RN, D, and what "outside-in" meant | Robyn | As here; the lattice makes it a presentation choice | Open: explained 9 Nov |
+| D4 | Order C, V, RN, D, and what "outside-in" meant | Robyn | As here; the lattice makes it a presentation choice | Yes |
 | D5 | Shapley values on the coarse slots as the summary attribution, sequential paths for the figures | Robyn | Yes | Yes |
 | D6 | Optima: a compartmental segment (with 08) next to the ODE endpoint, which moves X from first or last into the middle | Robyn | Discuss | Yes |
 | D7 | Slot boundaries and interfaces (1.1, 1.3), as input to P4 | Robyn, Daniel, Cliff | For the sprint 4 checkpoint | Yes, for the sprint 4 checkpoint |
