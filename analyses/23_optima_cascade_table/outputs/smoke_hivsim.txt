@@ -1,0 +1,3 @@
+HIVsim (10,000 agents; Starsim /tmp/ss-nov09/starsim/__init__.py, STIsim /tmp/sti-613/stisim/__init__.py) with Optima's table, 2021: 10 s
+people by place: uninfected: 18,825,703, undx: 188,989, dx: 172,223, care: 144,028, lost: 25,148, svl: 588,303, usvl: 301,772
+target on ART 864,491

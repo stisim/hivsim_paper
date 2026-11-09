@@ -121,5 +121,11 @@ class EmodHost(CascadeHost):
         self.hiv.prep_eff[uids] = efficacy
         self.hiv.prep_until[uids] = self.hiv.t.now('year') + days/365
 
+    def population(self, uids):
+        """ Optima's population of each, from age, sex and Risk HIGH (models/optima/v4/poplabel.py), now """
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'optima' / 'v4'))
+        import poplabel
+        return np.array(poplabel.POPS)[poplabel.emod_label(self.sim, uids)]
+
     def cascade_stage(self, uids):
         return dict(diagnosed=self.hiv.diagnosed.raw[uids], on_art=self.hiv.on_art(uids), suppressive=self.ppl.arm.raw[uids] == 1) # people.arm: the cascade's arm of the last start

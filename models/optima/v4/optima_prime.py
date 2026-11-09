@@ -331,7 +331,7 @@ def make_disease(ref, components=('demography', 'natural_history'), cascade=None
     assert cx is None or {'cascade', 'treatment'} <= set(components), 'A cascade table needs the cascade and treatment components'
     zeros = {c: np.zeros((len(CD4),) + np.shape(sp['death'])) for c in UNTREATED}
     names = [s.replace('-', '_') for s in ref.settings['statelabels']]
-    st = sc.objdict({s.name: s for s in ss.states(' '.join(names))})
+    st = sc.objdict({s.name: s for s in (ss.states(' '.join(names)) if table_moves else ss.states(' '.join(names), people=True))}) # Without the cascade's moves, nothing links the care states to where people start: they are people all the same
     hiv = [st[f'{c}_{k}'] for c in UNTREATED + TREATED for k in CD4]
     trs = sc.objdict()
 

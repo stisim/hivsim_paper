@@ -1,0 +1,18 @@
+== ODE: the table against Optima′'s own cascade, 2000-2020 (table/own - 1) ==
+PLHIV                    mean -5.87e-14%, max |%| 1.11e-13; 2020: 1,112,243 vs 1,112,243
+Diagnosed                mean -2.38e-14%, max |%| 1.11e-13; 2020: 1,001,173 vs 1,001,173
+On ART                   mean -4.65e-14%, max |%| 2.78e-13; 2020: 854,992 vs 854,992
+Suppressed               mean -4.71e-14%, max |%| 2.44e-13; 2020: 790,750 vs 790,750
+New infections (year)    mean -1.69e-14%, max |%| 8.22e-13; 2020: 33,564 vs 33,564
+HIV deaths (year)        mean -4.23e-14%, max |%| 9.99e-14; 2020: 9,487 vs 9,487
+Figure 3A source shares (ODE mapping: care with dx, lost = interrupted): max |difference| 6.04e-13 points; 2020 own 42.13 / 39.35 / 12.73 / 5.79; table 42.13 / 39.35 / 12.73 / 5.79
+
+== Agents (100,000, seeds [1, 10, 11, 12, 13, 14, 15, 16, 2, 3, 4, 5, 6, 7, 8, 9]): the table through OptimaHost against analysis 20's own cascade (same seeds); and each against the ODE ==
+mean % = mean over years of (table mean / own mean - 1); z = difference / SE of the difference (independent runs)
+PLHIV                    mean +0.52% (max |%| 0.99, 2008); mean z +0.72, |z| > 2 in 0 of 21 years; vs ODE: table -0.15%, own -0.67%
+Diagnosed                mean +1.19% (max |%| 2.27, 2000); mean z +1.68, |z| > 2 in 9 of 21 years; vs ODE: table +0.66%, own -0.53%
+On ART                   mean +0.21% (max |%| 0.91, 2019); mean z +0.44, |z| > 2 in 4 of 21 years; vs ODE: table +0.06%, own -0.14%
+Suppressed               mean +0.44% (max |%| 3.85, 2004); mean z +0.74, |z| > 2 in 2 of 21 years; vs ODE: table +0.14%, own -0.29%
+New infections (year)    mean -0.29% (max |%| 5.35, 2020); mean z -0.08, |z| > 2 in 1 of 21 years; vs ODE: table -0.41%, own -0.08%
+HIV deaths (year)        mean +1.03% (max |%| 9.82, 2020); mean z +0.55, |z| > 2 in 3 of 21 years; vs ODE: table -0.20%, own -1.16%
+Run time: table 305 s, own 246 s (analysis 20, 48 at once)

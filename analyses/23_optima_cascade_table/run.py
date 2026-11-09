@@ -4,6 +4,7 @@ Analysis 23: Optima's cascade as a table (see README.md)
     python run.py ode              # Optima′ as an ODE: its own cascade, and the table (common/cascade/tables/malawi_optima_params.csv)
     python run.py abm SEED [N]     # Optima′ as agents running the table through OptimaHost (common/cascade/pathways.py)
     python run.py compare [N]      # Tables: ODE table vs own; agents table vs analysis 20's agents with the own cascade
+    PYTHONPATH=/tmp/sti-613:/tmp/ss-nov09 python run.py smoke    # The table on HIVsim's people (runs; not interpreted)
 """
 import sys, importlib.util
 from pathlib import Path
@@ -94,6 +95,22 @@ def compare(n=100_000):
     print('\n'.join(lines))
 
 
+def smoke_hivsim(n=10_000):
+    """ The table on HIVsim's people (StisimHost, which has no care or lost of its own and keeps the ART arm): it runs; not interpreted """
+    sys.path.insert(0, str(REPO / 'models' / 'hivsim'))
+    import components as hc, starsim as ss, stisim as sti
+    T = sc.timer()
+    sim = hc.make_sim(hc.pars(0), n_agents=n, stop=2021, cascade='table', params=Params(TABLE)).run()
+    tc = sim.interventions.table_cascade
+    au = sim.people.auids
+    place = np.bincount(tc.places(au), minlength=7)*sim.current_scale
+    lines = [f'HIVsim ({n:,} agents; Starsim {ss.__file__}, STIsim {sti.__file__}) with Optima\'s table, 2021: {T.toc(output=True):.0f} s',
+             'people by place: ' + ', '.join(f'{p}: {x:,.0f}' for p, x in zip(['uninfected', 'undx', 'dx', 'care', 'lost', 'svl', 'usvl'], place)),
+             f'target on ART {Params(TABLE).value("target", "on_art", sim.t.now("year")):,.0f}']
+    (OUT / 'smoke_hivsim.txt').write_text('\n'.join(lines) + '\n')
+    print('\n'.join(lines))
+
+
 if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'ode':
@@ -102,3 +119,5 @@ if __name__ == '__main__':
         run_abm(int(sys.argv[2]), int(sys.argv[3]) if len(sys.argv) > 3 else 100_000)
     elif cmd == 'compare':
         compare(int(sys.argv[2]) if len(sys.argv) > 2 else 100_000)
+    elif cmd == 'smoke':
+        smoke_hivsim()

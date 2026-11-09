@@ -120,5 +120,11 @@ class StisimHost(CascadeHost):
     def start_prep(self, uids, efficacy, days):
         self.hiv.start_prep(uids[~self.hiv.infected.raw[uids]], eff=efficacy, dur=ss.days(days))
 
+    def population(self, uids):
+        """ Optima's population of each, from age, sex and current sex work (models/optima/v4/poplabel.py), now """
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'optima' / 'v4'))
+        import poplabel
+        return np.array(poplabel.POPS)[poplabel.stisim_label(self.sim, uids)]
+
     def cascade_stage(self, uids):
         return dict(diagnosed=self.hiv.diagnosed.raw[uids], on_art=self.on_art(uids), suppressive=self.art.on_effective_art.raw[uids])
