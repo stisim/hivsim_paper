@@ -224,7 +224,7 @@ scenario: null                  # 'interruption' etc. from January
 | EMOD′, condensed cascade, 1% scale, to 2025 | 74 s per run (30 at once) | analysis 06 |
 | EMOD′, compiled / literal campaign | 96 s / 60 s | analysis 05 |
 | HIVsim, 10,000 agents, 1985–2021 | 10 s alone, 20–30 s with 150 at once | hivsim_malawi experiments 01–02 |
-| EMOD′, 1960.5–1985 burn-in | Not measured; run once per parameter set and seed | To measure first |
+| EMOD′, 1960.5–1985 burn-in | 10 s (13 MB saved; 0.4 s to load; then 60 s to 2025) | analysis 11 |
 | Optima′ ODE, dt 0.02 | Seconds (plus 30–75 s of R0 at `verbose>=1`) | `optima_prime_plan.md` |
 | Optima′ as agents | Not measured (the declared engine is about twice a coded one) | Sprint 5 |
 
