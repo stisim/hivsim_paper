@@ -302,3 +302,4 @@ Then, for sprint 8: the other direction (EMOD′ → HIVsim, which needs the rat
 | D8 | Optima's `lost` split into lost before and after ART, for reporting only | Robyn | Yes | Yes |
 | D9 | Scale 1% for all agent hybrids | Robyn | Yes | No: agent numbers vary with D; one check of HIVsim at 10,000 agents against 1% (1.4) |
 | D10 | Whether EMOD's copied bugs (the dropout trap, mortality scale) also get a "fixed" variant as extra steps on EMOD paths. They are parameters or switches already, so the cost is small | Robyn, Daniel | After the first path | Yes: a fixed variant is needed |
+| D11 | Runs where the epidemic doesn't take off (EMOD's seeding on HIVsim's demography takes off in 2–3 of 5 runs at 10,000 agents; analyses 12, 15) | Robyn | Condition on take-off, make seeding its own step, or seed more | Condition on take-off (decided 9 Nov) |
