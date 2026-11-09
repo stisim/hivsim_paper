@@ -108,7 +108,7 @@ Candidates:
 - Optima's products, such as failure and regain conditional on not being lost ((1 − loss) factors) and the moves among survivors in other forms;
 - noise: the first 16 seeds alone showed no gap.
 
-To settle it: 64 seeds, or 400k agents; or log each move by state and step against the own cascade's transition results (`/tmp/hp-optcx-scratch/dbg.py` has the start of this).
+To settle it: 64 seeds, or 400k agents; or log each move by state and step against the own cascade's transition results (`debug_moves.py` has the start of this).
 
 ## Provisional decisions (for Robyn)
 
