@@ -11,7 +11,7 @@ Throughout, **Decided** cites the doc and date where it was decided. Everything 
 - **The cascade is the one slot with a shared interface already** (`CascadeHost`, `common/cascade/`). This design makes the condensed cascade the common currency for the cascade: each model's cascade becomes a parameter table, and two new pathway types (rates, and stock targets) let HIVsim's and Optima's cascades fit it.
 - **First path: HIVsim → EMOD′** (proposed in place of HIVsim ↔ Optima′ in `plan.md`, sprint 7), with four coarse slots in the order cascade → HIV disease → network and risk → demography. Beyond what analysis 07 is building, it needs two adapters, the outputs analyzer and the runner.
 - **Attribution:** with four coarse slots, all 2⁴ = 16 hybrids cost about 16 core-hours, so exact Shapley values (the average over all 24 orders) are affordable. Sequential paths are what the figures show; Shapley is the summary number.
-- **Calibration:** none along paths for now (tier 1, uncalibrated). **Endpoint identity** is checked bit for bit; it holds by construction if each model's own `make_sim` is built from the same slot factories as the runner.
+- **Calibration:** the headline is compensated (tier 2): after each swap, refit two knobs, transmission scale and ART uptake, to the primary targets. Uncalibrated (tier 1) results are reported alongside. **Endpoint identity** is checked bit for bit; it holds by construction if each model's own `make_sim` is built from the same slot factories as the runner.
 
 ## 1. Components
 
@@ -156,7 +156,9 @@ Proposed:
 
 ## 3. Calibration and endpoint identity
 
-**Tier 1, uncalibrated, for every path to 15 December** (**Decided**: `vision.md` tiers; `plan.md` sprint 7, "uncalibrated"). A slot's parameters move with it, as the parameter layer. Tier 2 (compensated: refit one to three shared scalars, such as the transmission scale or ART uptake, to the primary targets after each swap, and report how far they move) is for January (`plan.md`). Full recalibration is out of scope.
+**Tier 1, uncalibrated** (superseded 9 Nov: tier 2 throughout, below). A slot's parameters move with it, as the parameter layer. Tier 2 (compensated: refit one to three shared scalars, such as the transmission scale or ART uptake, to the primary targets after each swap, and report how far they move) is for January (`plan.md`). Full recalibration is out of scope.
+
+**Decided** (Robyn, 9 Nov): the compensated results are the headline, and the uncalibrated ones and the difference (what calibration absorbs) are reported alongside. The knobs are a transmission scale and ART uptake. Proposed: ART uptake multiplies the rates into ART (testing and linkage) in flow cascades; a stock-target cascade (HIVsim's, Optima's) meets the number on ART by construction, so there it scales testing. Both endpoints are refitted the same way, so the refitted path runs between refitted endpoints; the difference between each published model and its refit is reported as its own component (calibration choices). The targets are the P3 stopping-rule targets (Robyn, 9 Nov). Every hybrid is compensated throughout, including for the 15 December interim (Robyn, 9 Nov: "calibrated pieces throughout"), so the refit is part of the runner from the first path.
 
 **Endpoint identity** (**Decided**, `prompts.md`, 27 Oct): a fully swapped hybrid equals the rebuilt target model exactly. Check it by comparing results, every result array equal, with the same seed and module order (**Decided**, `prompts.md`, Starsim v4 notes; `sim.hash()` is gone). This is a unit test of the runner, separate from fidelity (each rebuilt model against its original, P1/P2). Proposed tests:
 
