@@ -29,7 +29,7 @@ conda env create -f envs/optima.yml   # Optima HIV 2.12.2, only for regenerating
 
 The third, `emod`, runs the EMOD-HIV binary; its setup is in `models/emod/README.md`.
 
-- `starsim` pins Starsim to its first v4 release candidate (4.0.0rc1, on PyPI, Python 3.12 or later) and STIsim to a commit on `rs-art-split` (PR #607, which adds the ART split and HIV care). Change a pin on purpose and rerun the checks, such as `models/optima/v4/acceptance.py` (about 3 minutes).
+- `starsim` pins Starsim to its third v4 release candidate (4.0.0rc3, on PyPI, Python 3.12 or later) and STIsim to a commit on `rs-art-split` (PR #607, which adds the ART split and HIV care; it doesn't run on 4.0.0rc3 until STIsim is ported to it). Change a pin on purpose and rerun the checks, such as `models/optima/v4/acceptance.py` (about 3 minutes).
 - Optima's references (`models/optima/reference/*.obj`) are committed, so the Optima′ checks run in `starsim` alone.
 - The Starsim wheel on PyPI comes with its kernels built. Installing Starsim from a git clone instead means compiling them (Numba and Rust); see Starsim's docs.
 
