@@ -113,7 +113,7 @@ if ss is not None:
             dst, src = ss.uids(np.asarray(dst)[keep]), ss.uids(np.asarray(src)[keep])
             if len(src):
                 st = self.host.cascade_stage(src)
-                self.rows.append(pd.DataFrame(dict(year=now, src=src, dst=dst, src_female=ppl.female.raw[src], src_age=self.host.age_years(src),
+                self.rows.append(pd.DataFrame(dict(year=now, src=src, dst=dst, src_female=self.host.female(src), src_age=self.host.age_years(src),
                                                    diagnosed=st['diagnosed'], on_art=self.on.raw[src], suppressive=st['suppressive'],
                                                    n_starts=self.n_starts.raw[src], since_start=now - self.t_start.raw[src],
                                                    since_stop=now - self.t_stop.raw[src])))

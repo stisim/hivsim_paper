@@ -88,9 +88,109 @@ def sizes():
     print('\n'.join(lines))
 
 
+STATES = ['undx', 'dx', 'care', 'lost', 'usvl', 'svl']
+FIG3A = ['undiagnosed', 'diagnosed_never_treated', 'on_art', 'interrupted']
+PAPER = dict(undiagnosed='undiagnosed', diagnosed_naive='diagnosed_never_treated', art_lt6m='on_art', art_supp='on_art', art_nonsupp='on_art', interrupted='interrupted')
+END = 2021
+
+
+def run_outputs(seed, n=100_000):
+    """ Optima′ as agents with Outputs(OptimaHost): yearly outputs, and each year's sexual transmissions by the source's state and category """
+    import agents as ag, host as H
+    from common.outputs import Outputs, yearly
+    OUT.mkdir(exist_ok=True)
+    T = sc.timer()
+    sim = ag.make_sim(n_agents=n, rand_seed=seed, end=END, interventions=[H.OptimaTracker()], analyzers=[Outputs(H.OptimaHost)])
+    sim.run()
+    out = sim.analyzers.outputs
+    y = yearly(out)
+    srcs = out.host.sources
+    yr = np.floor(np.concatenate([np.full(len(st), t) for t, st, _ in srcs]) + 1e-9).astype(int)
+    st = pd.crosstab(yr, np.concatenate([s for _, s, _ in srcs])).reindex(columns=STATES, fill_value=0)
+    cat = pd.crosstab(yr, np.concatenate([c for _, _, c in srcs])).reindex(columns=FIG3A, fill_value=0)
+    r = sim.results.optima
+    t = np.array([d.years for d in r['infection_susreg'].timevec])
+    sexual = sum(np.asarray(r[k]) for k in ('infection_susreg', 'infection_progcirc'))
+    res = pd.Series({yy: sexual[np.floor(t + 1e-9).astype(int) == yy].sum() for yy in st.index})
+    sc.save(OUT / f'outputs_{n}_{seed}.obj', sc.objdict(yearly=y, by_state=st, by_category=cat, sexual_results=res, scale=out.scale, time=T.toc(output=True)))
+    print(f'seed {seed}: {T.toc(output=True):.0f} s')
+
+
+def run_ode():
+    """ The agent formulation as an ODE: sexual infections per year by the source's state (analysis 19's attribution, summed over each year's steps) """
+    import agents as ag, optima_prime as opp
+    sim = ag.make_sim(solver='ode', end=END).run()
+    by = opp.infections_by_source(sim)
+    dt = sim.pars.dt.years
+    yr = np.floor(by.index.to_numpy() + 1e-9).astype(int)
+    st = by.T.groupby(by.columns.str.split('_').str[0]).sum().T.groupby(yr).sum()*dt
+    by.to_csv(OUT / 'ode_by_source_steps.csv')
+    st.reindex(columns=STATES, fill_value=0).to_csv(OUT / 'ode_by_state.csv') # svl: none (U=U in this project)
+
+
+def compare():
+    """ Agents (Outputs on OptimaHost) against the ODE (states), Optima (D8, analysis 19) and analysis 20's totals """
+    files = sorted(OUT.glob('outputs_100000_*.obj'))
+    runs = [sc.load(f) for f in files]
+    yrs = np.arange(2000, 2021)
+    lines = [f'{len(runs)} seeds at 100,000 agents; years {yrs[0]}-{yrs[-1]}; sexual transmissions summed over each year', '']
+    sh = lambda d: 100*d.div(d.sum(axis=1), axis=0)
+    # 1. By the source's state, against the ODE
+    ode = pd.read_csv(OUT / 'ode_by_state.csv', index_col=0).loc[yrs]
+    ag_st = np.array([sh(r.by_state.loc[yrs]).to_numpy() for r in runs])
+    m, se = ag_st.mean(0), ag_st.std(0, ddof=1)/np.sqrt(len(runs))
+    o = sh(ode).to_numpy()
+    lines.append('== Share (%) by the source\'s state: agents mean (SE) vs ODE; z = (agents - ODE)/SE ==')
+    tab = pd.DataFrame({f'{c}': [f'{m[i, j]:.2f} ({se[i, j]:.2f}) vs {o[i, j]:.2f}, z {(m[i, j] - o[i, j])/max(se[i, j], 1e-9):+.1f}' for i in range(len(yrs))] for j, c in enumerate(STATES)}, index=yrs)
+    lines += [tab.iloc[::5].to_string(), tab.loc[[2020]].to_string()]
+    z = (m - o)/np.maximum(se, 1e-9)
+    lines.append(f'|z| > 2: {np.mean(np.abs(z) > 2)*100:.0f}% of state-years; mean |agents - ODE| {np.abs(m - o).mean():.2f} points, max {np.abs(m - o).max():.2f}')
+    # 2. Figure 3A's categories (D8), agents' two ways (the host's ever-treated flag at the time, and the log's ART history), against analysis 19
+    lines.append('')
+    host = np.array([sh(r.by_category.loc[yrs]).to_numpy() for r in runs])
+    tx = []
+    for r in runs:
+        y = r.yearly.set_index('year').loc[yrs]
+        tx.append(np.array([100*sum(y[f'tx_{k}'] for k, c in PAPER.items() if c == cat) for cat in FIG3A]).T)
+    tx = np.array(tx)
+    a19 = pd.read_csv(REPO / 'analyses' / '19_fig3a_optima' / 'outputs' / 'optima_by_source.csv')
+    a19 = a19[(a19.counted == 'sexual') & (a19.annual == 'step')]
+    ref = {mp: sh(a19[a19.mapping == mp].pivot(index='year', columns='category', values='number').rename(columns={'interrupted_art': 'interrupted'})[FIG3A]) for mp in ('history', 'states')}
+    pst = sh(ode.assign(dnt=ode.dx + ode.care, art=ode.usvl + ode.svl)[['undx', 'dnt', 'art', 'lost']].set_axis(FIG3A, axis=1))
+    lines.append('== Figure 3A categories (%), D8: agents (host flag; transmission log), Optima′ ODE with lost = interrupted, Optima (analysis 19, step at the whole year: D8; lost = interrupted) ==')
+    for yy in (2000, 2005, 2010, 2015, 2020):
+        i = list(yrs).index(yy)
+        lines.append(f'{yy}: ' + '; '.join(f'{c}: {host[:, i, j].mean():.1f}±{host[:, i, j].std(ddof=1)/np.sqrt(len(runs)):.1f}, {tx[:, i, j].mean():.1f} | ODE {pst.loc[yy, c]:.1f} | Optima {ref["history"].loc[yy, c]:.1f}, {ref["states"].loc[yy, c]:.1f}' for j, c in enumerate(FIG3A)))
+    lines.append(f'Host flag vs transmission log: max difference {np.abs(host.mean(0) - tx.mean(0)).max():.2f} points')
+    # 3. Totals, against analysis 20 (agents at 100k, ODE)
+    lines.append('')
+    a20 = REPO / 'analyses' / '20_optima_agents' / 'outputs'
+    a20ode = sc.load(a20 / 'ode_agentpieces.obj')
+    a20ag = [sc.load(f) for f in sorted(a20.glob('abm_100000_*.obj'))]
+    Y = list(a20ode.years)
+    idx = [Y.index(yy) for yy in yrs]
+    tot = np.array([r.yearly.set_index('year').loc[yrs, 'tx_n'].to_numpy()*r.scale for r in runs])
+    res = np.array([r.sexual_results.loc[yrs].to_numpy() for r in runs])
+    a20m = np.mean([x.sexinci_year[idx] for x in a20ag], axis=0)
+    lines.append('== Sexual infections per year: logged sources × scale (agents here), the disease\'s results (here), analysis 20 agents (48 seeds), ODE ==')
+    for yy in (2000, 2005, 2010, 2015, 2018, 2020):
+        i = list(yrs).index(yy)
+        lines.append(f'{yy}: {tot[:, i].mean():,.0f} ± {tot[:, i].std(ddof=1)/np.sqrt(len(runs)):,.0f}; {res[:, i].mean():,.0f}; {a20m[i]:,.0f}; ODE {a20ode.sexinci_year[idx][i]:,.0f}')
+    rel = tot.mean(0)/a20ode.sexinci_year[idx] - 1
+    lines.append(f'Agents here / ODE - 1, mean over years {100*rel.mean():+.2f}%, max |%| {100*np.abs(rel).max():.2f} ({yrs[np.abs(rel).argmax()]}); logged = results exactly: {np.allclose(tot, res)}')
+    (OUT / 'compare.txt').write_text('\n'.join(lines) + '\n')
+    print('\n'.join(lines))
+
+
 if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'label':
         run_label(sys.argv[2])
     elif cmd == 'sizes':
         sizes()
+    elif cmd == 'outputs':
+        run_outputs(int(sys.argv[2]), int(sys.argv[3]) if len(sys.argv) > 3 else 100_000)
+    elif cmd == 'ode':
+        run_ode()
+    elif cmd == 'compare':
+        compare()

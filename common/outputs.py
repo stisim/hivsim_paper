@@ -15,6 +15,7 @@ deaths of people on ART (at the end of the step before, as the log's ART history
 
 What it reads from the disease (`sim.diseases.hiv`): EmodHIV's `sexual`, `new_uids` and `dead_uids`; for a Starsim
 disease (STIsim's `sti.HIV`), its infection log (so the sim needs `ss.infection_log()`), `ti_infected` and `ti_dead`.
+A host with `sexual_pairs()`, `new_infections()` and `hiv_deaths()` gives them instead (Optima′'s, models/optima/v4/host.py).
 """
 import numpy as np
 import pandas as pd
@@ -66,6 +67,8 @@ class Outputs(TransmissionLog):
         super().init_post()
         if self.scale is None:
             self.scale = float(self.sim.pop_scale or 1)
+        if hasattr(self.host, 'sexual_pairs'): # The host gives the step's transmissions, new infections and HIV deaths
+            self.pairs = lambda sim: self.host.sexual_pairs()
         try:
             self.host.risk(ss.uids([0]))
             self.has_risk = True
@@ -86,7 +89,9 @@ class Outputs(TransmissionLog):
         au = au[(ppl.ti_dead.raw[au] != self.ti) & (self.host.age_years(au) >= 0)] # At the end of the step, and born
         inf = self.host.infected(au)
         st = self.host.cascade_stage(au)
-        new, dead = ss.uids(new_infections(sim)), ss.uids(hiv_deaths(sim))
+        h = self.host
+        new = ss.uids(h.new_infections() if hasattr(h, 'new_infections') else new_infections(sim))
+        dead = ss.uids(h.hiv_deaths() if hasattr(h, 'hiv_deaths') else hiv_deaths(sim))
         n = 4*len(BANDS)
         c = lambda k, w=None: np.bincount(k, weights=w, minlength=n)
         k = self.key(au)
