@@ -1,0 +1,6 @@
+name,runs,errors,s_min,s_max
+"D=hivsim,RN=hivsim,V=emod,C=emod",5,0,8.1,9.6
+"D=hivsim,RN=emod,V=emod,C=emod",5,0,10.1,11.3
+"D=hivsim,RN=hivsim,V=hivsim,C=hivsim",5,0,10.6,11.0
+"D=hivsim,RN=hivsim,V=hivsim,C=emod",5,0,15.2,15.8
+"D=emod,RN=emod,V=emod,C=emod",5,0,77.0,78.6

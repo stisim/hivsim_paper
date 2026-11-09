@@ -17,7 +17,8 @@ from common import swaps # noqa: E402
 
 OUT = here / 'outputs'
 CONFIG = {'from': 'hivsim', 'to': 'emod', 'slots': ['C', 'V', 'RN', 'D'], 'pairs': {'hivsim': [0], 'emod': [0]}, 'seeds': 5, 'stop': 2025}
-SHARES = dict(share_deaths_on_art='hiv_deaths', incidence_15_49_f='py_15_49_f', incidence_15_49_m='py_15_49_m') # Output: its denominator
+SHARES = dict(share_deaths_on_art='hiv_deaths', art_coverage='plhiv', incidence_15_49_f='py_15_49_f', incidence_15_49_m='py_15_49_m') # Output: its denominator
+# EmodHIV's new_infections are sexual only, so they are compared with the log's sexual transmissions (tx_n); sti.HIV's are every route
 RESULTS = dict(new_infections=('new_infections', 'new_infections'), hiv_deaths=('new_deaths', 'hiv_deaths'), infected=('infected', 'n_infected')) # Outputs' count: (sti.HIV's result, EmodHIV's)
 
 
@@ -63,14 +64,16 @@ def check_one(job):
     s = o.strata.groupby('year')[['new_infections', 'hiv_deaths', 'infected']].sum()
     rows = []
     for k, (rs, re) in RESULTS.items():
-        res = np.asarray(hiv.results[re if emod else rs], float)
-        out = s[k].to_numpy()*o.scale
+        res = np.asarray(hiv.results[re if emod else rs], float)/float(sim.pop_scale or 1) # In agents
+        out = s[k].to_numpy()
         if k == 'infected': # Stock: at the year's last step (the outputs count at the end of the step)
             last = pd.Series(np.arange(len(yr))).groupby(yr).max()
             a, b = out[last.to_numpy()], res[last.to_numpy()]
             b1 = res[np.minimum(last.to_numpy() + 1, len(res) - 1)] # The result recorded one step later
         else:
             a, b = pd.Series(out).groupby(yr).sum().to_numpy(), pd.Series(res).groupby(yr).sum().to_numpy()
+            if emod and k == 'new_infections':
+                a = y.set_index('year').tx_n.reindex(np.unique(yr)).fillna(0).to_numpy() if 'tx_n' in y else np.zeros(len(b))
             b1 = b
         for j, year in enumerate(np.unique(yr)):
             rows.append(dict(hybrid=i, name=swaps.name(choice), cell=cell['cell'], measure=k, year=year, outputs=a[j], disease=b[j], disease_next_step=b1[j]))
@@ -94,6 +97,12 @@ def check():
     summ.to_csv(OUT / 'check.csv', index=False)
     print(summ.to_string())
     print(agg.round(4).to_string())
+    agg.round(4).to_csv(OUT / 'counts_ratio.csv')
+    d = swaps.load(CONFIG)
+    took = d[d.year == 2020].assign(plhiv_2020=lambda x: x.plhiv).groupby('name', sort=False).agg(seeds=('cell', 'size'), took_off=('plhiv', lambda v: int((v > 0).sum())),
+           plhiv_2020_median=('plhiv', 'median'), new_inf_2020_median=('new_infections', 'median'), art_cov_2020_median=('art_coverage', 'median'), tx_undiag_2020_median=('tx_undiagnosed', 'median'))
+    took.to_csv(OUT / 'epidemic_2020.csv')
+    print(took.to_string())
 
 
 if __name__ == '__main__':

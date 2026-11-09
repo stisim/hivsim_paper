@@ -1,0 +1,7 @@
+,min,min,min,median,median,median,max,max,max
+measure,hiv_deaths,infected,new_infections,hiv_deaths,infected,new_infections,hiv_deaths,infected,new_infections
+hybrid,,,,,,,,,
+0,1.0,0.9891,1.0,1.0,1.0,1.0,1.0,1.0476,1.0075
+1,1.0,0.9897,1.0,1.0,0.9979,1.0,1.0122,1.0476,1.007
+3,1.0,0.9917,1.0,1.0,1.0027,1.0,1.0,1.1364,1.0
+4,1.0,0.9993,1.0,1.0,1.0028,1.0,1.0,1.2581,1.0

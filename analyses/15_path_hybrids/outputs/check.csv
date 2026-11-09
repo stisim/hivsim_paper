@@ -1,0 +1,11 @@
+hybrid,name,cell,stored_reproduced,nan_outputs,new_infections,tx_n,hiv_deaths,prev_2020
+0,"D=hivsim,RN=hivsim,V=hivsim,C=hivsim",p0_s1,True,,5339,4710,1270,0.1178786566400252
+0,"D=hivsim,RN=hivsim,V=hivsim,C=hivsim",p0_s2,True,,5681,4992,1397,0.12319141702240187
+1,"D=hivsim,RN=hivsim,V=hivsim,C=emod",p0_s1,True,,5448,4669,2356,0.10194056511854498
+1,"D=hivsim,RN=hivsim,V=hivsim,C=emod",p0_s2,True,,5770,4930,2456,0.11099016444427166
+2,"D=hivsim,RN=hivsim,V=emod,C=emod",p0_s1,True,,0,0,0,0.0
+2,"D=hivsim,RN=hivsim,V=emod,C=emod",p0_s2,True,,0,0,0,0.0
+3,"D=hivsim,RN=emod,V=emod,C=emod",p0_s1,True,,1842,1603,974,0.02992868555395347
+3,"D=hivsim,RN=emod,V=emod,C=emod",p0_s2,True,,0,0,0,0.0
+4,"D=emod,RN=emod,V=emod,C=emod",p0_s1,True,,57128,48690,34153,0.05375733339473812
+4,"D=emod,RN=emod,V=emod,C=emod",p0_s2,True,,61271,51821,36983,0.05705134156531427
