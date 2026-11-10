@@ -44,17 +44,32 @@ See `model_stats.md` (run time, memory, size, fidelity).
 
 ## 4. Epidemiology
 
-**What each model is calibrated to.**
+**What each model is calibrated to.** Prevalence by age and sex is the only indicator all three are fitted to. EMOD never used the UNAIDS PLHIV, new infections or AIDS deaths, and Optima only compared against them.
 
 ![Which indicators each model is calibrated to](figures/targets_matrix.png)
 
-**Core indicators, all three models against the data.**
+**Core indicators, all three models against the data.** New infections in 2020: EMOD′-fixed 38k, Optima 35k, HIVsim 26k, against UNAIDS 21k. ART coverage is close for all three. HIVsim's near-zero AIDS deaths after 2015 are a known gap: its reference set runs with the on-ART mortality options off (analysis 13; STIsim #613 has them, opt-in).
 
 ![Core indicators](figures/core_indicators.png)
 
 **Figure 3A: published (EMOD, Optima) and reconstructed (all three).**
 
 ![Figure 3A reconstruction](figures/fig3a_reconstruction.png)
+
+2020 shares (undiagnosed / diagnosed never treated / on ART / interrupted):
+
+| | Shares | New infections, 2024 |
+|---|---|---|
+| Published EMOD | 39 / 4 / 41 / 17 | 30.6k |
+| EMOD binary with Daniel's fixes | 37 / 4 / 45 / 13 | 41.3k (1.35×) |
+| EMOD′ with Daniel's fixes | 36 / 3 / 48 / 13 | ~39k |
+| Published Optima | 45 / 28 / 18 / 9 | 8.5k |
+| Our Optima (2022 project) = Optima′ | 42 / 41 / 11 / 6 | 29.2k (3.5×; projection with inputs frozen at 2020) |
+| HIVsim (provisional set) | 71 / 0 / 29 / 0 | 24.0k |
+
+- **EMOD:** with Daniel's fixes, the published split is reproduced and the total isn't.
+- **Optima:** neither is, because our project is a different calibration from MIHPSA's.
+- **HIVsim's split is structural:** ART is filled to a number from whoever is diagnosed, so almost nobody stays diagnosed without treatment. There is no dropout until the coverage input falls (2021). That is a third answer to the Figure 3A question, and the swaps can explain it.
 
 ![New infections per year](figures/fig3a_totals.png)
 
