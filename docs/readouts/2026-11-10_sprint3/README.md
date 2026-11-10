@@ -8,7 +8,7 @@
 2. **All three models are rebuilt in Starsim v4 and verified against their originals.** EMOD′ reproduces EMOD within run-to-run noise, Optima′ is within 2% of Optima (ODE) and its agent form is within 0.35% of the ODE, and HIVsim runs on STIsim v4.
 3. **The swap machinery works.** A runner, slot factories, endpoint-identity tests and an outputs analyzer are in place. The first path (HIVsim → EMOD′) ran end to end with exact endpoints, and the first step of the core path (the cascade, EMOD′ ↔ Optima′, both ways) is done.
 4. **First result: the cascade carries most of the split by treatment status, not the gap in totals.** Swapping the cascade moves 0.5–0.75 of the gap in "diagnosed, never treated" and "on ART", and all of the gap in "interrupted". New infections move the other way, so the total must come from natural history, transmission, network or demography. With Optima's PMTCT now on (decided today; it had been skipped on agent hosts), Optima's cascade on EMOD′ adds +16.9k new infections in 2020 (95% CI 14.7–19.1k; was +20.9k with PMTCT skipped). With EMOD's VMMC and PrEP kept, it adds +4.3k. The shares barely move.
-5. **The references are the bottleneck.** The EMOD binary with Daniel's two fixes reproduces the published shares, but its total is ~35–40% high, and we don't know which files were calibrated. Our Optima project is not the one MIHPSA published, and we need Rowan's.
+5. **The references are the bottleneck.** The EMOD binary with Daniel's two fixes reproduces the published shares, but its total is ~35% high across all 250 sets. The published runs used a campaign file we don't have (analysis 25). Our Optima project is not the one MIHPSA published, and we need Rowan's.
 
 ## 1. How each model is decomposed
 
@@ -112,13 +112,14 @@ Structural fixes found through calibration: declared STIsim ignored condoms (pre
 ## 6. What we need to clarify
 
 **References (critical path)**
-1. **EMOD (Daniel): can we replicate the published EMOD?** The shares, yes; the total and the fit, not yet.
-   - With his two PR #4 fixes, the shares are within 5 points of Figure 3A. The 2024 total is 41.3k against 30.6k (1.35×), ranging from 30.6k to 60.5k across our 10 sets, and nothing has been refitted since the fixes.
-   - **a.** Which campaign, config and demographics files produced the MIHPSA results, and which were the 250 sets fitted with? The sets are from April 2023 and the campaign file is dated December 2025.
-   - **b.** His scaling script reads an experiment `recalib-transmission___2023_11_04`. Were the published results from a later recalibration of transmission? If so, can we have those sets?
-   - **c.** How were sets chosen or averaged for the paper?
-   - **d.** With the fixes, should the fit hold, or should we refit?
-   - Analysis 25 (running) checks all 250 sets with both fixes.
+1. **EMOD (Daniel): can we replicate the published EMOD?** The shares, yes; the total, not with the files we have.
+   - With his two PR #4 fixes, the shares are within 5 points of Figure 3A.
+   - **Analysis 25:** all 250 sets give a median of 40.9k new infections in 2024 (5–95% 30.7–60.1k), against the published 30.6k (our 4th percentile). Neither the best-fitting sets nor his top-ranked ones come closer, so it isn't the choice of sets.
+   - **The published runs used a different campaign:** `config.json:24` and his scaling script (`mwi_transmission.Rmd:37`) name `campaign_Malawi_20220422_recalib.json`, run 4 Nov 2023. That file isn't in PR #1; we run `campaign_Malawi_20251215.json`. The parameter sets are the same (April 2023).
+   - **a.** Can we have `campaign_Malawi_20220422_recalib.json`, and how does it differ from the 20251215 file (testing and ART after 2015)?
+   - **b.** Is 30,582 the Rmd's `mean.new.infections.overall`, which averages over sexes rather than adding them, or the sum? Which ages and years, and how many sims?
+   - **c.** Did the published runs have the mortality fix, the dropout fix, both or neither?
+   - **d.** Once we have the right campaign: does the fit hold, or do we refit?
    - His PR #4 review questions (`notes_for_daniel.md`) haven't been sent yet.
 2. **Optima (Rowan, via Robyn):** MIHPSA's Malawi project. Until it arrives we decompose against our 2022 project, stated as such.
 3. **Year and outputs:** 2020 (inside the data, where Optima′ is verified) or 2024 (the caption's totals, which need Optima's post-2020 inputs)?
