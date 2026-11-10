@@ -17,7 +17,7 @@ oc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(oc)
 PREVENTION = False
 SWITCH = True
-PMTCT = False
+PMTCT = True # As models/optima/v4/components.py (False: skipped, as the stored runs before 10 Nov)
 
 
 def pars(pid=None):
