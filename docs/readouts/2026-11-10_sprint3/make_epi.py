@@ -1,11 +1,11 @@
 """
 Epi comparison figures for the sprint 3 readout (10 Nov 2026): targets matrix, core indicators, Figure 3A rebuilt.
 
-    python make_epi.py extract   # data/ extracts from analyses 17, 18, 19 and the Optima reference (run_hivsim.py makes data/hivsim_*)
+    python make_epi.py extract   # data/ extracts from analyses 18, 19 and the Optima reference (run_hivsim.py, run_emodp.py make data/hivsim_*, data/emodp_*)
     python make_epi.py           # figures/ from data/ and common/
 
 Sources: EMOD binary with Daniel's two fixes (PR #4), 10 sets x 5 seeds (analysis 18, variant `both`); EMOD' with the same
-fixes (`emod_fixed`, analysis 17; sets 0/25/50, 10 seeds each; agents x 100); our Optima (the 2022 project, not MIHPSA's;
+fixes (`emod_fixed`, as analysis 17, rerun by run_emodp.py with common/outputs.py; sets 0/25/50, 10 seeds each; census-rescaled); our Optima (the 2022 project, not MIHPSA's;
 models/optima/reference and analysis 19, sexual transmissions, inputs frozen at 2020 after 2020); HIVsim reference set
 (models/hivsim/reference/pars.json, provisional), 20 seeds x 50k agents (run_hivsim.py). All EMOD versions are uncalibrated
 after the fixes.
@@ -53,15 +53,6 @@ def save(fig, name):
 # ---------------------------------------------------------------- extracts
 def extract():
     DATA.mkdir(exist_ok=True)
-    # EMOD' with Daniel's fixes (analysis 17): sets 0/25/50, mean and 10-90% over 10 seeds
-    y = pd.read_csv(A / '17_emod_fixed' / 'outputs' / 'yearly.csv')
-    y = y[(y.variant == 'emod_fixed') & (y.year >= 1985)].copy()
-    for q in ('mean', 'q10', 'q90'):
-        y[f'tx_on_art_{q}'] = y[f'tx_art_lt6m_{q}'] + y[f'tx_art_supp_{q}'] + y[f'tx_art_nonsupp_{q}']
-    cols = ['pid', 'year'] + [f'{c}_{q}' for c in ['pop', 'plhiv', 'new_infections', 'hiv_deaths', 'art_coverage', 'tx_undiagnosed',
-                                                   'tx_diagnosed_naive', 'tx_on_art', 'tx_interrupted'] for q in ('mean', 'q10', 'q90')]
-    y[cols].to_csv(DATA / 'emod_prime_fixed_yearly.csv', index=False, float_format='%.5g')
-
     # EMOD binary with Daniel's fixes (analysis 18, `both`): per year median over 50 runs of the shares; totals at 15-64 census-scaled
     s = pd.read_csv(A / '18_fig3a_emod' / 'outputs' / 'shares.csv.gz')
     s = s[(s.variant == 'both') & (s.year >= 1990)]
@@ -89,7 +80,7 @@ def extract():
 # ---------------------------------------------------------------- loaders
 def load():
     d = {}
-    d['emodp'] = pd.read_csv(DATA / 'emod_prime_fixed_yearly.csv')
+    d['emodp'] = emodp()
     d['emodb'] = pd.read_csv(DATA / 'emod_binary_fixed_fig3a.csv').set_index('year')
     d['opt'] = pd.read_csv(DATA / 'optima_2022_project.csv').set_index('year')
     h = pd.read_csv(DATA / 'hivsim_yearly.csv')
@@ -99,6 +90,42 @@ def load():
     d['targets'] = pd.read_csv(repo / 'common' / 'targets.csv')
     d['pub'] = pd.read_csv(repo / 'common' / 'fig3a_malawi.csv', comment='#')
     return d
+
+
+def emodp():
+    """ EMOD′ + fixes (run_emodp.py), counts census-rescaled per run as Daniel's post-processing (analysis 18): x 17,563,749 over
+    the run's population at 2018.5 (mean of the ends of 2017 and 2018); mean and 10-90% over seeds, per set """
+    y = pd.read_csv(DATA / 'emodp_yearly.csv')
+    y = y[(y.year >= 1985) & (y.year <= 2024)].copy() # 2025 is a partial year
+    p18 = y[y.year.isin([2017, 2018])].groupby(['pid', 'seed'])['pop'].mean()
+    f = CENSUS_2018/y.set_index(['pid', 'seed']).index.map(p18)
+    for c in ['pop', 'plhiv', 'new_infections', 'hiv_deaths', 'on_art']:
+        y[c] = y[c].to_numpy()*f
+    y['tx_on_art'] = y.tx_art_lt6m + y.tx_art_supp + y.tx_art_nonsupp
+    cols = ['pop', 'plhiv', 'new_infections', 'hiv_deaths', 'art_coverage', 'prev_15_49', 'tx_undiagnosed', 'tx_diagnosed_naive', 'tx_on_art', 'tx_interrupted', 'tx_n']
+    q = y.groupby(['pid', 'year'])[cols]
+    s = pd.concat({'mean': q.mean(), 'q10': q.quantile(0.1), 'q90': q.quantile(0.9)}, axis=1)
+    s.columns = [f'{b}_{a}' for a, b in s.columns]
+    print('EMOD′ census factor (mean over runs):', round(float(np.mean(f)), 3))
+    return s.reset_index()
+
+
+def survey_15_49(tg):
+    """ DHS / MPHIA prevalence at 15-49, both sexes: the survey's 5-year age-sex values weighted by WPP's population (nearest WPP
+    year); 95% CI from the bands' intervals, as independent normals """
+    pr = tg[(tg.target == 'prevalence') & (tg.group == 'all') & (tg.age_lo >= 15) & (tg.age_hi <= 50) & (tg.age_hi - tg.age_lo == 5)]
+    wpp = tg[tg.target == 'population']
+    rows = []
+    for (src, yr), g in pr.groupby(['source', 'year']):
+        wy = wpp.year.unique()[np.abs(wpp.year.unique() - yr).argmin()]
+        w = g.apply(lambda r: wpp[(wpp.year == wy) & (wpp.sex == r.sex) & (wpp.age_lo == r.age_lo)].value.sum(), axis=1)
+        if g[['sex', 'age_lo']].drop_duplicates().shape[0] < 14:
+            continue # Not every band 15-49 of both sexes
+        w = w/w.sum()
+        se = (g.upper - g.lower)/3.92
+        v, s_ = (w*g.value).sum(), np.sqrt((w**2*se**2).sum())
+        rows.append(dict(source=src, year=yr, value=v, lower=v - 1.96*s_, upper=v + 1.96*s_))
+    return pd.DataFrame(rows)
 
 
 def hivsim_shares(h):
@@ -170,21 +197,17 @@ def core_indicators(d):
     eb = ep.groupby('year') # Band: over sets 0/25/50 (10-90% over seeds within each)
     h = d['hiv']; hq = h.groupby('year')
     o = d['opt']
-    h['prev'] = h.plhiv/h['pop']
     panels = [('PLHIV (millions)', 'plhiv', 1e-6, un('plhiv'), 'numplhiv'),
               ('New infections per year (thousands)', 'new_infections', 1e-3, un('new_infections'), 'numinci'),
               ('AIDS deaths per year (thousands)', 'hiv_deaths', 1e-3, un('aids_deaths'), 'numdeath'),
               ('ART coverage (% of PLHIV)', 'art_coverage', 100, un('art_coverage'), None),
-              ('HIV prevalence, all ages (%)', 'prev', 100, (un('plhiv')/wpp).dropna(), None),
+              ('HIV prevalence, 15–49 (%)', 'prev_15_49', 100, None, None),
               ('Population (millions)', 'pop', 1e-6, wpp[wpp.index <= 2021], 'popsize')]
     fig, axes = plt.subplots(2, 3, figsize=(12, 6.6), sharex=True)
     for ax, (title, col, k, data, ocol) in zip(axes.flat, panels):
         ax.set_title(title, fontsize=9.5)
         # EMOD'
-        if col == 'prev':
-            em, lo, hi = e0.plhiv_mean/e0.pop_mean, eb.apply(lambda g: (g.plhiv_q10/g.pop_q10).min()), eb.apply(lambda g: (g.plhiv_q90/g.pop_q90).max())
-        else:
-            em, lo, hi = e0[f'{col}_mean'], eb[f'{col}_q10'].min(), eb[f'{col}_q90'].max()
+        em, lo, hi = e0[f'{col}_mean'], eb[f'{col}_q10'].min(), eb[f'{col}_q90'].max()
         em, lo, hi = em[em.index <= 2024], lo[lo.index <= 2024], hi[hi.index <= 2024] # 2025 is a partial year
         ax.fill_between(lo.index, lo*k, hi*k, color=EMOD, alpha=0.15, lw=0)
         ax.plot(em.index, em*k, color=EMOD)
@@ -192,12 +215,19 @@ def core_indicators(d):
         ax.fill_between(hq[col].quantile(0.1).index, hq[col].quantile(0.1)*k, hq[col].quantile(0.9)*k, color=HIVSIM, alpha=0.18, lw=0)
         ax.plot(hq[col].median().index, hq[col].median()*k, color=HIVSIM)
         # Optima
-        ov = {'art_coverage': o.numtreat/o.numplhiv, 'prev': o.numplhiv/o.popsize}.get(col, o[ocol] if ocol else None)
-        ov = ov[ov.index <= 2024]
-        ax.plot(ov[ov.index <= 2020].index, ov[ov.index <= 2020]*k, color=OPTIMA)
-        ax.plot(ov[ov.index >= 2020].index, ov[ov.index >= 2020]*k, color=OPTIMA, ls=(0, (2, 1.5)))
+        if col != 'prev_15_49': # Optima's 15-49 prevalence isn't in its stored totals
+            ov = {'art_coverage': o.numtreat/o.numplhiv}.get(col, o[ocol] if ocol else None)
+            ov = ov[ov.index <= 2024]
+            ax.plot(ov[ov.index <= 2020].index, ov[ov.index <= 2020]*k, color=OPTIMA)
+            ax.plot(ov[ov.index >= 2020].index, ov[ov.index >= 2020]*k, color=OPTIMA, ls=(0, (2, 1.5)))
+        else:
+            ax.text(0.98, 0.95, 'Optima: 15–49 not in its stored totals', transform=ax.transAxes, ha='right', va='top', fontsize=7, color=MUTED)
         # Data
-        ax.plot(data.index + 0.5, data*k, 'o', ms=4, color=DATAC, mfc=DATAC, mec=SURFACE, mew=0.6, zorder=5)
+        if data is not None:
+            ax.plot(data.index + 0.5, data*k, 'o', ms=4, color=DATAC, mfc=DATAC, mec=SURFACE, mew=0.6, zorder=5)
+        if col == 'prev_15_49':
+            for _, r in survey_15_49(tg).iterrows():
+                ax.errorbar(r.year, r.value*k, yerr=[[(r.value - r.lower)*k], [(r.upper - r.value)*k]], fmt='D', ms=4, color=DATAC, mfc=SURFACE, capsize=2, lw=1, zorder=6)
         if col == 'art_coverage':
             m = tg[(tg.target == 'art_coverage') & (tg.source == 'MPHIA 2020-21')]
             for _, r in m.iterrows():
@@ -205,16 +235,17 @@ def core_indicators(d):
                             fmt='s', ms=4, color=DATAC, mfc=SURFACE, capsize=2, lw=1, zorder=6)
         ax.set_xlim(1990, 2025)
         ax.set_ylim(bottom=0)
-    handles = [Line2D([], [], color=EMOD, label='EMOD′ + Daniel’s 2 fixes (uncalibrated; agents × 100, not census-rescaled; set 0, band: sets 0/25/50, 10–90% of seeds)'),
+    handles = [Line2D([], [], color=EMOD, label='EMOD′ + Daniel’s 2 fixes (uncalibrated; census-rescaled; set 0, band: sets 0/25/50, 10–90% of seeds)'),
                Line2D([], [], color=OPTIMA, label='Optima, our 2022 project (dashed: inputs frozen at 2020)'),
                Line2D([], [], color=HIVSIM, label='HIVsim reference set, provisional (median, 10–90% of 20 seeds × 50k agents)'),
                Line2D([], [], color=DATAC, marker='o', ls='', label='UNAIDS 2025 / WPP (no bounds in targets.csv)'),
-               Line2D([], [], color=DATAC, marker='s', mfc=SURFACE, ls='', label='MPHIA 2020–21 men / women, 95% CI')]
+               Line2D([], [], color=DATAC, marker='s', mfc=SURFACE, ls='', label='MPHIA 2020–21 men / women, 95% CI'),
+               Line2D([], [], color=DATAC, marker='D', mfc=SURFACE, ls='', label='DHS / MPHIA 15–49 (WPP-weighted age-sex values), 95% CI')]
     fig.legend(handles=handles, loc='lower left', ncol=2, bbox_to_anchor=(0.01, -0.09), fontsize=8.2)
     o20, e20, h20, u20 = o.numinci[2020], e0.new_infections_mean[2020], hq.new_infections.median()[2020], un('new_infections')[2020]
     d20, hd20 = un('aids_deaths')[2020], hq.hiv_deaths.median()[2020]
     fig.suptitle(f'In 2020, new infections: EMOD′ {e20/1e3:.0f}k, Optima {o20/1e3:.0f}k, HIVsim {h20/1e3:.0f}k vs UNAIDS {u20/1e3:.0f}k; '
-                 f'HIVsim has almost no AIDS deaths after 2015 ({hd20/1e3:.1f}k vs {d20/1e3:.0f}k)',
+                 f'AIDS deaths: EMOD′ {e0.hiv_deaths_mean[2020]/1e3:.0f}k, Optima {o.numdeath[2020]/1e3:.0f}k, HIVsim {hd20/1e3:.0f}k vs {d20/1e3:.0f}k',
                  x=0.01, ha='left', fontsize=11.5, fontweight='bold', y=1.0)
     fig.tight_layout(rect=(0, 0, 1, 0.97))
     save(fig, 'core_indicators')
@@ -260,7 +291,7 @@ def fig3a(d):
     fig, axes = plt.subplots(2, 4, figsize=(13.5, 6.6), sharey=True)
     stack(axes[0, 0], pe, 'Published EMOD', note='Bansi-Matharu 2025 Fig 3A (digitised)')
     stack(axes[0, 1], eb, 'EMOD binary + Daniel’s 2 fixes', note='analysis 18; median of 10 sets × 5 seeds;\nuncalibrated after the fixes')
-    stack(axes[0, 2], epf, 'EMOD′ + Daniel’s 2 fixes', note='analysis 17; set 0, mean of 10 seeds;\nuncalibrated after the fixes')
+    stack(axes[0, 2], epf, 'EMOD′ + Daniel’s 2 fixes', note='run_emodp.py (as analysis 17); set 0, mean of 10 seeds;\nuncalibrated after the fixes')
     stack(axes[0, 3], hs, 'HIVsim (not in the paper)', note='reference set (provisional), 20 seeds × 50k;\npooled over seeds')
     stack(axes[1, 0], po, 'Published Optima HIV', note='Bansi-Matharu 2025 Fig 3A (digitised)')
     stack(axes[1, 1], o, 'Our Optima: 2022 project', proj=2020, note='not MIHPSA’s project (awaiting Rowan); analysis 19;\nsexual transmissions; inputs frozen after 2020')
@@ -275,11 +306,12 @@ def fig3a(d):
     txt = ('2020 shares, undiagnosed / dx never treated / on ART / interrupted:\n'
            + '\n'.join(f'{n:<16} ' + ' / '.join(f'{r(df, s):.0f}' for s in STAGES)
                        for n, df in [('Published EMOD', pe), ('EMOD binary', eb), ('EMOD′', epf), ('Published Optima', po), ('Our Optima', o), ('HIVsim', hs)])
-           + '\nNumbers in the bands are 2020 (dotted line).')
+           + '\nNumbers in the bands are 2020 (dotted line).'
+           + '\n\nHIVsim (structural, not a bug): testing limits ART, so 2010-20\neveryone diagnosed is on ART at once, and the\nnumber-on-ART target restarts anyone who stops\nwithin the step (no re-engagement delay).')
     axes[1, 3].text(-0.05, 1.0, txt, transform=axes[1, 3].transAxes, fontsize=7.6, va='top', family='monospace', color=INK)
     fig.suptitle('With Daniel’s fixes EMOD reproduces the published source split (within ~5 points); our Optima (2022 project) does not:\n'
                  f'it has {r(o, "diagnosed_never_treated"):.0f}% from diagnosed-never-treated in 2020 vs {r(po, "diagnosed_never_treated"):.0f}% published. '
-                 f'HIVsim is {r(hs, "undiagnosed"):.0f}% undiagnosed, never-treated ~0 after 2009 and interrupted ~0 until 2021 ({r(hs, "interrupted_art", 2024):.0f}% in 2024)',
+                 f'HIVsim is {r(hs, "undiagnosed"):.0f}% undiagnosed; never-treated and interrupted ≤{100*hs.loc[2009:2024, ["share_diagnosed_never_treated", "share_interrupted_art"]].max().max():.0f}% every year 2009–2024 (structural: see notes)',
                  x=0.01, ha='left', fontsize=11.5, fontweight='bold')
     fig.subplots_adjust(left=0.06, right=0.98, top=0.84, bottom=0.1, wspace=0.18, hspace=0.62)
     save(fig, 'fig3a_reconstruction')
@@ -295,8 +327,8 @@ def fig3a_totals(d):
     k = 1e-3
     fig, ax = plt.subplots(figsize=(11, 5.6))
     ax.fill_between(eb.index, eb.ni_q05*k, eb.ni_q95*k, color=EMOD, alpha=0.13, lw=0)
-    ax.plot(eb.index, eb.ni_median*k, color=EMOD, label='EMOD binary + Daniel’s 2 fixes (ages 15–64, census-scaled; median, 5–95% of 50 runs)')
-    ax.plot(e0.index, e0.new_infections_mean*k, color=EMOD, ls=(0, (1, 1.2)), lw=2, label='EMOD′ + Daniel’s 2 fixes (all ages, agents × 100; set 0)')
+    ax.plot(eb.index, eb.ni_median*k, color=EMOD, label='EMOD binary + Daniel’s 2 fixes (ages 15–64 only: its stored output; census-scaled; median, 5–95% of 50 runs)')
+    ax.plot(e0.index, e0.new_infections_mean*k, color=EMOD, ls=(0, (1, 1.2)), lw=2, label='EMOD′ + Daniel’s 2 fixes (all ages, census-rescaled; set 0)')
     ax.plot(o.index[o.index <= 2020], o.numinci[o.index <= 2020]*k, color=OPTIMA, label='Optima, our 2022 project (all ages; dashed: inputs frozen at 2020)')
     ax.plot(o.index[o.index >= 2020], o.numinci[o.index >= 2020]*k, color=OPTIMA, ls=(0, (2, 1.5)))
     ax.fill_between(hq.median().index, hq.quantile(0.1)*k, hq.quantile(0.9)*k, color=HIVSIM, alpha=0.18, lw=0)

@@ -47,8 +47,16 @@ def new_infections(sim):
 
 
 def hiv_deaths(sim):
+    """ This step's HIV deaths: EmodHIV's, or for STIsim's sti.HIV its own (`ti_dead`) and, with ART as its own module
+    (`sti.ART`), the deaths of people on ART and of AIDS after stopping it, which are ART's transitions, not HIV's """
     hiv = sim.diseases.hiv
-    return hiv.dead_uids if hasattr(hiv, 'dead_uids') else (hiv.ti_dead == sim.ti).uids
+    if hasattr(hiv, 'dead_uids'):
+        return hiv.dead_uids
+    dead = (hiv.ti_dead == sim.ti).uids
+    art = sim.interventions.get('art') if hasattr(sim.interventions, 'get') else None
+    if art is not None and hasattr(art, 'art_death'):
+        dead = dead | art.art_death.uids | art.post_art_death.uids
+    return dead
 
 
 class Outputs(TransmissionLog):

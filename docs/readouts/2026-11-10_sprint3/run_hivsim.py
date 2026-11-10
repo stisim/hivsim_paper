@@ -6,6 +6,7 @@ data/hivsim_targets.csv.   python run_hivsim.py [seeds] [n_agents]
 import sys
 from pathlib import Path
 from multiprocessing import Pool
+import numpy as np
 import pandas as pd
 
 here = Path(__file__).resolve().parent
@@ -24,6 +25,9 @@ def one(seed):
     y = yearly(out)
     for c in ['new_infections', 'hiv_deaths', 'pop', 'plhiv', 'diagnosed', 'on_art', 'suppressed']:
         y[c] = y[c]*out.scale
+    st = out.strata[(out.strata.age >= 15) & (out.strata.age < 50)].assign(yr=lambda d: np.floor(d.year + 1e-9).astype(int))
+    last = st[st.year == st.groupby('yr').year.transform('max')].groupby('yr')[['infected', 'pop']].sum()
+    y['prev_15_49'] = y.year.map(last.infected/last['pop'])
     targets = pd.read_csv(repo / 'common' / 'targets.csv')
     m = measure(out.strata, targets, out.scale)
     return y.assign(seed=seed), pd.DataFrame(dict(tid=list(m), value=list(m.values()))).assign(seed=seed)

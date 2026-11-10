@@ -39,8 +39,8 @@ def traditional_vmmc():
     return sti.VMMC(coverage=pd.concat([pre.assign(Year=y) for y in (1985, 2100)])[['Year', 'AgeBin', 'p_vmmc']])
 
 
-def make_sim(variant='own', seed=1, pars=None, params=None, n_agents=10e3, stop=2022, **kwargs):
-    """ HIVsim Malawi with its own testing, ART and VMMC (`own`), or with the condensed cascade (`condensed`, with `params`, by default emod_table()); from the slot factories (components.py) """
+def make_sim(variant='own', seed=1, pars=None, params=None, n_agents=10e3, stop=2022, art_mortality=True, **kwargs):
+    """ HIVsim Malawi with its own testing, ART and VMMC (`own`), or with the condensed cascade (`condensed`, with `params`, by default emod_table()); mortality on ART by EMOD's table unless `art_mortality=False`; from the slot factories (components.py) """
     import components
     pars = BEST if pars is None else pars
-    return components.make_sim(pars, seed=seed, n_agents=n_agents, stop=stop, verbose=0, cascade=variant, params=params, sim_kwargs=kwargs)
+    return components.make_sim(pars, seed=seed, n_agents=n_agents, stop=stop, verbose=0, cascade=variant, params=params, art_mortality=art_mortality, sim_kwargs=kwargs)
