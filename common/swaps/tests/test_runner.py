@@ -132,3 +132,14 @@ def test_path_hybrids(tmp_path):
     for col in ('new_infections', 'hiv_deaths', 'incidence_15_49_f', 'incidence_15_49_m'):
         assert np.isfinite(y[col]).all(), col
     assert len(list(tmp_path.glob('*/p0_s1.burnin.sim'))) == 1 # All EMOD′ only
+
+
+def test_optima_c_on_emod_draws_pmtct():
+    """ Optima's C slot on EMOD′-fixed's agents draws Optima's PMTCT per person by default (catches it being skipped
+    again: analysis 24's addendum, where skipping it gave +163k mother-to-child infections over 1990–2020) """
+    cfg = dict(models=dict(emod_fixed='models/emod/v4/components_fixed.py', optima='models/optima/v4/components.py'), stop=STOP)
+    cell = swaps.cells(dict(pairs=dict(emod_fixed=[0])))[0]
+    sim = swaps.build(dict(D='emod_fixed', RN='emod_fixed', V='emod_fixed', C='optima'), cell, cfg, outputs=False).run()
+    eff = sim.diseases.hiv.pmtct.raw
+    eff = eff[eff > 0]
+    assert len(eff) > 0 and np.allclose(eff, 0.9) # Some women got PMTCT, at Optima's efficacy (EMOD's own PMTCT left with its C)
