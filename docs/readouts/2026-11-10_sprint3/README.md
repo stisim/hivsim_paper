@@ -95,7 +95,14 @@ Structural fixes found through calibration: declared STIsim ignored condoms (pre
 ## 6. What we need to clarify
 
 **References (critical path)**
-1. **EMOD (Daniel):** which campaign and config files were calibrated for the paper? Is EMOD′-fixed, uncalibrated, the EMOD end, or do we refit its total, which is ~40% high?
+1. **EMOD (Daniel): can we replicate the published EMOD?** The shares, yes; the total and the fit, not yet.
+   - With his two PR #4 fixes, the shares are within 5 points of Figure 3A. The 2024 total is 41.3k against 30.6k (1.35×), ranging from 30.6k to 60.5k across our 10 sets, and nothing has been refitted since the fixes.
+   - **a.** Which campaign, config and demographics files produced the MIHPSA results, and which were the 250 sets fitted with? The sets are from April 2023 and the campaign file is dated December 2025.
+   - **b.** His scaling script reads an experiment `recalib-transmission___2023_11_04`. Were the published results from a later recalibration of transmission? If so, can we have those sets?
+   - **c.** How were sets chosen or averaged for the paper?
+   - **d.** With the fixes, should the fit hold, or should we refit?
+   - Analysis 25 (running) checks all 250 sets with both fixes.
+   - His PR #4 review questions (`notes_for_daniel.md`) haven't been sent yet.
 2. **Optima (Rowan, via Robyn):** MIHPSA's Malawi project. Until it arrives we decompose against our 2022 project, stated as such.
 3. **Year and outputs:** 2020 (inside the data, where Optima′ is verified) or 2024 (the caption's totals, which need Optima's post-2020 inputs)?
 
