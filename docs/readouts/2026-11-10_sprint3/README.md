@@ -55,7 +55,11 @@ Each model's wall time and peak memory are the median of 3 runs. Details and sou
 ![Run time per model](figures/run_time.png)
 
 - **EMOD′ is 5× faster than the EMOD binary.** A whole swap path (5 hybrids × 200 cells) takes minutes on the 160-core machine.
-- **Optima′ as an ODE is 44× slower than Optima.** A 10× smaller time step explains 10×; the rest is Starsim's declared-engine overhead. The profile points to two causes: a cache in the time-series parameter lookup that keeps missing during the run, and repeated searches of the whole object tree at `init` (40% of the time). A fix is being made on a local Starsim branch.
+- **Optima′ as an ODE is 44× slower than Optima.** A 10× smaller time step explains 10×; the rest is Starsim's declared-engine overhead. The profile points to two causes: a cache in the time-series parameter lookup that keeps missing during the run, and repeated searches of the whole object tree at `init` (40% of the time). Two fixes are on a local Starsim branch (`rs-perf-nov10`, not pushed); Optima′'s results stay bit-identical.
+  - `ss.timeseries` times are now converted once per sim instead of separately in each of 5,696 objects.
+  - The object-tree searches no longer follow `Cond.owner` into a stale second copy of the disease.
+  - Together they take init from 35 s to 13 s, the run from 59 s to 30 s, and memory from 1.9 GB to 1.2 GB.
+  - Still to do (for Cliff): the remaining searches walk about 2.3M plain numbers inside the time series, and the declared run loop is still about 25× Optima's per step.
 
 ## 4. Epidemiology
 
