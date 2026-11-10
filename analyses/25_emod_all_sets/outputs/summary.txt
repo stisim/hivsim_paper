@@ -1,0 +1,11 @@
+258 runs, 129 distinct sets (250 of the 250), seeds per set: {2: 129}
+2020 new infections 15-64, all 250 (weighted by copies): median 40,914, mean 41,193, 5-95% 29,972-54,747; distinct sets unweighted median 42,210; per-run median 41,831 (5-95% 27,179-56,956)
+2024 new infections 15-64, all 250 (weighted by copies): median 40,905, mean 42,354, 5-95% 30,689-60,054; distinct sets unweighted median 42,611; per-run median 42,158 (5-95% 27,792-62,404)
+Share of sets (weighted) with 2024 total <= 30,582: 0.04
+Spearman(2024 total, fit_total) = -0.15 (p = 0.098)
+Spearman(2024 total, fit_Prevalence) = -0.14 (p = 0.12)
+Spearman(2024 total, fit_ARTCoverage) = -0.09 (p = 0.3)
+Spearman(2024 total, fit_OnART) = 0.14 (p = 0.12)
+Spearman(2024 total, fit_Population) = 0.22 (p = 0.011)
+Spearman(2024 total, daniel_lik) = 0.04 (p = 0.69)
+Spearman(fixed-model fit, Daniel likelihood) = 0.65 (p = 4.1e-17)
