@@ -142,3 +142,5 @@ The table above is now the headline (direction 1 at the top, rerun 10 Nov with P
 4. EMOD′'s high early ANC uptake: should the `anc` fix go into EMOD′-fixed? That is an EMOD′ question, not a swap one.
 
 Tests: `tests/` and `common/swaps/tests` (`logs/tests_addendum.log`).
+
+Tests after the 10 Nov default change: `tests/` and `common/swaps/tests`, 25 passed, including the new `test_optima_c_on_emod_draws_pmtct` (`logs/tests_pmtct_default.log`).
