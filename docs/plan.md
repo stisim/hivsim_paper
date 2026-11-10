@@ -1,8 +1,27 @@
 # Sprint plan
 
-*Weekly sprints, Tuesday to Monday. Read with `vision.md` and `prompts.md`, where the P numbers are defined.*
+*Weekly sprints, Tuesday to Monday, each closed by a team check-in on the Tuesday with a readout in `docs/readouts/` (branch `starsim-rc3`). Read with `vision.md`, `prompts.md` (the P numbers), `core_question.md` and `swap_design.md` (the slots, paths and decisions D1–D11).*
+
+*Updated 10 Nov 2026 (end of sprint 3).*
 
 **Team:** Robyn (lead, Optima), Daniel (EMOD, prompts), Cliff (Starsim v4; Robyn reviews and contributes).
+
+## Sprint 3 review (3–9 Nov)
+
+Planned: HIVsim calibrated to the stopping rule; P4 drafted; a CRN test; EMOD rerun with reference outputs (Daniel); STIsim #607 merged and a pin agreed (Cliff). What happened:
+
+- **The question sharpened (Robyn, 9 Nov):** the core question is now Figure 3A of Bansi-Matharu et al. 2025: why EMOD and Optima HIV disagree, in Malawi, on who new infections come from (undiagnosed, diagnosed never treated, on ART, interrupted) and on how many there are. HIVsim becomes the common architecture rather than one of the two ends, and **EMOD′ ↔ Optima′ becomes the core path** (`core_question.md`).
+- **Engineering is well ahead of plan.** Items planned for sprints 5–8 and January are done (analyses 10–24 on `starsim-rc3`):
+  - EMOD′ reproduces EMOD within run-to-run noise, piece by piece and whole (analyses 02–06, 09). The condensed cascade is the common cascade interface.
+  - Swap runner, slot factories, endpoint tests and the outputs analyzer (`common/swaps/`, `common/outputs.py`; analyses 11, 15). This was the sprint 6 deliverable.
+  - **First path HIVsim → EMOD′ run end to end with exact endpoints** (analysis 16, 1,000 runs). This was the sprint 7 checkpoint, though uncalibrated rather than compensated.
+  - Optima′ as agents agrees with its ODE (≤0.35% at 400k agents; analysis 20; sprint 5). Population label, `OptimaHost`, Optima's cascade as a table (analyses 22–23; January items).
+  - **First step of the core path: the cascade swapped both ways between EMOD′ and Optima′** (analysis 24). The cascade carries most of the share split, not the gap in totals. Optima's PMTCT, skipped on agent hosts as a shortcut, is now on by default (Robyn, 10 Nov).
+- **The references moved.** Daniel's two fixes (PR #4: the dropout trap and background mortality) make the EMOD binary reproduce the published Figure 3A shares within 5 points (analysis 18; EMOD′-fixed agrees, analysis 17), but its total is ~35–40% high. Our Optima (2022 project) is not the calibration MIHPSA published (analysis 19).
+- **HIVsim calibration: not done.** Exp 04 (testing for advanced HIV, EMOD's mortality on ART): 2 of 600 runs meet the stopping rule, PLHIV before 2010 too low. A provisional reference set is in `models/hivsim/reference/` (endpoint identity doesn't depend on fit). Along the way two STIsim bugs were found and fixed: declared STIsim ignored condoms (prevalence 19% → 8%) and HIVsim's mortality on ART was 5–10× too low (analysis 13).
+- **CRN decided:** pairing helps stocks a lot, flows a little, cascade shares not at all (analysis 14); a Starsim engine leak fixed (starsim#1574). Use pairing and more seeds.
+- **Starsim / STIsim:** pin is Starsim 4.0.0rc3 + #1573 (under Cliff's review) and STIsim #613 (on #612); #607 and #609 closed. Five more Starsim frictions fixed on a local branch (not pushed).
+- **Not done:** P4 sign-off by all three (the slot boundaries in `swap_design.md`, figure in this sprint's readout); Optima′ sign-off; Daniel's P0 (we reran the binary ourselves, analyses 01, 09, 18); the compensated (tier 2) refit in the runner.
 
 ## Sprint 2 review (27 Oct–2 Nov)
 
@@ -19,36 +38,37 @@ Planned: both originals rerun with reference outputs, and draft prompts P1–P4.
 - **Starsim (Cliff):** 4.0.0rc1 released (the pin). STIsim pinned to Starsim v3 on main (#608). Upstream fixes from the Optima′ build merged (Starsim #1492, #1498).
 - **Not done:** P4 (component map and interfaces), the CRN test, and the prompt drafts (P1–P4 are still one-liners).
 
-## Plan from sprint 3
+## Plan from sprint 4
+
+Sprints 1–3 are in the reviews above. EMOD′ is no longer the critical path; the critical path is now **the references** (which EMOD and which Optima we decompose) and **the design of the V, RN and D steps between EMOD′ and Optima′** (Optima's transmission has no network).
 
 | Sprint | Dates | Robyn | Daniel | Cliff | Deliverable |
 |---|---|---|---|---|---|
-| **1** | 20–27 Oct | Vision; narrative draft; plan | — | — | ✅ `vision.md`, `narrative_draft.md`, `plan.md`, `prompts.md` |
-| **2** | 27 Oct–2 Nov | See the review above | | | ✅ Optima rerun; Optima′ first pass; HIVsim on v4; target set; EMOD files in PR #1 |
-| **3** | 3–9 Nov | **P3:** finish calibrating HIVsim (exp 04: testing for advanced HIV from 2004; exp 05: mortality on ART; stopping rule). Draft P4 from the Optima and HIVsim side. Test CRN on one real swap (HIVsim's cascade set to Optima's) | **P0 EMOD:** rerun the 250 parameter sets, reference outputs (`ReportHIVByAgeAndGender`) summarised into `analyses/01_reference_fits/`, component inventory | Review and merge STIsim #607. Agree the pin for the rebuilds | **Checkpoint:** HIVsim Malawi calibrated to the stopping rule; CRN decision |
-| **4** | 10–16 Nov | **P4** with Daniel: component map and interfaces (mechanism, inputs, parameters). Optima′ by population; sign-off | **P4** with Robyn; then start **P1:** EMOD′ rebuild loop | Review P4 for fit with v4 | **Checkpoint:** component boundaries and interfaces approved by all three; Robyn signs off Optima′ |
-| **5** | 17–23 Nov | Verify Optima′ as an ABM against its own ODE (time-step study). Add the explicit re-engagement mechanism to HIVsim. Score EMOD and Optima on the target set | P1 continues | Unblock v4 issues from the rebuilds | Optima′ verified both ways; fit scorecard for all three models |
-| **6** | 24–30 Nov | Refactor HIVsim and Optima′ to the interfaces. Swap runner and endpoint unit test (with Cliff) | First fidelity pass for EMOD′ (median inside the original's 90% interval) | Swap runner and endpoint unit test (with Robyn) | Swap runner with endpoint test passing on a trivial swap |
-| **7** | 1–7 Dec | First substitution path, HIVsim → EMOD′, compensated (refit transmission scale and ART uptake to the P3 targets; decided 9 Nov) | Finish verifying EMOD′, or escalate | Support the swap runner | **Checkpoint:** Daniel signs off EMOD′; first path with endpoint identity confirmed |
-| **8** | 8–15 Dec | Results outline and interim figures; plan for the January sprints | Paths EMOD′ ↔ Optima′ (the published gap) and HIVsim ↔ EMOD′ | Interim review | **Interim deliverable (15 Dec):** three verified models, first decompositions, interim figures, January plan |
-
-Changes from the 27 Oct plan (agreed with Robyn, 3 Nov): P2 and P3 moved earlier (done or under way); P4 moved from sprint 3 to sprint 4, so P1 starts a week later; Optima′ sign-off moved from sprint 6 to sprint 4. EMOD′ is now the critical path.
+| ✅ **1–3** | 20 Oct–9 Nov | See the reviews above | | | ✅ Core question; EMOD′ verified; Optima′ ODE and agents; runner; HIVsim → EMOD′ path; cascade swap EMOD′ ↔ Optima′ |
+| **4** | 10–16 Nov | **P4 checkpoint:** slot boundaries and interfaces (D7, the decomposition figure). Decide the V/RN/D design for EMOD′ ↔ Optima′, D11 (seeding) and analysis 23's provisional decisions. Sign off Optima′. HIVsim exp 05: early PLHIV, or relax the stopping rule | Which EMOD files were calibrated; whether EMOD′-fixed needs a refit for the total (~40% high). Review analyses 17–18 and 24 (EMOD side) | Review and merge Starsim #1573 and #1574; STIsim #612/#613; take the friction batch | **Checkpoint:** boundaries approved by all three; references for both ends agreed (or a dated plan to get them) |
+| **5** | 17–23 Nov | EMOD′ ↔ Optima′: the V step (natural history and transmission), both ways, on the agreed design. Compensated refit (tier 2: transmission scale, ART uptake) in the runner | Sign off EMOD′-fixed as the EMOD end (or refit it) | Unblock v4 issues; re-pin once #1573 lands, rerun the endpoint tests | V step both ways; runner refits each hybrid |
+| **6** | 24–30 Nov | EMOD′ ↔ Optima′: RN and D steps; full path with endpoint identity; Optima′ on MIHPSA's project if Rowan's files arrive | Review the EMOD side of the path | Support the runner | **Checkpoint:** core path complete, uncalibrated and compensated |
+| **7** | 1–7 Dec | Shapley lattice on the core path; HIVsim ↔ Optima′ and EMOD′ → HIVsim if cheap; treatment-interruption scenario set up (re-engagement rate in HIVsim) | Sign off the EMOD side | Interim review of the code | Decomposition of Figure 3A (shares and total) with intervals |
+| **8** | 8–15 Dec | Results outline and interim figures; January plan | Interim review | Interim review | **Interim deliverable (15 Dec):** verified ends, the core path decomposed, interim figures, January plan |
 
 ## Still to schedule
 
 These are left for January:
-- the treatment-interruption scenarios;
-- final swap design and orderings;
+- the treatment-interruption scenarios and the intervention ranking (2026–2035);
+- finer slots (V split into T, H, S) after the refactor, and the final orderings;
 - the full manuscript, co-author round and submission (by 31 March 2027).
 
 ## Risks
 
 | Risk | Fallback |
 |---|---|
-| Common random numbers don't reduce variance across swaps (`SexualNet` isn't CRN-safe when people are born or die); probably minor, since HIV outputs should vary little between runs | more seeds or agents; request a CRN-safe partnership network in Starsim |
-| The EMOD′ rebuild can't reach tolerance | report the diagnosed cause; partial path (EMOD components in HIVsim, no endpoint test) |
+| **MIHPSA's Optima Malawi project doesn't arrive from Rowan** | decompose against our 2022 project (Optima′ = our Optima), stated as such; the published panel is a check, not the end |
+| **The calibrated EMOD files are unknown, and EMOD′-fixed's total is ~40% high** | use the fixed files uncalibrated with the compensated refit (tier 2) as the headline; report the total gap with that caveat |
+| Optima has no network, so V/RN/D steps on EMOD′ ↔ Optima′ need a design choice (mean-field force of infection on agents, or an agent network fitted to Optima's mixing) | do the cascade and natural history steps first; put transmission and network together in one step |
+| Tests and runs slow the loop (the test suite takes ~35 min serially) | short horizons in tests (to 1995, `swap_design.md` §3), parallel runs; full horizon once per milestone |
+| ~~Common random numbers don't reduce variance across swaps~~ Checked (analysis 14): they help stocks, not cascade shares | more seeds (cheap); engine leak fixed (starsim#1574) |
+| ~~The EMOD′ rebuild can't reach tolerance~~ Done: EMOD′ reproduces EMOD within noise (analyses 02–06, 09) | |
 | v4 API changes mid-rebuild | pinned to 4.0.0rc1; re-pin deliberately and rerun the endpoint test |
-| EMOD′ (the critical path) starts a week late, after P4 | start EMOD′'s components that don't depend on the interfaces (demography, natural history) during sprint 3–4; partial path if needed |
 | HIVsim calibration runs on (a calibration can always be improved) | the stopping rule in `experiments/03_testing_art/SUMMARY.md` in hivsim_malawi; whatever meets it by 9 Nov goes forward |
 | HIVsim's low mortality on ART is a model gap, not a parameter | fix it in STIsim before the swaps, since deaths on ART are a paper output |
 | ~~MIHPSA Optima turns out to be legacy Optima HIV, not Atomica~~ Confirmed 28 Oct: legacy Optima HIV ([optimamodel/optima](https://github.com/optimamodel/optima)) | hand rebuild (declared, for its ODE form); Malawi files from Rowan |
