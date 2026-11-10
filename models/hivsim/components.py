@@ -9,7 +9,7 @@ puts them together in the canonical order; `malawi.make_sim()` and `swap.make_si
     ctx:  from the runner, `choice`, `models`, `pars`, `seed`, `stop`, `cell`; from make_sim(), also: n_agents (default
           10,000); `cascade`: 'own' (HIVsim's testing, ART and VMMC; the default) or 'condensed' (the condensed cascade,
           with `params`, by default EMOD's Malawi table), or 'table' (pathways by rate and level, common/cascade/pathways.py,
-          with `params`, e.g. Optima's table)
+          with `params`, e.g. Optima's table); `art_mortality`: deaths on ART by EMOD's table (default True; False for STIsim's default)
 
 Fine slots, and the runner's coarse ones made of them: RN = R + N, V = T + H + S. Where one module covers several
 slots, the first slot it belongs to builds it, and the others give nothing:
@@ -18,7 +18,9 @@ slots, the first slot it belongs to builds it, and the others give nothing:
 - ART is in C (`make_art()`), as the cascade's treatment, though its biology is H's (swap_design §1.1). It is a declared
   module of its own (`sti.ART`, an `ss.Disease` given with the interventions), which holds the states of treatment and
   modifies sti.HIV's natural history; read them on it (`sim.interventions.art.on_treatment`), not through HIV's pass-throughs.
-  Its opt-in mortality options (`art_death_table`, `dur_reengage`) are off.
+  Mortality on ART is on by default: `art_death_table=sti.ART.emod_death_table` (EMOD's ART mortality table, as in
+  hivsim_malawi experiment 04), in both of C's arms (it is H's biology); `ctx.art_mortality=False` turns it off (STIsim's
+  default, on-ART mortality relative to the off-ART rate at the current CD4). `dur_reengage` stays off.
 - M (measurement) is sti.HIV's own results, and V's `ss.infection_log()` (for common/outputs.py).
 """
 import sys
@@ -145,17 +147,18 @@ def seeding_for(pars, ctx):
     return seeding
 
 
-def make_art(kind):
-    """ HIVsim's ART (sti.ART, its own declared module), the one place it is made: `own`, to the numbers on ART and the share suppressed; `cascade`, holding ART's states for the condensed cascade. STIsim's defaults otherwise (no `art_death_table`, no `dur_reengage`) """
+def make_art(kind, mortality=True):
+    """ HIVsim's ART (sti.ART, its own declared module), the one place it is made: `own`, to the numbers on ART and the share suppressed; `cascade`, holding ART's states for the condensed cascade. With `mortality` (default), deaths on ART by EMOD's table (`sti.ART.emod_death_table`); STIsim's defaults otherwise (no `dur_reengage`) """
+    kw = dict(art_death_table=sti.ART.emod_death_table) if mortality else {}
     if kind == 'own':
-        return sti.ART(coverage=malawi.read('n_art.csv', index_col='year'), vls_coverage=malawi.read('vls.csv', index_col='year'))
-    return art_for_cascade()
+        return sti.ART(coverage=malawi.read('n_art.csv', index_col='year'), vls_coverage=malawi.read('vls.csv', index_col='year'), **kw)
+    return art_for_cascade(**kw)
 
 
 def make_C(pars, ctx):
     """ Care cascade and prevention: HIVsim's testing, ART and VMMC (`own`), or the condensed cascade (`condensed`) """
     if opt(ctx, 'cascade', 'own') == 'own':
-        intvs = malawi.make_testing(pars.get('test_scale', 1), pars.get('test_rel_m', 1), pars.get('test_start', 2004)) + [make_art('own')]
+        intvs = malawi.make_testing(pars.get('test_scale', 1), pars.get('test_rel_m', 1), pars.get('test_start', 2004)) + [make_art('own', opt(ctx, 'art_mortality', True))]
         vmmc = malawi.read('vmmc.csv') # Share of men circumcised, by age
         if vmmc is not None:
             intvs.append(sti.VMMC(coverage=vmmc))
@@ -174,7 +177,7 @@ def for_cascade(pars, ctx):
     as the holder of ART's states (ART's biology is H's), and circumcision before the programmes, held at its pre-2010
     level (HIVsim's VMMC data include traditional circumcision; EMOD′'s V has its own) """
     import swap
-    return dict(interventions=[make_art('cascade'), swap.traditional_vmmc()])
+    return dict(interventions=[make_art('cascade', opt(ctx, 'art_mortality', True)), swap.traditional_vmmc()])
 
 
 def make_M(pars, ctx):

@@ -31,6 +31,15 @@ def at_ref(path, **replace):
     return mod
 
 
+def art_mortality(sim):
+    """ The pre-factory sim with mortality on ART by EMOD's table, which the factories have on by default since (models/hivsim/components.py, make_art) """
+    import stisim as sti
+    arts = [i for i in sim.pars.interventions if isinstance(i, sti.ART)]
+    assert len(arts) == 1, arts
+    arts[0].pars.art_death_table = sti.ART.emod_death_table
+    return sim
+
+
 def check(case):
     """ Run one case before and after; print the arrays that differ, and exit 1 if any do """
     sys.path[:0] = [str(repo), str(repo / 'common')]
@@ -65,11 +74,11 @@ def check(case):
             old = swap.make_sim('condensed', seed=cell['seed'], stop=2010, analyzers=[Outputs(stisim_host.StisimHost)])
             new = swaps.build(dict(D='hivsim', RN='hivsim', V='hivsim', C='emod'), cell, cfg)
         elif case == 'hivsim_malawi':
-            old, new = ref_malawi.make_sim(seed=2, n_agents=3e3, verbose=0), malawi.make_sim(seed=2, n_agents=3e3, verbose=0)
+            old, new = art_mortality(ref_malawi.make_sim(seed=2, n_agents=3e3, verbose=0)), malawi.make_sim(seed=2, n_agents=3e3, verbose=0)
         else:
             ref = at_ref(HIVSIM / 'swap.py', malawi=ref_malawi)
             variant = case.removeprefix('hivsim_')
-            old, new = ref.make_sim(variant, seed=2, n_agents=3e3), swap.make_sim(variant, seed=2, n_agents=3e3)
+            old, new = art_mortality(ref.make_sim(variant, seed=2, n_agents=3e3)), swap.make_sim(variant, seed=2, n_agents=3e3)
     from common.identity import arrays, differences
     a, b = arrays(old.run()), arrays(new.run())
     d = differences(a, b)
