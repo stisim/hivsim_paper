@@ -3,7 +3,9 @@ Optima's cascade (models/optima/v4/components.py's make_C) with treatment failur
 arm: `switch_arm` as the host's `start_art` in the new arm. On EMOD′ that is EmodHIV.go_on_art for someone already on
 ART (EMOD's GoOnART: the new arm's table and transmission multiplier, a new prognosis, time on ART kept). With
 PREVENTION (optima_c_switch_prev.py), EMOD's own VMMC and PrEP flows (its campaign's, through the condensed cascade's
-holder) run as well. Sensitivity runs of analysis 24 only.
+holder) run as well. With PMTCT (optima_c_pmtct.py, optima_c_switch_prev_pmtct.py), the table's PMTCT number is drawn
+per person (`TableCascade(pmtct=True)`); with SWITCH False, the arm doesn't switch (as models/optima/v4/components.py).
+Sensitivity runs of analysis 24 only.
 """
 import sys
 import importlib.util
@@ -14,6 +16,8 @@ spec = importlib.util.spec_from_file_location('optima_components', REPO / 'model
 oc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(oc)
 PREVENTION = False
+SWITCH = True
+PMTCT = False
 
 
 def pars(pid=None):
@@ -32,7 +36,7 @@ def make_C(params, ctx):
     from common.cascade.pathways import TableCascade
     vm = ctx.models[ctx.choice['V']]
     scale = getattr(ctx.models[ctx.choice['D']], 'SCALE', None)
-    intvs = [TableCascade(params, switching(vm.HOST), scale=scale)]
+    intvs = [TableCascade(params, switching(vm.HOST) if SWITCH else vm.HOST, scale=scale, pmtct=PMTCT)]
     if PREVENTION:
         intvs = prevention(ctx, vm.HOST) + intvs
     return dict(interventions=intvs)
