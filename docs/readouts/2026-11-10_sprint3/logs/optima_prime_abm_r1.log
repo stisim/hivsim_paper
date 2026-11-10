@@ -1,0 +1,24 @@
+STATS {"agents_start": 100000, "init_s": 23.431049823760986, "start": 1990.0, "stop": "2025", "dt": "years(0.02)", "run_s": 116.66790986061096, "wall_s": 140.09896039962769, "agents_end": 227290}
+	Command being timed: "/home/robyn/miniconda/envs/hp_rc3/bin/python -u /tmp/hp-ro-stats/docs/readouts/2026-11-10_sprint3/measure_stats.py one optima_prime_abm 1"
+	User time (seconds): 139.18
+	System time (seconds): 1.21
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:20.41
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1826336
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 23
+	Minor (reclaiming a frame) page faults: 705939
+	Voluntary context switches: 105
+	Involuntary context switches: 180
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 16
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
