@@ -1,0 +1,9 @@
+group,n_sets,ni_2024_mean,ni_2024_median,ni_2020_mean,undiagnosed_2020,diagnosed_never_treated_2020,on_art_2020,interrupted_art_2020,undiagnosed_2024,diagnosed_never_treated_2024,on_art_2024,interrupted_art_2024,max_abs_share_diff
+all 250 (weighted),129.0,42353.8,40904.9,41193.3,37.5,3.8,45.7,13.0,34.2,2.4,48.7,14.6,5.2
+top 10 by fixed-model fit,10.0,41745.1,43297.8,41942.7,37.4,3.5,45.9,13.1,32.2,2.1,49.7,16.0,5.3
+top 10 by Daniel likelihood (distinct),10.0,42644.7,44437.3,42767.0,39.0,3.5,45.3,12.2,34.6,2.2,48.5,14.7,5.1
+top 25 by fixed-model fit,25.0,40625.9,39427.4,40770.7,37.3,3.8,45.7,13.2,33.0,2.4,49.0,15.6,5.1
+top 25 by Daniel likelihood (distinct),25.0,43333.7,44111.4,42585.0,38.2,3.5,45.5,12.8,33.7,2.2,49.4,14.7,5.1
+10 most-copied sets,10.0,41503.4,41102.5,41401.5,38.7,3.3,45.6,12.4,33.2,2.2,49.7,15.0,5.0
+"sets with 2024 total within 10% of 30,582",18.0,31943.6,32161.3,32028.0,35.1,4.5,47.0,13.4,30.9,2.7,50.0,16.4,6.4
+Figure 3A / caption,,30582.0,,,38.5,3.7,40.6,17.1,32.6,2.1,45.5,19.8,

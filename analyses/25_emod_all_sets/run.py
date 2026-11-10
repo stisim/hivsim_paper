@@ -127,7 +127,7 @@ def plot(sets):
     ax.set_ylim(0, None)
     ax.grid(axis='y', color='#e6e6e6', lw=0.6)
     ax.spines[['top', 'right']].set_visible(False)
-    ax.set_title('EMOD with both PR #4 fixes: one dot per distinct calibrated set (size = copies among the 250)', loc='left', fontsize=9)
+    ax.set_title('EMOD, both PR #4 fixes: 129 distinct calibrated sets\n(dot size = copies among the 250)', loc='left', fontsize=9)
     f.tight_layout()
     (here / 'figures').mkdir(exist_ok=True)
     f.savefig(here / 'figures' / 'total_vs_fit.png', dpi=200)
