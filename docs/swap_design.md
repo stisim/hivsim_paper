@@ -1,6 +1,8 @@
 # Component swaps: design (P5)
 
-*Draft, 4 Nov 2026. This is the design for the paper's core analysis: swapping components between HIVsim, EMOD′ and Optima′ one at a time, and attributing the gap in policy outputs to them. It also feeds P4 (the component map and interfaces, sprint 4), whose boundaries need approval by Robyn, Daniel and Cliff.*
+*Draft, 4 Nov 2026; status of the interfaces and paths updated 10 Nov 2026.*
+
+* This is the design for the paper's core analysis: swapping components between HIVsim, EMOD′ and Optima′ one at a time, and attributing the gap in policy outputs to them. It also feeds P4 (the component map and interfaces, sprint 4), whose boundaries need approval by Robyn, Daniel and Cliff.*
 
 Throughout, **Decided** cites the doc and date where it was decided. Everything else is **proposed** here and needs a decision. The open decisions are listed at the end.
 
@@ -35,7 +37,7 @@ Each slot has three layers, swapped separately: mechanism, inputs and parameters
 
 ### 1.2 What each model has in each slot
 
-| Slot | EMOD′ (`models/emod/v4/`) | HIVsim (`hivsim_malawi/hivsim/malawi.py`, STIsim) | Optima′ (`models/optima/v4/optima_prime.py`) |
+| Slot | EMOD′ (`models/emod/v4/`) | HIVsim (`models/hivsim/`, STIsim; `sti.ART` its own module) | Optima′ (`models/optima/v4/optima_prime.py`) |
 |---|---|---|---|
 | D | `EmodDemography`: from 1960.5, 3 nodes, 1% scale, mortality read 1000× too low (copied) | STIsim demographics (`malawi_*` files), from 1985, 10,000 agents | Births, background deaths, ageing between 5-year bands, risk transfers; `ForcePopsize` (writes the engine's compartments); from 1990 |
 | R | `EmodRisk`: Risk LOW/MEDIUM by node, HIGH while FSW or client; STI flag | Inside `StructuredSexual`: `risk_group` 0/1/2 by sex; `fsw`, `client` (lifetime fate, durations) | The 39 populations themselves, with `risktransit` |
@@ -44,21 +46,21 @@ Each slot has three layers, swapped separately: mechanism, inputs and parameters
 | H | Inside `EmodHIV`: Weibull prognosis by age, CD4 deterministic from it, acute/latent/AIDS; ART mortality tables | `sti.HIV` (acute, latent, falling CD4, deaths by CD4) and `sti.ART`'s biology | 6 CD4 bands, death by band, CD4 moves on ART |
 | S | `EmodHIV` (1983, HIGH risk, fast-forwarded) | `sti.HIV` `init_prev_data` (1985) | Initial shares by population and state (1990) |
 | C | Condensed cascade with EMOD's table (`common/cascade/`, analysis 06; the literal and compiled campaigns are its references) | `sti.HIVTest` ×2, `sti.ANCTest`, `sti.ART(coverage=n_art, vls_coverage=vls)`, `sti.VMMC` | Cascade transitions and `CascadeTargets` (number on ART, holds from 2020; writes the engine's compartments) |
-| M | Infections logged with source and stage (`EmodHIV.infections`) | To check: STIsim's infection log | Compartment flows only |
+| M | Infections logged with source and stage (`EmodHIV.infections`) | `common/outputs.py` on `StisimHost` (tracked source) | ODE: compartment flows; agents: `Outputs(OptimaHost)`, source drawn by each stage's share of the force (analysis 22) |
 
 ### 1.3 Interfaces
 
 | Interface | Between | Exists? | Notes |
 |---|---|---|---|
-| `CascadeHost` | C ↔ H, D, R | **Yes** for EMOD′ (`cascade_host.py`). STIsim: **being built** (analysis 07). Optima′ as agents: **to write** | Per agent. For Optima′ agents it moves people between declared states with `ss.move()` (Starsim #1492) |
-| Cascade table | C's parameters | **Yes** (`common/cascade/params.py`): EMOD's, from its campaign | HIVsim and Optima need two new pathway types (below) |
-| Cascade as compartment rates | C → Optima′ ODE | **Being built** (analysis 08) | Used for the ODE side of Optima paths (2.3) |
+| `CascadeHost` | C ↔ H, D, R | **Yes** for all three: EMOD′ (`cascade_host.py`), STIsim (`StisimHost`, analysis 07), Optima′ as agents (`OptimaHost`, analysis 22) | Per agent. For Optima′ agents it moves people between declared states with `ss.move()` (Starsim #1492) |
+| Cascade table | C's parameters | **Yes** for EMOD (`common/cascade/params.py`, analysis 06) and Optima (`tables/malawi_optima_params.csv`, analysis 23, with the rate and target/hold pathway types). HIVsim's: **to write** | Needed for EMOD′ → HIVsim |
+| Cascade as compartment rates | C → Optima′ ODE | **Yes** (`common/cascade/rates.py`, analysis 08) | Used for the ODE side of Optima paths (2.3) |
 | Contact edges | N → T | De facto: both agent networks are `ss.SexualNet`s with `p1`, `p2`, `acts`, `condoms` | Field meanings differ (acts per step or per year; condom probability or share). **To write:** one spec and an adapter on each side |
 | Infectiousness and susceptibility | H → T, C/R → T | Starsim's `rel_trans` and `rel_sus` exist; EmodHIV computes its own (`infectiousness()`) | **To write:** EmodHIV to expose relative infectiousness per agent in the same form |
 | Life events | D → H, C, N | Partly inside `CascadeHost` (debut, 12 weeks pregnant, 6 weeks old) | **To write** as a D interface: pregnancy, birth with mother, debut age, `age_years` |
-| Population label | R → T, C (Optima) | **To write** | Every R maps its people to Optima's 39 populations (sex, 5-year band, FSW, client); Optima′'s R provides `risk`, `fsw`, `client` back |
+| Population label | R → T, C (Optima) | **Yes** (`models/optima/v4/poplabel.py`, analysis 22; no MSM in EMOD′ or HIVsim) | Every R maps its people to Optima's 39 populations (sex, 5-year band, FSW, client); Optima′'s R provides `risk`, `fsw`, `client` back |
 | Seeding rule | S | **To write** | Each S seeds at its own year, or at the sim start if later (1.4) |
-| Outputs | M | **To write** (`common/outputs.py`) | Needs T to log each infection's source and H/C to give each person's cascade stage (`CascadeHost.cascade_stage(uids)`, a new method) |
+| Outputs | M | **Yes** (`common/outputs.py`, analyses 15–16; `cascade_stage()` on every host) | Needs T to log each infection's source and H/C to give each person's cascade stage (`CascadeHost.cascade_stage(uids)`, a new method) |
 
 Starsim doesn't enforce interfaces, so these are our own layer, enforced by our own tests (**Decided**, `prompts.md`, Starsim v4 notes).
 
@@ -84,7 +86,7 @@ With these, all three cascades run on one mechanism, and swapping the cascade's 
 | **Start year and initialization** | 1960.5, network burn-in to 1975.5, seeding 1983 | 1985, prevalence set at the start | 1990, state set by population | **Decided** (Robyn, 9 Nov): all hybrids start in 1985, because 1960.5 is too slow. EMOD′ runs a burn-in from 1960.5 to 1985 once per parameter set and seed, saves the sim, and every hybrid with EMOD's slots continues from it. The 1985 state is part of D (and S), so it swaps with them. A resumed EMOD′ must equal a continuous one exactly (a test). Slots swapped in at 1985 that carry state (network, natural history) start from the snapshot's people; the network may need a short warm-up with transmission off. Optima's native 1990 state: to settle with the Optima paths |
 | **Scale** | 1% (36,600 agents in 1960); NChooser truncation depends on it | 10,000 agents in 1985 | Counts | **Decided** (Robyn, 9 Nov): agent numbers vary and move with D: hybrids with HIVsim's D run at 10,000 agents, with EMOD's at 1%. Checked once: HIVsim at 10,000 agents against HIVsim at 1%, in distribution. EMOD's absolute numbers (VMMC, PrEP) are scaled to agents with random rounding when its C runs on HIVsim's D |
 | **Time step** | Monthly (30.42 days) | Monthly | ODE at 0.02 years, from rates per 0.2-year step | Agent hybrids are monthly. Optima′ as agents uses the same rates; the sprint 5 dt study checks it |
-| **Compartments against agents** | Agents | Agents | Compartments; `ForcePopsize`, `CascadeTargets`, `Births` and `Transmission` read or write `engine.y` | Agent versions of these four (sprint 5, with Optima′ as agents). They are also what any Optima slot needs to run in a hybrid |
+| **Compartments against agents** | Agents | Agents | Compartments; `ForcePopsize`, `CascadeTargets`, `Births` and `Transmission` read or write `engine.y` | Agent versions of these four: **done** (`models/optima/v4/agents.py`, analysis 20). They are also what any Optima slot needs to run in a hybrid |
 
 ## 2. Swap paths
 
@@ -123,6 +125,8 @@ Optima′ is checked only for 2000–2020 (**Decided**, 30 Oct), and its project
 ### 2.3 The three paths
 
 Coarse slots, as they can be swapped with the code as it is: **D**, **RN** (risk, sex work and network), **V** (the HIV disease: transmission, natural history, ART biology, mother-to-child and seeding), **C** (cascade and prevention programmes). They are split further (V into T, H and S) after the sprint 6 refactor.
+
+**Status, 10 Nov:** HIVsim → EMOD′ is run (all five hybrids, analysis 16). EMOD′ ↔ Optima′ is now the **core path** (`core_question.md`), and its C step is done both ways (analysis 24). Its V, RN and D steps wait on a design decision, because Optima's transmission has no network. D6 puts X in the middle of Optima paths. The "Swappable when" column below is the 4 Nov plan.
 
 | Path | Steps (proposed order) | Adapters needed for this order | Swappable when |
 |---|---|---|---|
@@ -226,7 +230,7 @@ scenario: null                  # 'interruption' etc. from January
 | HIVsim, 10,000 agents, 1985–2021 | 10 s alone, 20–30 s with 150 at once | hivsim_malawi experiments 01–02 |
 | EMOD′, 1960.5–1985 burn-in | 10 s (13 MB saved; 0.4 s to load; then 60 s to 2025) | analysis 11 |
 | Optima′ ODE, dt 0.02 | Seconds (plus 30–75 s of R0 at `verbose>=1`) | `optima_prime_plan.md` |
-| Optima′ as agents | Not measured (the declared engine is about twice a coded one) | Sprint 5 |
+| Optima′ as agents | See `docs/readouts/2026-11-10_sprint3/model_stats.md` | analysis 20 |
 
 Budget per path, assuming about 2 min per hybrid run:
 
