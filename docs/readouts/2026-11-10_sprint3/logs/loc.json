@@ -1,0 +1,26 @@
+{
+ "emod_prime": {
+  "files": 14,
+  "loc": 2481
+ },
+ "emod_prime_adapters": {
+  "files": 1,
+  "loc": 265
+ },
+ "hivsim": {
+  "files": 3,
+  "loc": 266
+ },
+ "optima_prime": {
+  "files": 6,
+  "loc": 1179
+ },
+ "common_cascade": {
+  "files": 6,
+  "loc": 961
+ },
+ "common_swaps": {
+  "files": 2,
+  "loc": 207
+ }
+}
