@@ -5,6 +5,8 @@ channels: [conda-forge]
 dependencies:
   - python=3.12 # Starsim 4 needs >=3.12
   - pip
+  - pytest
+  - pytest-xdist # Tests run in parallel by default (pytest.ini)
   - pip:
     - starsim==4.0.0rc3 # From PyPI, with its kernels already built
     # Also needs Starsim PR #1573 (branch v4-rs-nov09, f1273734) on rc3 until it is released: a checkout on PYTHONPATH ahead of this
