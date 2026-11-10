@@ -1,27 +1,31 @@
 # 24: The cascade step (C) between EMOD′-fixed and Optima′, both ways — summary
 
+**Rerun, 10 Nov (Robyn's decision 7: Optima's PMTCT on whenever Optima's cascade runs on agents):** direction 1 below is with Optima's PMTCT drawn per person, now the default of Optima's C slot. The numbers with PMTCT skipped are kept only as labelled superseded lines. Direction 2 and the open item don't run Optima's cascade on another model's agents and are unchanged.
+
 **Answer:** in both directions, swapping the cascade moves the Figure 3A shares a long way towards the other model.
 - It moves diagnosed never treated and on ART by about 0.5–0.75 of the gap between our two ends, and interrupted by the whole gap or more.
-- On those shares the effect is roughly symmetric. Undiagnosed is not (0.5–1.1 of the gap into EMOD′, about 2.0 into Optima′).
-- New infections don't follow the gap. EMOD′-fixed has more infections than Optima′ (39.7k against 33.6k in 2020), yet EMOD's cascade lowers infections in either host: −13 to −19% in Optima′, and Optima's cascade raises EMOD′'s by +53% as it stands, +9% sexual once host artefacts are removed. So the cascade explains the direction of the share split but not the total: that comes from the other components.
+- On those shares the effect is roughly symmetric. Undiagnosed is not (0.7–1.1 of the gap into EMOD′, about 2.0 into Optima′).
+- New infections don't follow the gap. EMOD′-fixed has more infections than Optima′ (39.7k against 33.6k in 2020), yet EMOD's cascade lowers infections in either host: −13 to −19% in Optima′, and Optima's cascade raises EMOD′'s by +43% as it stands (main arm), +11% (+6% sexual) once the other host artefacts are removed (1sp). So the cascade explains the direction of the share split but not the total: that comes from the other components.
 
 **Ends** are ours, measured the same way at both: EMOD′-fixed with its own cascade (48 cells), and Optima′ ODE (the 2022 project). Published 2020: EMOD 38.5 / 3.7 / 40.6 / 17.1, Optima 45.2 / 28.2 / 17.6 / 9.0. Our Optima (analysis 19) is 42.3 / 40.7 / 11.4 / 5.7; Optima′ gives 42.1 / 39.3 / 12.7 / 5.8. Shares are undiagnosed / diagnosed never treated / on ART / interrupted, % of sexual transmissions.
 
 **Runs** (Starsim /tmp/ss-nov09 f1273734, STIsim /tmp/sti-613 ebbc8e7, env hp_rc3; `run.py`, `tables.py`; all numbers in `outputs/report.txt`, `deltas.csv`, `gap.csv`, `open_item.csv`):
-- **Direction 1:** EMOD′-fixed own cascade against Optima's table on EMOD′'s people (`models/optima/v4/components.py`), EMOD sets 0/25/50 × 16 seeds = 48 cells, paired through the runner. Sensitivity arms (`variants/`): 1s, the ART arm switches on treatment failure and regain; 1sp, as 1s plus EMOD′'s own VMMC and PrEP. No errors; a rerun of the main arms was byte-identical.
+- **Direction 1:** EMOD′-fixed own cascade against Optima's table on EMOD′'s people (`models/optima/v4/components.py`, with Optima's PMTCT per person), EMOD sets 0/25/50 × 16 seeds = 48 cells, paired through the runner. Sensitivity arms (`variants/`): 1s, the ART arm switches on treatment failure and regain; 1sp, as 1s plus EMOD′'s own VMMC and PrEP. No errors. Rerun 10 Nov with PMTCT on (`logs/emod_pmtct_default.log`, 192 runs): `own` is identical to the stored own, and main and 1sp are identical to the addendum's `optima_pm` and `optima_swp_pm` (96 of 96 cell-years each).
 - **Direction 2:** Optima′ own against EMOD′-fixed's condensed table (`p_restart` = 1, checked), ODE for sets 0/25/50 (25 and 50 have identical tables, so two distinct EMOD tables); agents at 100k with `Outputs(OptimaHost)`, 16 seeds per set against 64 of the own cascade (unpaired).
 - **Analysis 23's open item:** Optima′ agents, Optima's table against own cascade, 64 seeds each, same code and environment.
 
-## Direction 1 (Optima's cascade into EMOD′-fixed), 2020, paired Δ (95% CI)
+## Direction 1 (Optima's cascade into EMOD′-fixed), 2020, paired Δ (95% CI), Optima's PMTCT on
 
 | 2020 | EMOD′-fixed | + Optima's cascade | Δ main | Δ 1s | Δ 1sp |
 |---|---|---|---|---|---|
-| New infections | 39.7k | 60.6k | +20.9k (17.9, 23.9) | +11.8k (8.9, 14.6) | +8.6k (5.8, 11.4) |
-| Sexual transmissions | 37.8k | 53.2k | +15.5k | +6.5k | +3.5k (1.2, 5.7) |
-| Mother-to-child | 1.9k | 7.3k | +5.4k | +5.3k | +5.1k |
-| Shares, % | 35.3 / 4.9 / 45.9 / 13.9 | 39.0 / 24.2 / 33.8 / 3.1 | +3.7 / +19.3 / −12.2 / −10.8 (each CI about ±1–2) | +7.4 / +24.6 / −22.4 / −9.6 | +6.3 / +24.8 / −21.2 / −9.9 |
+| New infections | 39.7k | 56.6k | +16.9k (14.7, 19.1) | +7.3k (4.8, 9.9) | +4.3k (1.8, 6.8) |
+| Sexual transmissions | 37.8k | 52.5k | +14.8k (12.7, 16.8) | +5.5k (3.2, 7.9) | +2.4k (0.1, 4.7) |
+| Mother-to-child | 1.9k | 4.1k | +2.1k (1.9, 2.4) | +1.8k (1.5, 2.1) | +1.9k (1.6, 2.2) |
+| Shares, % (undx / dx naive / on ART / interrupted) | 35.3 / 4.9 / 45.9 / 13.9 | 39.9 / 22.6 / 34.3 / 3.2 | +4.7 (3.3, 6.1) / +17.7 (16.3, 19.1) / −11.7 (−13.5, −9.9) / −10.7 (−11.3, −10.0) | +7.8 / +22.9 / −21.1 / −9.6 | +6.3 (4.8, 7.8) / +23.1 (21.2, 25.0) / −19.7 (−21.4, −18.1) / −9.7 (−10.3, −9.0) |
+| PLHIV | 937.7k | 1151.8k | +214.1k (195.0, 233.2) | +209.9k | +194.2k (169.5, 219.0) |
+| *PMTCT skipped (superseded)* | | *60.6k new infections* | *+20.9k (17.9, 23.9); sexual +15.5k; MTCT +5.4k; shares +3.7 / +19.3 / −12.2 / −10.8; PLHIV +263.4k* | *+11.8k; sexual +6.5k; MTCT +5.3k; +7.4 / +24.6 / −22.4 / −9.6* | *+8.6k (5.8, 11.4); sexual +3.5k (1.2, 5.7); MTCT +5.1k; +6.3 / +24.8 / −21.2 / −9.9; PLHIV +242.9k* |
 
-2024, main arm: +27.2k (23.7, 30.7) new infections; shares +7.8 / +20.2 / −15.3 / −12.8; 1sp +8.6k.
+2024, main arm: +20.8k (18.3, 23.3) new infections; shares +7.4 / +18.3 / −13.0 / −12.6; 1sp +3.1k (0.1, 6.2) (superseded, PMTCT skipped: main +27.2k, 1sp +8.6k). PMTCT barely moves the shares (Figure 3A counts sexual transmission); in 2020 it takes the extra mother-to-child infections from +5.4k to +2.1k, and sexual transmissions from +15.5k to +14.8k (main arm).
 
 ## Direction 2 (EMOD′-fixed's cascade into Optima′), 2020
 
@@ -39,19 +43,19 @@ Gap = Optima′ − EMOD′-fixed: undiagnosed +6.9, diagnosed never treated +34
 
 | Quantity | Dir. 1 main | Dir. 1s | Dir. 1sp | Dir. 2 ODE | Dir. 2 agents |
 |---|---|---|---|---|---|
-| Undiagnosed | 0.54 | 1.07 | 0.92 | 2.04 | 1.99 |
-| Diagnosed never treated | 0.56 | 0.72 | 0.72 | 0.52 | 0.72 |
-| On ART | 0.37 | 0.67 | 0.64 | 0.57 | 0.57 |
-| Interrupted | 1.34 | 1.19 | 1.23 | 1.60 | 2.28 |
-| New infections | −3.4 | −1.9 | −1.4 | −0.84 | −0.92 |
+| Undiagnosed | 0.68 | 1.13 | 0.92 | 2.04 | 1.99 |
+| Diagnosed never treated | 0.51 | 0.67 | 0.67 | 0.52 | 0.72 |
+| On ART | 0.35 | 0.64 | 0.59 | 0.57 | 0.57 |
+| Interrupted | 1.32 | 1.19 | 1.20 | 1.60 | 2.28 |
+| New infections | −2.8 | −1.2 | −0.7 | −0.84 | −0.92 |
 
-2024 looks the same.
+Direction 1 with Optima's PMTCT on. Superseded (PMTCT skipped), main / 1s / 1sp: undiagnosed 0.54 / 1.07 / 0.92, diagnosed never treated 0.56 / 0.72 / 0.72, on ART 0.37 / 0.67 / 0.64, interrupted 1.34 / 1.19 / 1.23, new infections −3.4 / −1.9 / −1.4. 2024 looks the same.
 
 **Symmetry:**
 - **Diagnosed never treated and on ART: roughly symmetric.** With arm switching, the cascade carries about 0.6–0.7 of the gap whichever model it sits in.
 - **Interrupted:** the swap closes the whole gap or overshoots it both ways; EMOD's cascade overshoots more inside Optima′ (1.6–2.3 against 1.2–1.3).
-- **Undiagnosed: not symmetric** (about 0.5–1.1 into EMOD′, about 2.0 into Optima′).
-- **New infections: same sign, different size, and opposite to the gap.** EMOD's cascade gives fewer infections in either host (sexual transmissions +9% for EMOD′ with Optima's cascade (1sp), −9 to −15% for Optima′ with EMOD's), yet EMOD′-fixed has more infections than Optima′.
+- **Undiagnosed: not symmetric** (about 0.7–1.1 into EMOD′, about 2.0 into Optima′).
+- **New infections: same sign, different size, and opposite to the gap.** EMOD's cascade gives fewer infections in either host (sexual transmissions +6% for EMOD′ with Optima's cascade (1sp), −9 to −15% for Optima′ with EMOD's), yet EMOD′-fixed has more infections than Optima′.
 
 ## Analysis 23's ~1% gap: not real
 
@@ -59,14 +63,14 @@ At 64 seeds each, paired by seed, the 2000–2020 mean of table/own − 1: PLHIV
 
 ## Caveats
 
-1. **Optima's cascade on EMOD′ is not quite Optima's.** Without arm switching (analysis 23 provisional decision 5), only 69% of people on ART are on the suppressive arm against 93% in Optima′: the biggest artefact (arm switching cuts the rise in infections from +20.9k to +11.8k). PMTCT is skipped on other hosts (decision 7), adding +5.4k mother-to-child infections (not in the Figure 3A shares, which count sexual transmission). EMOD's VMMC and PrEP belong to EMOD's cascade and leave with it; putting them back takes off a further 3.2k in 2020 and 7.2k in 2024. The number on ART is Optima's Malawi target in people, applied to EMOD′'s population.
-2. **PLHIV rises by +263k with Optima's cascade on EMOD′** (+235k more infections, −56k fewer HIV deaths over 1990–2020); infections are already higher by 2004. Diagnosed in the addendum below: mostly mother-to-child (PMTCT) and Optima's larger ART numbers in 2005–2010.
+1. **Optima's cascade on EMOD′ is not quite Optima's.** Without arm switching (analysis 23 provisional decision 5), only 69% of people on ART are on the suppressive arm against 93% in Optima′: the biggest artefact (arm switching cuts the rise in infections from +16.9k to +7.3k; +20.9k to +11.8k with PMTCT skipped). Optima's PMTCT is now drawn per person (decision 7, decided); skipping it had added +5.4k mother-to-child infections in 2020 (+2.1k remain with it, real cascade content: Optima's PMTCT numbers start small, and EMOD′'s early ANC uptake is high, see the addendum). EMOD's VMMC and PrEP belong to EMOD's cascade and leave with it; putting them back takes off a further 3.0k in 2020 and 6.1k in 2024. The number on ART is Optima's Malawi target in people, applied to EMOD′'s population.
+2. **PLHIV rises by +214k with Optima's cascade on EMOD′** (+108k more infections, −128k fewer HIV deaths over 1990–2020; +263k with PMTCT skipped, superseded). Diagnosed in the addendum below: the part PMTCT doesn't remove is Optima's larger ART numbers in 2005–2010 (deaths averted), a real cascade difference.
 3. The new-infection gap is small (6.1k), so fractions of it are unstable; use the Δs.
 4. Our Optima end is the 2022 project. Against the published Optima, the gap in diagnosed never treated would be 24.5 points instead of 34.4.
 5. EMOD′-fixed is uncalibrated; only two distinct EMOD cascade tables were tested.
 6. EMOD′ counts are agents × 100, not rescaled to the census.
 
-## Code (no default behaviour changes; tests 24 passed, `logs/tests.log`)
+## Code (as first run: no default behaviour changes; tests 24 passed, `logs/tests.log`. Since 10 Nov, Optima's C slot draws Optima's PMTCT by default: see Next)
 
 - `models/optima/v4/components.py` (new): Optima's cascade as a runner slot, on the host of the model supplying V, scaled by the D model's `SCALE`.
 - `common/cascade/pathways.py`: `TableCascade(scale=None)` (EMOD′ runs with `pop_scale` 1, so Optima's ART target in people would otherwise be read as agents).
@@ -75,8 +79,8 @@ At 64 seeds each, paired by seed, the 2000–2020 mean of table/own − 1: PLHIV
 
 ## Next
 
-- Robyn's decisions: arm switching on `EmodHost` as the default for table cascades (analysis 23 decision 5); Optima's PMTCT drawn per person on agent hosts (decision 7).
-- Diagnose why infections are already higher in the early 2000s with Optima's cascade on EMOD′.
+- Robyn's decision: arm switching on `EmodHost` as the default for table cascades (analysis 23 decision 5).
+- Decided (Robyn, 10 Nov): Optima's PMTCT on whenever Optima's cascade runs on agents (analysis 23 decision 7). Optima's C slot passes `TableCascade(pmtct=True)` (`models/optima/v4/components.py`, `PMTCT = True`; False reproduces the superseded runs); `TableCascade`'s own default stays False, since analysis 23's HIVsim table runs and the Optima′ agent runs use it directly (on Optima′'s own agents it adds nothing: no one is pregnant, and Optima′ applies its PMTCT inside births). Test: `common/swaps/tests/test_runner.py::test_optima_c_on_emod_draws_pmtct` (fails with `PMTCT = False`).
 - Run the V, RN and D steps to find where the total-infection gap comes from.
 
 ## Addendum: why PLHIV and infections are higher early (caveat 2)
@@ -129,9 +133,11 @@ The extra mother-to-child infections that remain (+37k in 2001–2004) are also 
 - The shares barely move: PMTCT changes mother-to-child infections, which the Figure 3A shares don't count. The gap fractions in the table above stand.
 - Direction 1's conclusion is unchanged: the cascade carries the share split, not the total.
 
+The table above is now the headline (direction 1 at the top, rerun 10 Nov with PMTCT on by default; identical numbers).
+
 **Slot-boundary questions for Robyn:**
-1. Is PMTCT in C? Both models treat it as cascade, so here it goes with C. It is drawn per person from Optima's number only with `pmtct=True`, which is off by default; this is decision 7 again.
-2. Should `TableCascade(pmtct=True)` be the default on agent hosts? If so, should the denominator also count the diagnosed women on ART, as Optima's does (done here)?
+1. Is PMTCT in C? Both models treat it as cascade, so here it goes with C. Decided 10 Nov: yes, on by default for Optima's C slot.
+2. Decided 10 Nov: PMTCT on for Optima's cascade on agent hosts, with Optima's denominator (diagnosed women giving birth, on ART or not).
 3. EMOD's VMMC and PrEP: C (they leave, as in the main arm) or prevention outside C (kept, as in 1sp)? They don't matter before 2011.
 4. EMOD′'s high early ANC uptake: should the `anc` fix go into EMOD′-fixed? That is an EMOD′ question, not a swap one.
 
