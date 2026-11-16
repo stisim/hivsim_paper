@@ -137,6 +137,47 @@ Coarse slots, as they can be swapped with the code as it is: **D**, **RN** (risk
 
 **Optima, ODE side (proposed, needs a decision).** Analysis 08 maps the condensed cascade into Optima′'s compartments. That allows a short **compartmental segment** next to the Optima endpoint, with the swaps that make sense in an ODE (EMOD's or HIVsim's cascade table and natural history parameters, as rates). Those runs are deterministic and take seconds, with no noise to pair. The order on Optima paths would then be: Optima′ ODE → [compartmental swaps] → X (to agents) → agent swaps → the other model. This puts X in the middle, not first or last, so it changes the 27 Oct decision. The alternative keeps X first and uses 08 only as a check of the cascade swap's ODE form.
 
+### 2.3a The H step between EMOD′ and Optima′ (sprint 5)
+
+With D11 and D12 the core path is X, C, H, S, NT, DR. "V" on this path is **H**: natural history and ART biology (1.1). That means stages and CD4, HIV deaths, infectiousness by stage, and what ART does: mortality on ART, CD4 recovery, and infectiousness when suppressed or not.
+
+**Neither model has H as a module today.**
+- `EmodHIV` is T, H and S in one module.
+- Optima′ builds H into its declared graph. Each CD4 band is crossed with each place in the cascade (`undx_gt500`, `svl_gt200`, ...), and its moves combine progression with the cascade's chance (`make_disease`, the `natural_history` and `treatment` blocks).
+
+So H can't be swapped as Optima′ is built. Two ways forward:
+- **(a) Modules, exact.**
+  - Split each model's V into T, H and S modules behind one interface.
+  - Build Optima′ again as agent modules: Optima's H (bands per agent), Optima's T (force of infection by population on agents, D12), Optima's D and R (populations and population forcing), and C (`TableCascade` on `OptimaHost`, which exists).
+  - Each split model must equal its unsplit form: EMOD′ exactly, and Optima′ as modules against Optima′ declared as agents, in distribution.
+  - Hybrids are then exact swaps of one module each.
+  - This is also what the NT and DR steps need, so it is done once for the whole path.
+- **(b) Parameters only.** Fit EMOD's natural history to Optima's bands (progression and death rates by band) and swap the rates in Optima′, and the reverse in EMOD′. This is cheaper, but it is not an endpoint-identity swap: EMOD's CD4 follows a prognosis drawn at infection, which a band chain can't reproduce, and the fit is then itself a modelling step.
+
+**Proposed: (a).** (b) is kept as a check: the size of the gap between the two is how much EMOD's prognosis structure matters beyond its average rates.
+
+**The H interface** (per agent; enforced by our tests like `CascadeHost`):
+
+| Direction | What | EMOD′ (`EmodHIV` now) | Optima's H on agents |
+|---|---|---|---|
+| T → H | `infect(uids, source)`: new infections (H starts the disease) | `infect()` | Into the acute band |
+| H → T | `infectiousness(uids)`: per-act or relative infectiousness, by stage and ART | `infectiousness()` | By band and on ART (suppressed or not), Optima's `cd4trans` and treatment factors; `effdx` stays with T (1.4) |
+| H → C, M | `cd4(uids)`, `who_stage(uids)`, `newly_symptomatic`, `on_art(uids)`, `suppressed(uids)` | As now, through `EmodHost` | Band → a CD4 value inside it, fixed per person (1.4); AIDS = band below 200 |
+| C → H | `start_art(uids, arm)`, `stop_art(uids)` | `go_on_art()`, `go_off_art()` | Moves to `svl` or `usvl` at the same band; recovery and failure by band |
+| H → D | HIV deaths (`request_death`) | As now | Optima's death by band, before other moves (`rate_scale`) |
+
+T reads H only through `infectiousness()`, and C reads it only through the host. So a hybrid's T and C never need to know whose H it is.
+
+**Order of work:**
+1. **Split `EmodHIV` into `EmodT`, `EmodH` and `EmodS`** behind the interface (`make_T`, `make_H` and `make_S` exist and would then return real modules). Check: EMOD′ is bit-identical to before, for every cascade form and with the fixes.
+2. **Optima′ as modules on agents:** Optima's H, T, D and R as modules, with C as now.
+   - Check against Optima′ declared as agents: in distribution (with many seeds, as in analysis 20), and against the ODE (2%).
+   - This is the new Optima end on agents; X is then the switch from the declared ODE to the modules.
+3. **The H step both ways:** Optima's H on EMOD′-fixed's T, S, RN, D and C, and EMOD's H on Optima′'s modules. Each is run through the runner, paired, with the same outputs as analysis 24. Together with analysis 24, these give C and H in both orders.
+4. **(b) as a check:** Optima's band rates fitted to EMOD′'s H, swapped into Optima′'s ODE.
+
+Steps 1 and 2 are independent and can run in parallel. Step 2 is the larger: it is the sprint 6 refactor (2.3), brought forward.
+
 ### 2.4 How hybrids are named
 
 A hybrid is a choice of (model, layer) for each slot, plus a pair of parameter sets and a seed. Example: `C=emod, V=hivsim, RN=hivsim, D=hivsim`. With layers split: `C.mech=emod, C.inputs=hivsim, C.params=hivsim, ...`.
