@@ -124,8 +124,8 @@ class EmodDemography(ss.Demographics):
         self.n_births, self.n_deaths = len(born), len(dead)
         return
 
-    def record_flows(self):
-        super().record_flows()
+    def record_events(self):
+        super().record_events()
         self.results.births[self.ti] = self.n_births
         self.results.deaths[self.ti] = self.n_deaths
         return

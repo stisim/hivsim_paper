@@ -426,14 +426,14 @@ class EmodHIV(ss.Disease):
         self.art[uids] = OFF
         return
 
-    def record_flows(self):
-        super().record_flows()
+    def record_events(self):
+        super().record_events()
         self.results.new_infections[self.ti] = getattr(self, 'n_new', 0)
         self.results.hiv_deaths[self.ti] = getattr(self, 'n_dead', 0)
         return
 
-    def record_stocks(self):
-        super().record_stocks()
+    def record_states(self):
+        super().record_states()
         au = self.sim.people.auids
         self.results.n_infected[self.ti] = np.count_nonzero(self.infected.raw[au])
         self.results.n_on_art[self.ti] = np.count_nonzero(self.art.raw[au] != OFF)
