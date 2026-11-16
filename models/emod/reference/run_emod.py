@@ -150,6 +150,18 @@ def natural_history(files, cp):
               Report_HIV_ByAgeAndGender_Collect_Circumcision_Data=1, Report_Transmission=1, Report_HIV_Mortality=1)
 
 
+def published(files):
+    """Undo Daniel's two fixes in source/ (hivsim_paper PR #4), in place, giving the files as published: the model
+    EMOD′ copies and analyses 01-25 ran. Fixes are applied on top of these (v4/inputs.py, FIXES)"""
+    for k in ('MortalityDistributionMale', 'MortalityDistributionFemale'):
+        dist = files['Demographics_Malawi.json']['Defaults']['IndividualAttributes'][k]
+        assert dist['ResultScaleFactor'] == 2.7397260273972604e-03
+        dist['ResultScaleFactor'] = 2.7397260273972604e-06
+    events = files[CAMPAIGN]['Events']
+    i, = [i for i, ev in enumerate(events) if ev.get('Event_Name') == 'OnART: switch InterventionStatus off so people can reenroll']
+    del events[i]
+
+
 def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat_hist=False, report_ip=(), transmission=False, inputs=None):
     """Return {filename: json} for one simulation; inputs: a copy of source/InputFiles to read instead"""
     inputs = Path(inputs) if inputs else orig / 'InputFiles'
@@ -157,6 +169,8 @@ def build_inputs(table, run_number, years=None, network=False, no_hiv=False, nat
     files = {CAMPAIGN: json.load(open(inputs / 'Templates' / CAMPAIGN))}
     for f in DEMOG:
         files[Path(f).name] = json.load(open(inputs / f))
+    if inputs == orig / 'InputFiles':
+        published(files)
     cp = config['parameters']
     for key, value in table.items():
         tag, *path = key.split('.')
@@ -224,7 +238,7 @@ def main():
     ap.add_argument('--natural-history', action='store_true', help='campaign reduced to sex work, STI co-infection, traditional circumcision and seeding; report transmissions and HIV deaths')
     ap.add_argument('--transmission', action='store_true', help="Daniel's transmission reports (TransmissionReport, diagnosis and ART events, ReportHIVART), from 1960")
     ap.add_argument('--seeds', type=int, nargs='*', help='run each set with these seeds (Run_Number = (run_number*10 + seed) mod 65536, folders setNNN_sK); default: its own run_number')
-    ap.add_argument('--inputs', help='read model inputs from this copy of source/InputFiles (e.g. with fixes) instead')
+    ap.add_argument('--inputs', help='read model inputs from this copy of source/InputFiles instead, as they are (source/InputFiles itself has Daniel\'s two fixes, which are undone unless given here)')
     a = ap.parse_args()
 
     sets = pd.read_csv(orig / 'resampled_parameter_sets_20230424.csv')
