@@ -30,3 +30,19 @@ Found by reading the files, not yet confirmed in output:
 - **Duplicates:** your 250 resampled sets contain 129 distinct parameter vectors (one repeated 22 times), told apart by Run_Number. Is that as expected from your resampling?
 
 Full component inventory: `docs/emod_inventory.md`.
+
+## Review of your PR #4 (9 Nov 2026; not yet sent)
+
+Thanks for the responses (`models/emod/reference/source/emod_responses.md`) and fixes. What we checked:
+
+- **Mortality** (`Demographics_Malawi.json`, `ResultScaleFactor` 1/(365·1000) → 1/365, both sexes): agreed, this is the right factor for deaths per person.
+- **Dropout trap** (new campaign event: on `OnART3`, the `ARTDropout` event, set `InterventionStatus` to `None`): this does release people who drop out. The ART-start events disqualify `OnEffectiveART`/`OnNonSuppressiveART`, `None` is a declared value of `InterventionStatus`, and the re-enrolment choice (`HCTUptakePostDebut8` or `LostForever9`) still follows on the same trigger. (`emod_responses.md` says "back to OffART"; `OffART` is a value of `ARTStatus`, not `InterventionStatus`, so `None` is right.)
+- Path changes in `script.sbatch` and `simtools.ini` match the repo layout. The PR merges into `main` without conflicts.
+
+Questions back:
+
+1. **Which files produced the published (MIHPSA) results and the 250 calibrated sets?** You think your original calibration used the correct mortality factor, and that the dropout trap came in with the move to `ARTMortalityTable`. If both are later than the calibration, the files in PR #1 (which we treated as the published model, and which EMOD′ reproduces, bugs included) are not the model that was calibrated. Do you know which campaign/demographics files (or dates/commits) the 250 sets were fitted with, and which produced the MIHPSA submission?
+2. **Does the calibration still hold with the fixes?** Rescaling to the 2018 census keeps prevalence and ART coverage, but the age structure and growth change, and the dropout fix changes ART coverage and the share of transmissions from people who interrupted ART (50–55% with the trap vs 8–20% across MIHPSA models). Would you expect to refit, or treat the fixed model as uncalibrated?
+3. Minor: the second bullet in `emod_responses.md` stops mid-sentence ("it is unlikely this would have a").
+
+On our side: EMOD′ already has the two bugs as switches; we're making a "fixed" EMOD′ variant that matches your two changes exactly (D10 in `docs/swap_design.md`), and will compare it with the copied-bug version.
