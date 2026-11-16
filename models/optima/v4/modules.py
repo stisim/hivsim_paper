@@ -13,22 +13,27 @@ agents.py), with the same rates: Optima's probability per step of 0.2 years divi
   through the host); then ageing and risk transfers, in the declared order.
 - `OptimaT`: Optima's force of infection by population pair (optima_prime.Transmission), from the counts at the start
   of the step: each source is the infected agents of a population in one place in care and CD4 band, with the sum of
-  their `infectiousness()` (H) times Optima's `effdx` factor (T's, once for the diagnosed and once more on ART, as
-  Optima's alltrans). Circumcision is `people.circumcised`. Sources of each step's infections are drawn after the
-  step from the parts of the force, as host.OptimaTracker drew them.
+  their `infectiousness()` (H's, per act, over Optima's per-act base) times Optima's `effdx` factor (T's, once for the
+  diagnosed and once more on ART, as Optima's alltrans). Circumcision is `people.circumcised`. Exposure is in `step()`,
+  after the cascade, as EmodT's: each infection's source is drawn from the parts of the force, as host.OptimaTracker
+  drew them, and passed to H's `infect()`.
 - `OptimaH`: each infected agent's CD4 band (acute, gt500, gt350, gt200, gt50, lt50) and place (undx, dx, care, lost,
   svl, usvl: pathways.PLACES; ART's arm is svl or usvl, and the others are the host's record, kept here as EmodHIV
   keeps `diagnosed`). Each step, HIV death by band and arm, progression off ART, and the CD4 moves on ART, as one
   competing draw, among those who survive Optima's step (`hiv_survival()`, times D's `bg_survival()`).
 - `OptimaS`: Optima's state in 1990, each population's shares of the 38 states, exactly (as the declared engine).
 
-What crosses between modules: T → H `infect(uids)`; H → T `infectiousness(uids)`; T reads the place in care and CD4
-band through the host (for effdx and its sources); C → H `start_art`/`stop_art`/`switch_arm` and the places, through
-the host; H → D its deaths, and `hiv_survival()` (Optima's death before other moves: D's background death is among
-those who survive HIV); D → H, T and C `bg_survival()`; D → H `infect()` for infected births. Within a step: D, then
-T's infections, then H's moves (each among those not dying, and present at the start of the step), then C; the
-declared engine instead draws D's, T's and H's moves for each agent in one competing draw, which differs only by
-order dt² per step.
+H has EmodH's interface (models/emod/v4/hiv.py), so EMOD's and Optima's T, H and S swap: the name `hiv`,
+`infect(uids, source, route, fast_forward)`, `infected`, `on_art()`, `infectiousness()` (per act), `go_on_art()` and
+`go_off_art()`, HIV deaths by `request_death`, and `new_uids`, `sexual` and `n_new` published in `step()`. Beyond
+it: T reads each source's place in care and CD4 band through the host (for effdx and its sources); C → H
+`start_art`/`stop_art`/`switch_arm` and the places, through the host; H → D `hiv_survival()` (Optima's death
+before other moves: D's background death is among those who survive HIV); D → H, T and C `bg_survival()`; D → H
+`infect()` for infected births; S → H `seed(uids, band)`. Each module has its own random stream. Within a step: D,
+then H's moves (among those present at the start of the step and not dying or leaving), then C, then T's exposure;
+the declared engine draws D's, T's and H's moves for each agent in one competing draw before the cascade, which
+differs by order dt² per step, and by when in the step infections happen (before or after the cascade: one step's
+delay to a first test).
 """
 import numpy as np
 import starsim as ss
@@ -220,7 +225,7 @@ class OptimaDR(ss.Demographics):
         dis = modules(sim)[2]
         infected = ss.uids(np.concatenate(kids[1:]))
         if len(infected):
-            dis.infect(infected, source=None)
+            dis.infect(infected, source=-1, route='birth')
             if len(kids[2]):
                 self.host.test(kids[2]) # Infected at birth to a diagnosed mother: diagnosed (Optima's birth_dx)
         self.born = ss.uids(np.concatenate(kids))
@@ -307,11 +312,18 @@ class OptimaDR(ss.Demographics):
 
 
 class OptimaT(ss.Disease):
-    """ Optima's force of infection by population pair (optima_prime.Transmission) on agents: see the module docstring """
-    def __init__(self, name='optima_t', seed_offset=2203, **kwargs):
+    """
+    Optima's force of infection by population pair (optima_prime.Transmission) on agents: see the module docstring
+
+    Args:
+        host (class): the CascadeHost of H's model (each source's place in care and CD4 band)
+        hiv (str): the name of H's module
+    """
+    ROUTE = 4 # The route of its infections in H's log (EMOD's relationship types are 0-3)
+
+    def __init__(self, host=None, hiv='hiv', name='optima_t', seed_offset=2203, **kwargs):
         super().__init__(name=name, **kwargs)
-        self.seed_offset = seed_offset
-        self.pairs = (ss.uids(), ss.uids())
+        self.host_class, self.hivname, self.seed_offset = host, hiv, seed_offset
         return
 
     def init_pre(self, sim):
@@ -323,18 +335,22 @@ class OptimaT(ss.Disease):
         self.foi = opp.Transmission(r) # Its arrays: partnerships, acts, per-act probabilities, condoms, susceptibility (alleff), force, inhomo
         assert np.all(np.asarray(sp['propemigrate']) == 0), 'Emigration (propemigrate) is not handled'
         self.dxfactor = 1 - sp['effdx']
+        self.base = sp['transmfi'] # H's infectiousness() is per act for a man's insertive act (EMOD's Base_Infectivity's sense); Optima's per-act probability by direction is relative to it
         self.n_start = 0
-        self._new = []
         return
+
+    @property
+    def hiv(self):
+        return self.sim.diseases[self.hivname]
 
     @property
     def host(self):
         if getattr(self, '_host', None) is None:
-            self._host = self.sim.diseases.hiv.host_class(self.sim)
+            self._host = (self.host_class or ModulesHost)(self.sim)
         return self._host
 
     def sources(self, uids):
-        """ Each infected agent's source group (place × CD4 band) and infectiousness (H's, times effdx: once diagnosed, and once more on ART) """
+        """ Each infected agent's source group (place × CD4 band) and infectiousness (H's, relative to Optima's base, times effdx: once diagnosed, and once more on ART) """
         h = self.host
         place = h.care_place(uids)
         if place is None:
@@ -342,7 +358,7 @@ class OptimaT(ss.Disease):
             place = np.where(st['on_art'], np.where(st['suppressive'], SVL, USVL), np.where(st['diagnosed'], DX, UNDX))
         place = np.asarray(place)
         band = np.asarray(h.cd4_band(uids))
-        rel = np.asarray(self.sim.diseases.hiv.infectiousness(uids), float)
+        rel = np.asarray(self.hiv.infectiousness(uids), float)/self.base
         rel = rel*self.dxfactor**((place != UNDX).astype(int) + np.isin(place, [SVL, USVL]))
         return (place - 1)*NB + band, rel
 
@@ -356,7 +372,7 @@ class OptimaT(ss.Disease):
         au = ppl.auids
         pop = pop_of(sim, au)
         allpeople = np.maximum(np.bincount(pop, minlength=NP), 1e-300)
-        inf = au[np.asarray(self.host.infected(au), bool)]
+        inf = au[self.hiv.infected.raw[au]]
         g, rel = self.sources(inf)
         ip = pop_of(sim, inf)
         effprev = np.bincount(g*NP + ip, weights=rel, minlength=NG*NP).reshape(NG, NP)/allpeople # Sources × populations
@@ -382,33 +398,27 @@ class OptimaT(ss.Disease):
         d = modules(self.sim)[0]
         return d.survival_by_pop() if d is not None and hasattr(d, 'survival_by_pop') else np.ones(NP)
 
-    def step_state(self):
-        """ Infections, among those without HIV here at the start of the step and not dying or leaving in it """
-        super().step_state()
+    def step(self):
+        """
+        Exposure, after the cascade (as EmodT's): infections at the force of the step's start among those without HIV
+        who were here at its start and aren't dying or leaving; each one's source drawn from the parts of the force on
+        the recipient's population and circumcision (a source group), then an agent in it now (as host.OptimaTracker
+        drew them); then H's `infect()`
+        """
+        super().step()
         sim, ppl = self.sim, self.sim.people
         au = ppl.auids
-        au = au[(au < self.n_start) & ~leaving(ppl, au, self.ti)]
-        sus = au[~np.asarray(self.host.infected(au), bool)]
+        au = au[~leaving(ppl, au, self.ti)]
+        hiv = self.hiv
+        inf = hiv.infected.raw[au]
+        sus = au[~inf & (au < self.n_start)]
         c = (self.circumcised.raw[sus] & ~ppl.female.raw[sus]).astype(int)
         p = -np.expm1(-self.rate[c, pop_of(sim, sus)]*self.t.dt_year)
         hit = self.rng.random(len(sus)) < p
-        new, c = sus[hit], c[hit]
-        if len(new):
-            sim.diseases.hiv.infect(new, source=None)
-        self._new = (new, c)
-        return
-
-    def step(self):
-        """ The sources of this step's infections (after the cascade, as host.OptimaTracker drew them): a source group from the parts of the force on the recipient's population and circumcision, then an agent in it now """
-        super().step()
-        sim, ppl = self.sim, self.sim.people
-        new, circ = self._new if len(self._new) else (ss.uids(), np.zeros(0, int))
+        new, circ = sus[hit], c[hit]
         if not len(new):
-            self.pairs = (ss.uids(), ss.uids())
             return
-        au = ppl.auids
-        au = au[~leaving(ppl, au, self.ti)]
-        cand = au[np.asarray(self.host.infected(au), bool)]
+        cand = au[inf]
         g, _ = self.sources(cand)
         key = pop_of(sim, cand)*NG + g
         order = np.argsort(key, kind='stable')
@@ -428,7 +438,8 @@ class OptimaT(ss.Disease):
                 cell = self.rng.choice(w.size, size=len(who), p=(w/w.sum()).ravel())
                 pick = start[cell] + (self.rng.random(len(who))*count[cell]).astype(int)
                 dst.append(who); src.append(cand[pick])
-        self.pairs = (ss.uids(np.concatenate(dst)), ss.uids(np.concatenate(src)))
+        dst, src = ss.uids(np.concatenate(dst)), np.concatenate(src)
+        hiv.infect(dst, source=src, route=np.full(len(dst), self.ROUTE))
         return
 
 
@@ -448,6 +459,7 @@ class OptimaH(ss.Disease):
             ss.FloatArr('lowest_cd4', default=np.inf),
         )
         self.new_uids = self.dead_uids = self.newly_symptomatic = ss.uids()
+        self.sexual, self.n_new, self._new, self._sexual = (ss.uids(), np.zeros(0, int)), 0, [], []
         return
 
     def init_pre(self, sim):
@@ -474,6 +486,7 @@ class OptimaH(ss.Disease):
         self.up, self.down = up, down
         self.cd4trans = np.array([sp[f'cd4trans{k}'] for k in opp.CD4])*sp['transnorm']
         self.txfactor = np.array([1, 1 - sp['efftxsupp'], 1 - sp['efftxunsupp']])
+        self.base = sp['transmfi']
         self._new = []
         self.n_start = 0
         return
@@ -484,15 +497,27 @@ class OptimaH(ss.Disease):
         return np.where(p == SVL, 1, np.where(p == USVL, 2, 0))
 
     # The H interface
-    def infect(self, uids, source=None):
-        """ New infections (T, or D's births): into acute, undiagnosed """
+    def infect(self, uids, source=-1, route='seed', fast_forward=False):
+        """
+        New infections (EmodH's interface): into acute, undiagnosed; returns those infected (not infected already)
+
+        Args:
+            uids (uids): who
+            source (int/array): each one's source, -1 for none
+            route (str/array): 'seed', 'birth', or (sexual transmissions) each one's route, which makes them the step's `sexual`
+            fast_forward (bool): EmodS's seeds partway through their course; Optima's own seeds have bands (`seed()`), so here into acute as any
+        """
         uids = ss.uids(uids)
+        new = ~self.infected.raw[uids]
+        uids, source = uids[new], np.broadcast_to(source, new.shape)[new]
         if len(uids):
             self.infected[uids] = True
             self.place[uids] = UNDX
             self.band[uids] = 0
             self.ti_infected[uids] = self.ti
             self._new.append(uids)
+            if not isinstance(route, str):
+                self._sexual.append((uids, np.asarray(source)))
         return uids
 
     def seed(self, uids, band):
@@ -504,9 +529,9 @@ class OptimaH(ss.Disease):
         return
 
     def infectiousness(self, uids):
-        """ Relative infectiousness per act: Optima's cd4trans by band (times transnorm), and its ART factors (effdx is T's) """
+        """ Per-act transmission probability for a man's insertive act (Optima's transmfi, as EMOD's Base_Infectivity is before the woman's multiplier), times Optima's cd4trans by band (times transnorm) and its ART factors (effdx is T's) """
         b = self.band.raw[uids]
-        out = np.where(b >= 0, self.cd4trans[np.maximum(b, 0)], 0.0)*self.txfactor[self.arm(uids)]
+        out = self.base*np.where(b >= 0, self.cd4trans[np.maximum(b, 0)], 0.0)*self.txfactor[self.arm(uids)]
         return np.where(self.infected.raw[uids], out, 0.0)
 
     def hiv_survival(self, uids):
@@ -541,6 +566,14 @@ class OptimaH(ss.Disease):
         self.place[u] = LOST
         return u
 
+    def go_on_art(self, uids, *args, arm='suppressive', **kwargs):
+        """ EmodH's name (its table, multiplier and days to suppression are EMOD's, so not used): start_art() """
+        return self.start_art(uids, arm)
+
+    def go_off_art(self, uids):
+        """ EmodH's name: stop_art() """
+        return self.stop_art(uids)
+
     def switch_arm(self, uids, arm):
         uids = ss.uids(uids)
         src, dst = (USVL, SVL) if arm == 'suppressive' else (SVL, USVL)
@@ -551,7 +584,7 @@ class OptimaH(ss.Disease):
     def start_step(self):
         super().start_step()
         self.n_start = self.sim.people.uid.len_used
-        self._new = []
+        self._new, self._sexual = [], []
         return
 
     def step_state(self):
@@ -585,8 +618,11 @@ class OptimaH(ss.Disease):
         return
 
     def step(self):
+        """ The step's infections, once T's exposure is done (EmodH's names): `new_uids` (every route), `sexual` (recipients, sources) and `n_new` """
         super().step()
         self.new_uids = ss.uids(np.concatenate(self._new)) if self._new else ss.uids()
+        self.sexual = (ss.uids(np.concatenate([u for u, _ in self._sexual])), np.concatenate([x for _, x in self._sexual]).astype(int)) if self._sexual else (ss.uids(), np.zeros(0, int))
+        self.n_new = len(self.sexual[0])
         return
 
 
@@ -637,7 +673,7 @@ class OptimaS(ss.Intervention):
                 if hasattr(dis, 'seed'):
                     dis.seed(who, opp.CD4.index(k))
                 else:
-                    dis.infect(who, source=None)
+                    dis.infect(who, fast_forward=True)
                 if c != 'undx':
                     h.test(who)
                 if c in ('care', 'lost'):
@@ -785,8 +821,7 @@ class ModulesHost(CascadeHost):
 
     # For common/outputs.py
     def sexual_pairs(self):
-        t = modules(self.sim)[1]
-        return t.pairs if t is not None else (ss.uids(), ss.uids())
+        return self.dis.sexual
 
     def new_infections(self):
         return self.dis.new_uids

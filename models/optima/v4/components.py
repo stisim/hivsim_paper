@@ -36,7 +36,7 @@ PMTCT = True # Optima's PMTCT number per person on the host's pregnant women
 N_AGENTS = 100_000 # Agents in 1990 (about 1% of Malawi), as analyses 20-24
 DT = 0.02 # Years, as Optima′ as agents (agents.make_sim)
 START = 1990
-SLOTS = ['D', 'T', 'H', 'S', 'C'] # The order make_sim() calls them in (the runner's canonical order)
+SLOTS = ['D', 'S', 'T', 'H', 'C'] # The order make_sim() calls them in (the runner's canonical order)
 LISTS = ['demographics', 'networks', 'diseases', 'interventions', 'connectors', 'analyzers']
 
 
@@ -89,7 +89,7 @@ def make_RN(params, ctx):
 def make_T(params, ctx):
     """ Optima's force of infection by population pair """
     import modules as om
-    return dict(diseases=[om.OptimaT()])
+    return dict(diseases=[om.OptimaT(host=host_of(ctx))])
 
 
 def make_H(params, ctx):

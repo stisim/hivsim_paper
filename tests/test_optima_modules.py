@@ -82,6 +82,31 @@ def test_births_and_forcing(sim):
         assert np.allclose(np.broadcast_to(leave[cl], y[m].shape)[has], leave_s[m][has])
 
 
+def test_h_interface():
+    """ OptimaH has EmodH's interface: infect() starts only those without HIV, and a sexual route makes them the step's `sexual` (with their sources) once H steps """
+    import components as oc
+    sim = oc.make_sim(seed=3, stop=1992, n_agents=5_000)
+    sim.run(until=1991)
+    h = sim.diseases.hiv
+    au = sim.people.auids
+    neg, pos = au[~h.infected.raw[au]][:5], au[h.infected.raw[au]][:3]
+    h.start_step()
+    got = h.infect(ss_uids(np.concatenate([neg, pos])), source=np.concatenate([pos[:1].repeat(5), pos]), route=np.zeros(8, int))
+    assert set(got) == set(neg) and h.infected.raw[neg].all() and (h.band.raw[neg] == 0).all()
+    h.step()
+    assert set(h.sexual[0]) == set(neg) and (h.sexual[1] == pos[0]).all() and h.n_new == 5 and set(h.new_uids) == set(neg)
+    assert (h.infectiousness(neg) > 0).all() and not h.on_art(neg).any()
+    h.go_on_art(neg[:2])
+    assert h.on_art(neg[:2]).all()
+    h.go_off_art(neg[:2])
+    assert not h.on_art(neg[:2]).any()
+
+
+def ss_uids(x):
+    import starsim as ss
+    return ss.uids(x)
+
+
 def test_runner_endpoint():
     """ The runner's hybrid with every slot Optima′'s is components.make_sim(), exactly """
     import components as oc
