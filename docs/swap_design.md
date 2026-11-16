@@ -42,11 +42,11 @@ Each slot has three layers, swapped separately: mechanism, inputs and parameters
 | D | `EmodDemography`: from 1960.5, 3 nodes, 1% scale, mortality read 1000× too low (copied) | STIsim demographics (`malawi_*` files), from 1985, 10,000 agents | Births, background deaths, ageing between 5-year bands, risk transfers; `ForcePopsize` (writes the engine's compartments); from 1990 |
 | R | `EmodRisk`: Risk LOW/MEDIUM by node, HIGH while FSW or client; STI flag | Inside `StructuredSexual`: `risk_group` 0/1/2 by sex; `fsw`, `client` (lifetime fate, durations) | The 39 populations themselves, with `risktransit` |
 | N | `EmodNetwork`: pair formation with queues, 4 types, frozen rates after 1975.5 | `StructuredSexual` (stable, casual, one-time, sex work) and `MaternalNet` | None: acts per year between pairs of populations (regular, casual, commercial) |
-| T | Inside `EmodHIV`: Poisson acts, forced first act, multipliers on probabilities | Inside `sti.HIV`: `beta_m2f`, multipliers on `rel_trans`/`rel_sus` | `Transmission`: force of infection per population from compartment counts, with `force` and `inhomo` |
-| H | Inside `EmodHIV`: Weibull prognosis by age, CD4 deterministic from it, acute/latent/AIDS; ART mortality tables | `sti.HIV` (acute, latent, falling CD4, deaths by CD4) and `sti.ART`'s biology | 6 CD4 bands, death by band, CD4 moves on ART |
-| S | `EmodHIV` (1983, HIGH risk, fast-forwarded) | `sti.HIV` `init_prev_data` (1985) | Initial shares by population and state (1990) |
+| T | `EmodT`: Poisson acts, forced first act, multipliers on probabilities | Inside `sti.HIV`: `beta_m2f`, multipliers on `rel_trans`/`rel_sus` | `Transmission`: force of infection per population from compartment counts, with `force` and `inhomo` |
+| H | `EmodH`: Weibull prognosis by age, CD4 deterministic from it, acute/latent/AIDS; ART mortality tables | `sti.HIV` (acute, latent, falling CD4, deaths by CD4) and `sti.ART`'s biology | 6 CD4 bands, death by band, CD4 moves on ART |
+| S | `EmodS` (1983, HIGH risk, fast-forwarded) | `sti.HIV` `init_prev_data` (1985) | Initial shares by population and state (1990) |
 | C | Condensed cascade with EMOD's table (`common/cascade/`, analysis 06; the literal and compiled campaigns are its references) | `sti.HIVTest` ×2, `sti.ANCTest`, `sti.ART(coverage=n_art, vls_coverage=vls)`, `sti.VMMC` | Cascade transitions and `CascadeTargets` (number on ART, holds from 2020; writes the engine's compartments) |
-| M | Infections logged with source and stage (`EmodHIV.infections`) | `common/outputs.py` on `StisimHost` (tracked source) | ODE: compartment flows; agents: `Outputs(OptimaHost)`, source drawn by each stage's share of the force (analysis 22) |
+| M | Infections logged with source and stage (`EmodH.infections`) | `common/outputs.py` on `StisimHost` (tracked source) | ODE: compartment flows; agents: `Outputs(OptimaHost)`, source drawn by each stage's share of the force (analysis 22) |
 
 ### 1.3 Interfaces
 
@@ -142,7 +142,7 @@ Coarse slots, as they can be swapped with the code as it is: **D**, **RN** (risk
 With D11 and D12 the core path is X, C, H, S, NT, DR. "V" on this path is **H**: natural history and ART biology (1.1). That means stages and CD4, HIV deaths, infectiousness by stage, and what ART does: mortality on ART, CD4 recovery, and infectiousness when suppressed or not.
 
 **Neither model has H as a module today.**
-- `EmodHIV` is T, H and S in one module.
+- `EmodHIV` was T, H and S in one module (split in step 1 below).
 - Optima′ builds H into its declared graph. Each CD4 band is crossed with each place in the cascade (`undx_gt500`, `svl_gt200`, ...), and its moves combine progression with the cascade's chance (`make_disease`, the `natural_history` and `treatment` blocks).
 
 So H can't be swapped as Optima′ is built. Two ways forward:
@@ -158,7 +158,7 @@ So H can't be swapped as Optima′ is built. Two ways forward:
 
 **The H interface** (per agent; enforced by our tests like `CascadeHost`):
 
-| Direction | What | EMOD′ (`EmodHIV` now) | Optima's H on agents |
+| Direction | What | EMOD′ (`EmodH`) | Optima's H on agents |
 |---|---|---|---|
 | T → H | `infect(uids, source)`: new infections (H starts the disease) | `infect()` | Into the acute band |
 | H → T | `infectiousness(uids)`: per-act or relative infectiousness, by stage and ART | `infectiousness()` | By band and on ART (suppressed or not), Optima's `cd4trans` and treatment factors; `effdx` stays with T (1.4) |
@@ -169,7 +169,7 @@ So H can't be swapped as Optima′ is built. Two ways forward:
 T reads H only through `infectiousness()`, and C reads it only through the host. So a hybrid's T and C never need to know whose H it is.
 
 **Order of work:**
-1. **Split `EmodHIV` into `EmodT`, `EmodH` and `EmodS`** behind the interface (`make_T`, `make_H` and `make_S` exist and would then return real modules). Check: EMOD′ is bit-identical to before, for every cascade form and with the fixes.
+1. **Split `EmodHIV` into `EmodT`, `EmodH` and `EmodS`** behind the interface (`make_T`, `make_H` and `make_S` exist and would then return real modules). Check: EMOD′ is bit-identical to before, for every cascade form and with the fixes. **Done** (`models/emod/v4/hiv.py`; `tests/test_components.py`, the `split_*` cases). Besides `infectiousness()` and `infect()`, EmodT reads H's `infected` and, for transmission at birth, `on_art()`; the three draw in turn from one stream, so S steps before T and T before H (the runner's slot order has S before T and H).
 2. **Optima′ as modules on agents:** Optima's H, T, D and R as modules, with C as now.
    - Check against Optima′ declared as agents: in distribution (with many seeds, as in analysis 20), and against the ODE (2%).
    - This is the new Optima end on agents; X is then the switch from the declared ODE to the modules.

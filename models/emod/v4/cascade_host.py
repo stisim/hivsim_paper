@@ -1,5 +1,5 @@
 """
-EMOD′'s side of the condensed cascade (common/cascade): `EmodHost` implements its `CascadeHost` on EmodHIV, the
+EMOD′'s side of the condensed cascade (common/cascade): `EmodHost` implements its `CascadeHost` on EmodH (hiv.py), the
 demography and the risk module. ART arms are the campaign's ARTMortalityTable interventions (by arm and sex).
 """
 import sys

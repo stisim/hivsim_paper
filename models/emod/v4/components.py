@@ -5,15 +5,15 @@ parameter set's inputs (`pars(pid)`, i.e. `inputs.load(pid)`). `make_sim()` puts
 `harness.make_sim()` is built on it, and the runner's `build()` calls the same factories.
 
     ctx: from the runner, `choice`, `models`, `pars`, `seed`, `stop`, `cell`; from make_sim(), also: record (the
-         network's and HIV's logs; default False), network (R and N), hiv (T, H, S), cascade (C: None, 'interpreted'
+         network's and HIV's logs; default False), network (R and N), hiv (S, T, H), cascade (C: None, 'interpreted'
          (emod_cascade.py), 'compiled' (compile_campaign.py) or 'condensed' (common/cascade), the default), analyzers
 
-Fine slots, and the runner's coarse ones made of them: RN = R + N, V = T + H + S. Where one module covers several
-slots, the first slot it belongs to builds it and the others give nothing: T and S are inside H's `EmodHIV`.
+Fine slots, and the runner's coarse ones made of them: RN = R + N, V = S + T + H (hiv.py: `EmodS`, `EmodT` and `EmodH`,
+in the order they step; the runner's canonical order has S before T and H for the same reason).
 
 In a hybrid (`ctx.choice`), the factories fit the slots that aren't EMOD′'s with the bridges in adapters.py
 (common/swaps/README.md, "Hybrids of the first path"): on HIVsim's D, RN is `EmodNetworkAt` and `EmodRiskAt` and the
-first of RN and V adds `EmodPeople`; on HIVsim's RN, V is `EmodHIVOnSti`; C runs the condensed cascade on the host of
+first of RN and V adds `EmodPeople`; on HIVsim's RN, T is `EmodTOnSti`; C runs the condensed cascade on the host of
 V's model, with what that model's `for_cascade()` gives, flows summed over nodes if V isn't EMOD′'s and scaled by the
 sim's people per agent if D isn't.
 """
@@ -26,7 +26,7 @@ import inputs
 from demography import EmodDemography
 from network import EmodNetwork
 from risk import EmodRisk
-from hiv import EmodHIV
+from hiv import EmodS, EmodT, EmodH
 from emod_cascade import EmodCascade
 from cascade_host import EmodHost
 
@@ -96,26 +96,31 @@ def make_N(inp, ctx):
 
 
 def make_T(inp, ctx):
-    """ Transmission: inside EmodHIV (make_H) """
-    return {}
+    """ Transmission: EmodT; on another model's RN (StructuredSexual), EmodTOnSti """
+    if not with_hiv(ctx):
+        return {}
+    if own(ctx, 'RN'):
+        return dict(diseases=[EmodT(inp)])
+    from adapters import EmodTOnSti
+    return dict(diseases=[EmodTOnSti(inp)])
 
 
 def make_H(inp, ctx):
-    """ Natural history (and, as EmodHIV, transmission and the 1983 seeding); on another model's RN (StructuredSexual),
-    EmodHIVOnSti, with EmodPeople reading EMOD's Risk and STI flag from that network """
+    """ Natural history and ART biology: EmodH; on another model's RN (StructuredSexual), with EmodPeople reading EMOD's
+    Risk and STI flag from that network """
     if not with_hiv(ctx):
         return {}
-    record = opt(ctx, 'record', False)
+    hiv = EmodH(inp, record=opt(ctx, 'record', False))
     if own(ctx, 'RN'):
-        return dict(diseases=[EmodHIV(inp, record=record, seeding=seeding(inp, ctx))])
+        return dict(diseases=[hiv])
     if own(ctx, 'D'):
         raise NotImplementedError("EMOD′'s V on another model's RN needs that RN on EMOD′'s D (no bridge yet)")
-    from adapters import EmodHIVOnSti, EmodPeople
-    return dict(diseases=[EmodHIVOnSti(inp, record=record, seeding=seeding(inp, ctx))], demographics=[EmodPeople(inp, risk_net='structuredsexual')])
+    from adapters import EmodPeople
+    return dict(diseases=[hiv], demographics=[EmodPeople(inp, risk_net='structuredsexual')])
 
 
 def seeding(inp, ctx):
-    """ EmodHIV's seeding rule: another model's S, if the hybrid has one (that model's `seeding_for(pars, ctx)`); else
+    """ EmodS's seeding rule: another model's S, if the hybrid has one (that model's `seeding_for(pars, ctx)`); else
     the parameter set's `seeding` if it has one (adapters.py's options); else None, EMOD's rule """
     if not own(ctx, 'S'):
         s = ctx.choice['S']
@@ -124,10 +129,12 @@ def seeding(inp, ctx):
 
 
 def make_S(inp, ctx):
-    """ Seeding: inside EmodHIV (make_H) """
+    """ Seeding, with traditional circumcision: EmodS, by `seeding()`'s rule """
     if not own(ctx, 'V'):
         raise NotImplementedError("EMOD′'s S on another model's V isn't built")
-    return {}
+    if not with_hiv(ctx):
+        return {}
+    return dict(diseases=[EmodS(inp, net='emodnet' if own(ctx, 'RN') else 'structuredsexual', seeding=seeding(inp, ctx))])
 
 
 def make_C(inp, ctx):
@@ -210,8 +217,8 @@ def make_RN(inp, ctx):
 
 
 def make_V(inp, ctx):
-    """ The virus: transmission, natural history and seeding (the runner's coarse slot) """
-    return join(make_T(inp, ctx), make_H(inp, ctx), make_S(inp, ctx))
+    """ The virus: seeding, transmission and natural history, in the order they step (the runner's coarse slot) """
+    return join(make_S(inp, ctx), make_T(inp, ctx), make_H(inp, ctx))
 
 
 def make_sim(inp, ctx=None, sim_kwargs=None, **kwargs):
