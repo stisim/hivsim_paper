@@ -1,6 +1,8 @@
 """
 Identity: each model's make_sim, rebuilt on its slot factories (models/*/components.py), gives exactly the runs it gave
-before (at REF, the commit before the factories), same seed: every result array and every analyzer's table.
+before (at REF, the commit before the factories), same seed: every result array and every analyzer's table. And EMOD′'s
+V as three modules (EmodS, EmodT, EmodH) gives exactly the runs of EmodHIV as one module (hiv.py at SPLIT), with every
+cascade, the fixes, and on HIVsim's D and RN (EmodTOnSti), with EMOD's infection and death logs and the outputs' table.
 
     PYTHONPATH=<STIsim rs-v4-art-mortality>:<Starsim rs-nov16> pytest tests/test_components.py -n 8    # env hp_rc3; about 2 minutes on 8 cores
 
@@ -17,13 +19,17 @@ repo = Path(__file__).resolve().parents[1]
 REF = '5df2972' # HIVsim migrated to rc3; harness.py, malawi.py and swap.py as they were before the factories
 EMOD = repo / 'models' / 'emod' / 'v4'
 HIVSIM = repo / 'models' / 'hivsim'
+SPLIT = 'd7f950e' # EmodHIV as one module (transmission, natural history and seeding), before the split
 EMOD_CASES = dict(network={}, hiv=dict(hiv=True), interpreted=dict(cascade=True), compiled=dict(cascade=True, compiled=True), condensed=dict(cascade=True, condensed=True))
 HIVSIM_CASES = ['hivsim_malawi', 'hivsim_own', 'hivsim_condensed', 'hivsim_runner', 'hivsim_runner_emod_c']
+SPLIT_CASES = dict(split_hiv=dict(hiv=True), split_interpreted=dict(cascade=True), split_compiled=dict(cascade=True, compiled=True),
+                   split_condensed=dict(cascade=True, condensed=True), split_fixes=dict(cascade=True, condensed=True, fixes=('mortality', 'reenrol')),
+                   split_hhee=None) # The last: the runner's D=hivsim,RN=hivsim,V=emod,C=emod, in a cell where the epidemic takes off
 
 
-def at_ref(path, **replace):
-    """ The module at `path` as it was at REF (with its own __file__, so its data paths hold), with some globals replaced """
-    src = subprocess.check_output(['git', 'show', f'{REF}:{path.relative_to(repo)}'], cwd=repo, text=True)
+def at_ref(path, ref=REF, **replace):
+    """ The module at `path` as it was at commit `ref` (with its own __file__, so its data paths hold), with some globals replaced """
+    src = subprocess.check_output(['git', 'show', f'{ref}:{path.relative_to(repo)}'], cwd=repo, text=True)
     mod = types.ModuleType(path.stem + '_ref')
     mod.__file__ = str(path)
     exec(compile(src, str(path), 'exec'), mod.__dict__)
@@ -40,10 +46,43 @@ def art_mortality(sim):
     return sim
 
 
+def unsplit(comp, old):
+    """ The factories `comp` with EmodHIV as one module (`old`, hiv.py at SPLIT), from make_H, as they had it at SPLIT """
+    def make_H(inp, ctx):
+        if not comp.with_hiv(ctx):
+            return {}
+        kw = dict(record=comp.opt(ctx, 'record', False), seeding=comp.seeding(inp, ctx))
+        if comp.own(ctx, 'RN'):
+            return dict(diseases=[old.EmodHIV(inp, **kw)])
+        import adapters
+        on_sti = type('EmodHIVOnSti', (old.EmodHIV,), dict(contacts=adapters.EmodTOnSti.contacts))
+        return dict(diseases=[on_sti(inp, net='structuredsexual', **kw)], demographics=[adapters.EmodPeople(inp, risk_net='structuredsexual')])
+    comp.make_S = comp.make_T = lambda inp, ctx: {}
+    comp.make_H = make_H
+
+
 def check(case):
     """ Run one case before and after; print the arrays that differ, and exit 1 if any do """
     sys.path[:0] = [str(repo), str(repo / 'common')]
-    if case in EMOD_CASES:
+    if case in SPLIT_CASES:
+        sys.path.insert(0, str(EMOD))
+        import harness
+        import components
+        old_hiv = at_ref(EMOD / 'hiv.py', ref=SPLIT)
+        if case == 'split_hhee':
+            from common import swaps
+            choice, cfg = dict(D='hivsim', RN='hivsim', V='emod', C='emod'), dict(stop=2010, pairs=dict(hivsim=[0], emod=[0]), seeds=4)
+            cell = swaps.cells(cfg)[3] # Seed 4: HIV takes off by 1995 (it doesn't with seeds 1-3)
+            new = swaps.build(choice, cell, cfg)
+            comp = swaps.runner.load_model('emod')
+            unsplit(comp, old_hiv)
+            old = swaps.build(choice, cell, cfg)
+        else:
+            kw = dict(seed=3, stop=2010) | SPLIT_CASES[case]
+            new = harness.make_sim(0, **kw)
+            unsplit(components, old_hiv)
+            old = harness.make_sim(0, **kw)
+    elif case in EMOD_CASES:
         sys.path.insert(0, str(EMOD))
         import harness
         import emod_cascade
@@ -80,7 +119,9 @@ def check(case):
             variant = case.removeprefix('hivsim_')
             old, new = art_mortality(ref.make_sim(variant, seed=2, n_agents=3e3)), swap.make_sim(variant, seed=2, n_agents=3e3)
     from common.identity import arrays, differences
-    a, b = arrays(old.run()), arrays(new.run())
+    a, b = arrays(old.run()), arrays(new.run()) # Each initialised as it runs: EmodNetwork seeds Numba's global stream at its start
+    if case in SPLIT_CASES:
+        assert list(new.diseases.keys()) == ['emods', 'emodt', 'hiv'] and list(old.diseases.keys()) == ['hiv'], (new.diseases.keys(), old.diseases.keys())
     d = differences(a, b)
     print(f'{case}: {len(a)} arrays, {len(d)} differ')
     if len(d):
@@ -88,7 +129,7 @@ def check(case):
     sys.exit(int(len(d) > 0))
 
 
-@pytest.mark.parametrize('case', list(EMOD_CASES) + HIVSIM_CASES)
+@pytest.mark.parametrize('case', list(EMOD_CASES) + HIVSIM_CASES + list(SPLIT_CASES))
 def test_identity(case):
     r = subprocess.run([sys.executable, __file__, case], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]

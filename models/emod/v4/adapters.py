@@ -7,12 +7,12 @@ EMOD′ components on HIVsim's slots (docs/swap_design.md, section 5, steps 6 an
   fields EMOD′ modules read, made from STIsim's demography. `people.node`: drawn at the start from EMOD's node shares
   (its InitialPopulation by node), and a newborn's is its mother's. `people.emod_age`: EMOD's age in days after the
   step's ageing, `(age + dt)*365` (Starsim ages people at the end of the step), 0 in the step of birth. `born` and
-  `mothers`: the step's live births and their mothers, from the pregnancy's deliveries (EmodHIV's transmission at birth
-  and traditional circumcision of newborns read them). `twelve_weeks`: women reaching 12 weeks of gestation this step.
+  `mothers`: the step's live births and their mothers, from the pregnancy's deliveries (EmodT's transmission at birth
+  and EmodS's traditional circumcision of newborns read them). `twelve_weeks`: women reaching 12 weeks of gestation this step.
   With `risk_net`, it also reads EMOD's R from HIVsim's (step 6): `people.risk` HIGH for current FSW and clients, LOW
   for `risk_group` 0 and MEDIUM otherwise, each step; `people.sti` drawn once at the network's debut (on day 1 for those
   past it), with EMOD's probabilities by that Risk.
-- `EmodHIVOnSti` (step 6): EmodHIV reading `StructuredSexual`'s edges. STIsim's `acts` are already whole acts per step
+- `EmodTOnSti` (step 6): EmodT reading `StructuredSexual`'s edges (`EmodHIVOnSti()`: EmodHIV with it). STIsim's `acts` are already whole acts per step
   (drawn once per partnership), taken as they are; `condoms` is the chance an act has a condom, as EMOD′'s; types are
   mapped stable → MARITAL, casual → INFORMAL, one-time → TRANSITORY, sex work → COMMERCIAL (only the infection log
   reads them).
@@ -44,7 +44,7 @@ import stisim as sti
 from stisim.data import loaders as stidata
 
 import inputs
-from hiv import EmodHIV
+from hiv import EmodHIV, EmodT
 from network import EmodNetwork, nb_seed, TYPES
 from risk import EmodRisk, LOW, MEDIUM, HIGH
 from cascade_host import EmodHost
@@ -132,8 +132,8 @@ class EmodPeople(ss.Demographics):
         return
 
 
-class EmodHIVOnSti(EmodHIV):
-    """ EmodHIV on `StructuredSexual` (see the module docstring) """
+class EmodTOnSti(EmodT):
+    """ EmodT on `StructuredSexual` (see the module docstring) """
     def __init__(self, inp, net='structuredsexual', **kwargs):
         super().__init__(inp, net=net, **kwargs)
         return
@@ -145,8 +145,13 @@ class EmodHIVOnSti(EmodHIV):
         return sc.objdict(p1=e.p1, p2=e.p2, acts=np.asarray(e.acts).astype(int), condoms=e.condoms, type=TYPE_MAP[np.asarray(e.edge_type).astype(int)])
 
 
+def EmodHIVOnSti(inp, net='structuredsexual', **kwargs):
+    """ EmodHIV's modules on `StructuredSexual`, with EmodTOnSti """
+    return EmodHIV(inp, net=net, T=EmodTOnSti, **kwargs)
+
+
 class EmodHostOnSti(EmodHost):
-    """ EmodHost (the condensed cascade's host on EmodHIV) on STIsim's demography with `EmodPeople`: pregnancy from
+    """ EmodHost (the condensed cascade's host on EmodH) on STIsim's demography with `EmodPeople`: pregnancy from
     `ss.Pregnancy`; debut from EmodNetworkAt's, or else StructuredSexual's (with debuts from `EmodPeople`) """
     def __init__(self, sim):
         super().__init__(sim)
@@ -222,7 +227,7 @@ class EmodNetworkAt(EmodNetwork):
         return
 
     def warm_up(self):
-        """ The starting population's history and the warm-up; `EmodPeople` calls it in the first step, before the diseases' step (EmodHIV seeds by Risk then) """
+        """ The starting population's history and the warm-up; `EmodPeople` calls it in the first step, before the diseases' step (EmodS seeds by Risk then) """
         if self.warmed:
             return
         self.warmed = True
@@ -257,14 +262,14 @@ class EmodNetworkAt(EmodNetwork):
 
 
 def seed_per_capita(rate):
-    """ A seeding rule for EmodHIV (its `seeding`): `rate` expected seeds per person alive, drawn among Risk HIGH, each
+    """ A seeding rule for EmodS (its `seeding`): `rate` expected seeds per person alive, drawn among Risk HIGH, each
     with probability rate × alive/HIGH (at most 1). From the same draws as EMOD's rule (a uniform per HIGH agent), so
     its seeds are a subset or superset of EMOD's in the same run """
-    def seeding(hiv):
-        ppl = hiv.sim.people
+    def seeding(s):
+        ppl = s.sim.people
         high = ppl.auids[ppl.risk.raw[ppl.auids] == HIGH]
         p = min(1.0, rate*len(ppl.auids)/max(len(high), 1))
-        return high[hiv.rng.random(len(high)) < p]
+        return high[s.rng.random(len(high)) < p]
     return seeding
 
 

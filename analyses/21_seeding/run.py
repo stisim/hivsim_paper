@@ -73,14 +73,14 @@ def emod_seeds(seed):
     import hiv
     import components_fixed
     got = {}
-    camp = hiv.EmodHIV.campaign
+    camp = hiv.EmodS.campaign
     def campaign(self):
         was = self.seeded
         camp(self)
         if self.seeded and not was:
             ppl = self.sim.people
-            got.update(year=self.t.now('year'), alive=len(ppl.auids), high=int((ppl.risk.raw[ppl.auids] == 2).sum()), seeds=int(self.infected.raw[ppl.auids].sum()))
-    hiv.EmodHIV.campaign = campaign
+            got.update(year=self.t.now('year'), alive=len(ppl.auids), high=int((ppl.risk.raw[ppl.auids] == 2).sum()), seeds=int(self.hiv.infected.raw[ppl.auids].sum()))
+    hiv.EmodS.campaign = campaign
     harness.make_sim(0, seed=seed, stop=1984, network=True, hiv=True, record=False, fixes=components_fixed.FIXES).run()
     return dict(seed=seed, **got)
 

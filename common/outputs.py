@@ -13,7 +13,7 @@ deaths of people on ART (at the end of the step before, as the log's ART history
     yearly(out)                # one row per year: the outputs of 2.2 and their numerators
     measure(out.strata, targets, scale)   # {tid: value} for common/targets.csv
 
-What it reads from the disease (`sim.diseases.hiv`): EmodHIV's `sexual`, `new_uids` and `dead_uids`; for a Starsim
+What it reads from the disease (`sim.diseases.hiv`): EmodH's `sexual`, `new_uids` and `dead_uids`; for a Starsim
 disease (STIsim's `sti.HIV`), its infection log (so the sim needs `ss.infection_log()`), `ti_infected` and `ti_dead`.
 A host with `sexual_pairs()`, `new_infections()` and `hiv_deaths()` gives them instead (Optima′'s, models/optima/v4/host.py).
 """
@@ -30,7 +30,7 @@ SEXUAL = ('structuredsexual',) # Routes in a Starsim infection log that count as
 def sexual_pairs(sim):
     """ This step's sexual transmissions: (recipients, sources) """
     hiv = sim.diseases.hiv
-    if hasattr(hiv, 'sexual'): # EmodHIV
+    if hasattr(hiv, 'sexual'): # EmodH
         return hiv.sexual
     if hiv.infection_log is None:
         raise ValueError('Outputs needs the sources of transmissions: add ss.infection_log() to the sim')
@@ -47,7 +47,7 @@ def new_infections(sim):
 
 
 def hiv_deaths(sim):
-    """ This step's HIV deaths: EmodHIV's, or for STIsim's sti.HIV its own (`ti_dead`) and, with ART as its own module
+    """ This step's HIV deaths: EmodH's, or for STIsim's sti.HIV its own (`ti_dead`) and, with ART as its own module
     (`sti.ART`), the deaths of people on ART and of AIDS after stopping it, which are ART's transitions, not HIV's """
     hiv = sim.diseases.hiv
     if hasattr(hiv, 'dead_uids'):

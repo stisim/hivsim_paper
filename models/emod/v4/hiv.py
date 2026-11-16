@@ -1,6 +1,9 @@
 """
 EMOD′ HIV: transmission per coital act, natural history, and the effects of ART, as in EMOD-HIV (docs/emod_inventory.md,
-sections 4, 5, 9 (ART), 10 (traditional circumcision), 11 (transmission at birth) and 12). In each step, in EMOD's order:
+sections 4, 5, 9 (ART), 10 (traditional circumcision), 11 (transmission at birth) and 12), as three modules
+(docs/swap_design.md §2.3a): `EmodS` (seeding, S; step 1), `EmodT` (transmission, T; steps 2, 3 and 6) and `EmodH`
+(natural history and ART biology, H; step 4 and ART), which `EmodHIV()` makes, in the order they must step. In each
+step, in EMOD's order:
 
 1. Campaign basics: traditional circumcision from 1975 (everyone then, and each newborn, with a probability by node;
    EMOD draws for both sexes and circumcises only men), and the seeding at SeedYr: a share of everyone at Risk HIGH is
@@ -17,8 +20,8 @@ sections 4, 5, 9 (ART), 10 (traditional circumcision), 11 (transmission at birth
    Weibull time (scale 618 days, shape 2) before death, which fires NewlySymptomatic. On ART, failure comes 9 months
    before the death drawn at ART start: the AIDS stage, with no ART effect, and CD4 falling to √31.63 by the death.
 5. The campaign's care cascade (emod_cascade.py), after progression, as EMOD updates interventions after infections.
-   Steps 1-4 are `step_state()`; the cascade is an intervention, which Starsim runs after it (and after the network);
-   step 6 is `step()`.
+   Steps 1-4 are the modules' `step_state()`; the cascade is an intervention, which Starsim runs after them (and
+   after the network); step 6 is EmodT's `step()`.
 6. Exposure: each uninfected person's acts, in random order, until one transmits (RelationshipGroups::ExposeToContagion),
    with × (1 − 0.6) for a circumcised man, × the male-to-female multiplier for a woman by her age, and × (1 − PrEP).
    New infections draw their prognosis from the age then (FerrandAgeDependentDistribution): under 15, exponential
@@ -29,7 +32,14 @@ ART (`go_on_art`, ARTMortalityTable): the time from starting to death is drawn f
 age and CD4 (interpolated), each later bin's draw timed from ART start, as EMOD does. Dropout (`go_off_art`,
 InfectionHIV::ApplySuppressionDropout): a new prognosis is drawn from the age then and shortened by the share of the
 CD4 decline already done; its AIDS stage starts at the new prognosis's latent end, so someone who recovered little
-CD4 on ART can die before reaching it, as in EMOD. People: `people.sti` (risk module), `people.circumcised`.
+CD4 on ART can die before reaching it, as in EMOD. People: `people.sti` (risk module), `people.circumcised`, and
+PMTCT and PrEP (`pmtct`, `pmtct_until`, `prep_eff`, `prep_until`), which the cascade gives and EmodT reads.
+
+The modules talk only through H's interface: EmodS and EmodT infect people with `infect(uids, source, route)`, and EmodT
+reads H's `infected`, `on_art()` (the mother's, at birth) and `infectiousness()`; the cascade reads and changes H through
+the host (cascade_host.py: `go_on_art()`, `go_off_art()`, ...); H requests the HIV deaths. EmodH keeps the name `hiv`
+and the infection and death logs (`infections`, `deaths`, and each step's `new_uids`, `sexual` and `dead_uids`). The
+three draw in turn from one random stream (`stream()`), as EMOD does, so EmodS, EmodT and EmodH step in that order.
 """
 import numpy as np
 import pandas as pd
@@ -42,18 +52,31 @@ CD4_SQ, CD4_LIN, CD4_SAT, CD4_MONTHS = -0.2113, 15.584, 287.3415, 3.073*12 # CD4
 IDEAL_MONTH = 30 # IDEALDAYSPERMONTH
 
 
-class EmodHIV(ss.Disease):
+def stream(sim):
+    """ The random stream EMOD′'s HIV modules draw from in turn (EmodS, EmodT and EmodH, in the order they step), one
+    per sim, as EMOD has one """
+    return sim.__dict__.setdefault('_emod_hiv_rng', np.random.default_rng(sim.pars.rand_seed + 5))
+
+
+def people_cofactors(sim):
+    """ Each person's PMTCT (`pmtct`, its efficacy, until the year `pmtct_until`) and PrEP (`prep_eff` until
+    `prep_until`), which the cascade gives and EmodT reads, as people properties """
+    F, add = ss.FloatArr, sim.people.add_state
+    return [add(F('pmtct', default=0.0)), add(F('pmtct_until', default=np.inf)), add(F('prep_until', default=-np.inf)), add(F('prep_eff', default=0.0))]
+
+
+class EmodH(ss.Disease):
     """
+    Natural history and ART biology (H): infections started by `infect()`, their progression and HIV deaths, and ART
+    (`go_on_art()`, `go_off_art()`); with the logs of every infection and HIV death.
+
     Args:
         inp (objdict): EMOD's inputs for one parameter set, from `inputs.load()`
-        net (str): the name of the network
         record (bool): whether to keep a record of each infection and HIV death (`infections`, `deaths`)
-        seeding (callable): who is seeded at the seeding step, as `seeding(hiv)` returning uids (adapters.py has
-            options); None for EMOD's rule (`seed_coverage` of everyone at Risk HIGH)
     """
-    def __init__(self, inp, net='emodnet', record=True, seeding=None, name='hiv', **kwargs):
+    def __init__(self, inp, record=True, name='hiv', **kwargs):
         super().__init__(name=name, **kwargs)
-        self.inp, self.netname, self.record, self.seeding = inp, net, record, seeding
+        self.inp, self.record = inp, record
         F = ss.FloatArr
         self.define_states(
             ss.BoolArr('infected', label='Infected'),
@@ -64,20 +87,19 @@ class EmodHIV(ss.Disease):
             F('who1'), F('who2'), F('who3'),                       # Shares of the prognosis in WHO stages 1-3
             ss.IntArr('art', default=OFF), F('art_mult'), F('supp_timer'), F('fail_timer'), F('art_days', default=-1.0), F('cd4_at_art'),
             ss.BoolArr('ever_tested', default=False, result=False), ss.BoolArr('diagnosed', default=False, result=False), F('last_test'), F('lowest_cd4', default=np.inf),
-            ss.BoolArr('ever_art', default=False, result=False), F('pmtct', default=0.0), F('pmtct_until', default=np.inf), F('prep_until', default=-np.inf), F('prep_eff', default=0.0),
-            F('p_act'), ss.IntArr('stage0', default=-1), F('days0'), # Per-act infectiousness, stage and days since infection at the start of the step
+            ss.BoolArr('ever_art', default=False, result=False),
+            ss.IntArr('stage0', default=-1), F('days0'), # Stage and days since infection at the start of the step (for the log of sexual transmissions)
         )
         self.infections, self.deaths = [], []
-        self.seeded = self.circ_started = False
         self.newly_symptomatic = self.new_uids = self.dead_uids = ss.uids()
         return
 
     def init_pre(self, sim):
         super().init_pre(sim)
         self.node = sim.people.add_state(ss.IntArr('node', default=0))
-        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False, result=False))
-        self.circumcised = sim.people.add_state(ss.BoolArr('circumcised', default=False, result=False))
-        self.rng = np.random.default_rng(sim.pars.rand_seed + 5)
+        for st in people_cofactors(sim): # PMTCT and PrEP, which the cascade sets here
+            setattr(self, st.name, st)
+        self.rng = stream(sim)
         self.dt_days = self.t.dt_year*365 # The step in days (EMOD's Simulation_Timestep)
         h = self.inp.hiv
         self.acute_len, self.aids_len = h.Acute_Duration_In_Months*365/12, h.AIDS_Duration_In_Months*365/12
@@ -129,9 +151,18 @@ class EmodHIV(ss.Disease):
             arr[uids] = WHO_LAMBDA[k]*(-np.log(self.rng.random(len(uids))))**(1/WHO_KAPPA[k])
         return prog
 
-    def infect(self, uids, fast_forward=False):
-        """ Start infections; seeded ones partway through their course """
-        uids = uids[~self.infected.raw[uids]]
+    def infect(self, uids, source=-1, route='seed', fast_forward=False):
+        """
+        Start infections, and log them; returns those infected (those not infected already)
+
+        Args:
+            uids (uids): who
+            source (int/array): each one's source, -1 for none
+            route (str/array): 'seed', 'birth', or (sexual transmissions) each one's relationship type
+            fast_forward (bool): start each partway through its course (a uniform fraction of the prognosis), as seeds are
+        """
+        new = ~self.infected.raw[uids]
+        uids, source = uids[new], np.broadcast_to(source, new.shape)[new]
         if not len(uids):
             return uids
         self.infected[uids] = True
@@ -146,6 +177,12 @@ class EmodHIV(ss.Disease):
             self.sqrt_cd4[uids] = self.sqrt_post + self.cd4_rate.raw[uids]*ff
         self.set_stage(uids)
         self.year_infected[uids] = self.t.now('year') - self.days.raw[uids]/365
+        self.step_new.append(uids)
+        if isinstance(route, str):
+            self.log_infections(uids, src=source, kind=route)
+        else:
+            self.step_sexual = uids, source
+            self.log_infections(uids, src=source, kind=route, src_stage=self.stage0.raw[source], src_days=self.days0.raw[source])
         return uids
 
     def set_stage(self, uids):
@@ -287,42 +324,6 @@ class EmodHIV(ss.Disease):
 
     # %% Steps
 
-    def campaign(self):
-        """ Traditional circumcision and the seeding """
-        ppl, c = self.sim.people, self.inp.campaign
-        year = self.t.now('year')
-        if year >= c.circ_year:
-            if self.circ_started:
-                uids = self.sim.demographics.emoddemog.born
-            else:
-                uids, self.circ_started = ppl.auids, True
-            got = uids[self.rng.random(len(uids)) < c.p_circ[self.node.raw[uids]]] # EMOD draws for everyone, and circumcises only men
-            self.circumcised[got[~ppl.female.raw[got]]] = True
-        if year >= c.seed_year and not self.seeded:
-            self.seeded = True
-            if self.seeding is None:
-                high = ppl.auids[ppl.risk.raw[ppl.auids] == 2]
-                chosen = high[self.rng.random(len(high)) < c.seed_coverage]
-            else:
-                chosen = self.seeding(self)
-            seeds = self.infect(chosen, fast_forward=True)
-            self.step_new.append(seeds)
-            self.log_infections(seeds, src=np.full(len(seeds), -1), kind='seed')
-        return
-
-    def at_birth(self):
-        dem, h = self.sim.demographics.emoddemog, self.inp.hiv
-        if not len(dem.born):
-            return
-        m = dem.mothers
-        p = np.where(self.on_art(m), h.Maternal_Infection_Transmission_Probability*h.Maternal_Transmission_ART_Multiplier,
-                     h.Maternal_Infection_Transmission_Probability*(1 - np.where(self.pmtct_until.raw[m] >= self.t.now('year'), self.pmtct.raw[m], 0)))
-        hit = self.infected.raw[m] & (self.rng.random(len(m)) < p)
-        kids = self.infect(dem.born[hit])
-        self.step_new.append(kids)
-        self.log_infections(kids, src=m[hit], kind='birth')
-        return
-
     def infectiousness(self, uids):
         """ Per-act transmission probability of infected people before acquisition factors (UpdateInfectiousnessSTI) """
         h = self.inp.hiv
@@ -332,56 +333,16 @@ class EmodHIV(ss.Disease):
         supp = np.select([art == RAMP, art == SUPPRESSED], [1 - (1 - m)/183*(183 - self.supp_timer.raw[uids]), m], 1.0)
         return h.Base_Infectivity*stage_mult*supp
 
-    def contacts(self):
-        """ This step's edges: `p1` the man, `p2` the woman, `acts` (whole acts this step), `condoms` (the chance each act has a condom), `type` (EMOD's order) """
-        return self.sim.networks[self.netname].edges
-
-    def acts(self):
-        """ The coital acts of this step between an infected and an uninfected partner, with the infected side's part of their probability """
-        e, h = self.contacts(), self.inp.hiv
-        if e is None or not len(e.p1):
-            return None
-        inf = self.infected.raw
-        idx = np.flatnonzero((inf[e.p1] != inf[e.p2]) & (e.acts > 0))
-        p1, p2 = e.p1[idx], e.p2[idx]
-        src = np.where(inf[p1], p1, p2)
-        dst = np.where(inf[p1], p2, p1)
-        sti = np.maximum(np.where(self.sti.raw[src], h.STI_Coinfection_Transmission_Multiplier, 1), np.where(self.sti.raw[dst], h.STI_Coinfection_Acquisition_Multiplier, 1))
-        return dict(idx=idx, src=src, dst=dst, p=self.p_act.raw[src]*sti, stage=self.stage0.raw[src], days=self.days0.raw[src], type=e.type[idx], edges=e)
-
-    def exposures(self, a):
-        """ Who is infected by the acts, and by which """
-        none = ss.uids(), np.zeros(0, int)
-        if a is None or not len(a['idx']):
-            return none
-        h, ppl, e = self.inp.hiv, self.sim.people, a['edges']
-        dst = a['dst']
-        ok = ppl.alive.raw[dst] & ~self.infected.raw[dst]
-        female = ppl.female.raw[dst]
-        acq = np.where(female, np.interp(ppl.emod_age.raw[dst]/365, h.Male_To_Female_Relative_Infectivity_Ages, h.Male_To_Female_Relative_Infectivity_Multipliers),
-                       np.where(self.circumcised.raw[dst], 1 - self.inp.campaign.circ_efficacy, 1))
-        acq = acq*np.where(self.prep_until.raw[dst] >= self.t.now('year'), 1 - self.prep_eff.raw[dst], 1)*ok
-        n = e.acts[a['idx']].astype(int)
-        act = np.repeat(np.arange(len(n)), n)
-        condom = self.rng.random(len(act)) < e.condoms[a['idx']][act]
-        p = (a['p']*acq)[act]*np.where(condom, 1 - h.Condom_Transmission_Blocking_Probability, 1)
-        hit = np.flatnonzero(self.rng.random(len(act)) < p)
-        if not len(hit):
-            return none
-        order = hit[np.argsort(self.rng.random(len(hit)))] # Acts in random order; the first for each person infects them
-        who = dst[act[order]]
-        _, first = np.unique(who, return_index=True)
-        return ss.uids(who[first]), act[order[first]]
+    def start_step(self):
+        super().start_step()
+        self.step_new, self.step_sexual = [], None # The step's infections, from every route, and its sexual transmissions (recipients, sources)
+        return
 
     def step_state(self):
-        """ Steps 1-4: campaign basics, births, the infectiousness of the step's acts, and progression """
+        """ Step 4: progression (after seeding, births and T's infectiousness of the step's acts), and HIV deaths """
         super().step_state()
         ppl = self.sim.people
-        self.step_new = []
-        self.campaign()
-        self.at_birth()
         inf = ppl.auids[self.infected.raw[ppl.auids]]
-        self.p_act[inf] = self.infectiousness(inf) # As at the start of the step, for transmission in step()
         self.stage0[inf] = self.stage.raw[inf]
         self.days0[inf] = self.days.raw[inf]
         dead, self.newly_symptomatic = self.progress(inf)
@@ -395,16 +356,10 @@ class EmodHIV(ss.Disease):
         return
 
     def step(self):
-        """ Step 6: exposure, after the cascade (an intervention, so it runs between step_state and step) """
-        a = self.acts()
-        dead = self.dead_uids
-        new, k = self.exposures(a)
-        new = self.infect(new)
-        self.sexual = new, (a['src'][k] if a is not None else np.zeros(0, int)) # This step's sexual transmissions: recipients and sources
-        if a is not None:
-            self.log_infections(new, src=a['src'][k], kind=a['type'][k], src_stage=a['stage'][k], src_days=a['days'][k])
-        self.n_new, self.n_dead = len(new), len(dead)
-        self.new_uids = ss.uids(np.concatenate(self.step_new + [new])) # Every infection of the step, as EMOD's NewInfectionEvent
+        """ The step's infections, once T's exposure (step 6) is done """
+        self.sexual = self.step_sexual or (ss.uids(), np.zeros(0, int)) # This step's sexual transmissions: recipients and sources
+        self.n_new, self.n_dead = len(self.sexual[0]), len(self.dead_uids)
+        self.new_uids = ss.uids(np.concatenate(self.step_new)) if self.step_new else ss.uids() # Every infection of the step, as EMOD's NewInfectionEvent
         return
 
     def log_infections(self, uids, src, kind, src_stage=None, src_days=None):
@@ -444,3 +399,166 @@ class EmodHIV(ss.Disease):
         cat = lambda recs: pd.DataFrame({k: np.concatenate([r[k] for r in recs]) for k in recs[0]}) if recs else pd.DataFrame()
         self.infections, self.deaths = cat(self.infections), cat(self.deaths)
         return
+
+
+class EmodT(ss.Disease):
+    """
+    Transmission (T): at birth (step 2), the infectiousness of the step's acts (step 3), and exposure over them (step 6).
+    It reads the H module only through `infected`, `on_art()` and `infectiousness()`, and infects through its
+    `infect()`; it steps after EmodS and before H.
+
+    Args:
+        inp (objdict): EMOD's inputs for one parameter set, from `inputs.load()`
+        net (str): the name of the network
+        hiv (str): the name of the H module
+    """
+    def __init__(self, inp, net='emodnet', hiv='hiv', name='emodt', **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.inp, self.netname, self.hivname = inp, net, hiv
+        self.define_states(ss.FloatArr('p_act')) # Per-act infectiousness at the start of the step
+        return
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False, result=False))
+        self.circumcised = sim.people.add_state(ss.BoolArr('circumcised', default=False, result=False))
+        self.pmtct, self.pmtct_until, self.prep_until, self.prep_eff = people_cofactors(sim)
+        self.rng = stream(sim)
+        return
+
+    @property
+    def hiv(self):
+        return self.sim.diseases[self.hivname]
+
+    def at_birth(self):
+        dem, h, hiv = self.sim.demographics.emoddemog, self.inp.hiv, self.hiv
+        if not len(dem.born):
+            return
+        m = dem.mothers
+        p = np.where(hiv.on_art(m), h.Maternal_Infection_Transmission_Probability*h.Maternal_Transmission_ART_Multiplier,
+                     h.Maternal_Infection_Transmission_Probability*(1 - np.where(self.pmtct_until.raw[m] >= self.t.now('year'), self.pmtct.raw[m], 0)))
+        hit = hiv.infected.raw[m] & (self.rng.random(len(m)) < p)
+        hiv.infect(dem.born[hit], source=m[hit], route='birth')
+        return
+
+    def contacts(self):
+        """ This step's edges: `p1` the man, `p2` the woman, `acts` (whole acts this step), `condoms` (the chance each act has a condom), `type` (EMOD's order) """
+        return self.sim.networks[self.netname].edges
+
+    def acts(self):
+        """ The coital acts of this step between an infected and an uninfected partner, with the infected side's part of their probability """
+        e, h = self.contacts(), self.inp.hiv
+        if e is None or not len(e.p1):
+            return None
+        inf = self.hiv.infected.raw
+        idx = np.flatnonzero((inf[e.p1] != inf[e.p2]) & (e.acts > 0))
+        p1, p2 = e.p1[idx], e.p2[idx]
+        src = np.where(inf[p1], p1, p2)
+        dst = np.where(inf[p1], p2, p1)
+        sti = np.maximum(np.where(self.sti.raw[src], h.STI_Coinfection_Transmission_Multiplier, 1), np.where(self.sti.raw[dst], h.STI_Coinfection_Acquisition_Multiplier, 1))
+        return dict(idx=idx, src=src, dst=dst, p=self.p_act.raw[src]*sti, type=e.type[idx], edges=e)
+
+    def exposures(self, a):
+        """ Who is infected by the acts, and by which """
+        none = ss.uids(), np.zeros(0, int)
+        if a is None or not len(a['idx']):
+            return none
+        h, ppl, e = self.inp.hiv, self.sim.people, a['edges']
+        dst = a['dst']
+        ok = ppl.alive.raw[dst] & ~self.hiv.infected.raw[dst]
+        female = ppl.female.raw[dst]
+        acq = np.where(female, np.interp(ppl.emod_age.raw[dst]/365, h.Male_To_Female_Relative_Infectivity_Ages, h.Male_To_Female_Relative_Infectivity_Multipliers),
+                       np.where(self.circumcised.raw[dst], 1 - self.inp.campaign.circ_efficacy, 1))
+        acq = acq*np.where(self.prep_until.raw[dst] >= self.t.now('year'), 1 - self.prep_eff.raw[dst], 1)*ok
+        n = e.acts[a['idx']].astype(int)
+        act = np.repeat(np.arange(len(n)), n)
+        condom = self.rng.random(len(act)) < e.condoms[a['idx']][act]
+        p = (a['p']*acq)[act]*np.where(condom, 1 - h.Condom_Transmission_Blocking_Probability, 1)
+        hit = np.flatnonzero(self.rng.random(len(act)) < p)
+        if not len(hit):
+            return none
+        order = hit[np.argsort(self.rng.random(len(hit)))] # Acts in random order; the first for each person infects them
+        who = dst[act[order]]
+        _, first = np.unique(who, return_index=True)
+        return ss.uids(who[first]), act[order[first]]
+
+    def step_state(self):
+        """ Steps 2 and 3: births, and the infectiousness of the step's acts, as at the start of the step (before H's progression) """
+        super().step_state()
+        ppl = self.sim.people
+        self.at_birth()
+        inf = ppl.auids[self.hiv.infected.raw[ppl.auids]]
+        self.p_act[inf] = self.hiv.infectiousness(inf)
+        return
+
+    def step(self):
+        """ Step 6: exposure, after the cascade (an intervention, so it runs between step_state and step) """
+        a = self.acts()
+        new, k = self.exposures(a)
+        if a is not None:
+            self.hiv.infect(new, source=a['src'][k], route=a['type'][k])
+        return
+
+
+class EmodS(ss.Disease):
+    """
+    Seeding (S), with the campaign's other basic, traditional circumcision (step 1). It infects through the H module's
+    `infect()`, and steps first of EMOD′'s HIV modules: before EmodT's births and H's progression.
+
+    Args:
+        inp (objdict): EMOD's inputs for one parameter set, from `inputs.load()`
+        net (str): the name of the network (for seeding rules that read it)
+        hiv (str): the name of the H module
+        seeding (callable): who is seeded at the seeding step, as `seeding(s)` (with this module) returning uids
+            (adapters.py has options); None for EMOD's rule (`seed_coverage` of everyone at Risk HIGH)
+    """
+    def __init__(self, inp, net='emodnet', hiv='hiv', seeding=None, name='emods', **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.inp, self.netname, self.hivname, self.seeding = inp, net, hiv, seeding
+        self.seeded = self.circ_started = False
+        return
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        self.node = sim.people.add_state(ss.IntArr('node', default=0))
+        self.circumcised = sim.people.add_state(ss.BoolArr('circumcised', default=False, result=False))
+        self.rng = stream(sim)
+        return
+
+    @property
+    def hiv(self):
+        return self.sim.diseases[self.hivname]
+
+    def campaign(self):
+        """ Traditional circumcision and the seeding """
+        ppl, c = self.sim.people, self.inp.campaign
+        year = self.t.now('year')
+        if year >= c.circ_year:
+            if self.circ_started:
+                uids = self.sim.demographics.emoddemog.born
+            else:
+                uids, self.circ_started = ppl.auids, True
+            got = uids[self.rng.random(len(uids)) < c.p_circ[self.node.raw[uids]]] # EMOD draws for everyone, and circumcises only men
+            self.circumcised[got[~ppl.female.raw[got]]] = True
+        if year >= c.seed_year and not self.seeded:
+            self.seeded = True
+            if self.seeding is None:
+                high = ppl.auids[ppl.risk.raw[ppl.auids] == 2]
+                chosen = high[self.rng.random(len(high)) < c.seed_coverage]
+            else:
+                chosen = self.seeding(self)
+            self.hiv.infect(chosen, fast_forward=True)
+        return
+
+    def step_state(self):
+        super().step_state()
+        self.campaign()
+        return
+
+    def step(self):
+        return
+
+
+def EmodHIV(inp, net='emodnet', record=True, seeding=None, name='hiv', T=EmodT):
+    """ EMOD′'s HIV as its three modules, in the order they step: [EmodS, T (EmodT, or a subclass), EmodH named `name`] """
+    return [EmodS(inp, net=net, hiv=name, seeding=seeding), T(inp, net=net, hiv=name), EmodH(inp, record=record, name=name)]

@@ -33,7 +33,7 @@ def make_RN(inp, ctx):
 
 
 def make_V(inp, ctx):
-    return dict(diseases=[EmodHIV(inp, record=False)])
+    return dict(diseases=EmodHIV(inp, record=False))
 
 
 def make_C(inp, ctx):
