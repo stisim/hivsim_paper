@@ -1,0 +1,25 @@
+# 26: Optima′ as agent modules
+
+**Question:** can Optima′ be rebuilt as separate agent modules, so that its natural history (H), transmission (T), demography and populations (D with R) and seeding (S) can each be swapped for another model's, and does it then still behave as Optima′? This is step 2 of `docs/swap_design.md` §2.3a: the Optima end of the H step, and of the NT and DR steps after it.
+
+**What's built** (`models/optima/v4/modules.py`; factories in `components.py`):
+- **D (with R)**, `OptimaDR`: each agent's Optima population (`people.optima_pop`), with its sex and an age in its band; background death; births with mother-to-child transmission and PMTCT (Optima's births have no mothers, so they read the mothers' places in care by population); population forcing (`ForcePopsize` on agents: departures, and arrivals that are copies of residents of the population and class); ageing and risk transfers.
+- **T**, `OptimaT`: Optima's force of infection by population pair (regular, casual and commercial acts, `force`, `inhomo`, condoms, circumcision, PrEP), from the infectiousness of the infected agents of each population, read only through H's `infectiousness()` and the host's place in care (for `effdx`). No network (D12). Sources drawn from the parts of the force, as `host.OptimaTracker` drew them.
+- **H**, `OptimaH`: a CD4 band per infected agent, Optima's progression, HIV death by band (before other moves), ART's effects on `svl`/`usvl` at the band (recovery, progression; failure and regain are the table's rows, through `switch_arm`, as in Optima′ declared with the table), and `infectiousness()`.
+- **S**, `OptimaS`: Optima's state in 1990, by population, exactly (as the declared engine places it).
+- **C**: as now, `TableCascade` with Optima's table, on the modules' host (`ModulesHost`).
+- They talk only through the H interface (§2.3a) and the host: T → H `infect`; H → T `infectiousness`; C → H `start_art`/`stop_art` (and `switch_arm`); H → D deaths. Where Optima's product structure (death first, then other moves among survivors) needs another module's death chance, it is read through `hiv_survival()` (H) and `bg_survival()` (D), defaulting to 1 for another model's.
+
+**Ends compared** (env `hp_rc3`, Starsim `/tmp/ss-nov16`, STIsim `/tmp/sti-pr`; dt 0.02, 1990–2021; 100,000 agents in 1990, as analyses 20–24):
+1. **Declared:** Optima′ declared as agents with Optima's table, `agents.make_sim(cascade=P)` with `TableCascade(P, OptimaHost)` and `OptimaTracker` (analysis 24's `optima` arm).
+2. **Modules:** `components.make_sim()`, which is the runner's `build()` with every slot Optima′'s.
+3. **ODE:** `optima_prime.make_sim(cascade=P)`, the 2022 project (analysis 23: equal to Optima′'s own cascade to rounding).
+
+**Checks:**
+1. **Arithmetic** (`tests/test_optima_modules.py`): on the same people, the modules' force of infection, births (with MTCT and PMTCT) and population forcing equal `optima_prime.Transmission`'s, `Births`' and `agents.ForcePopsize`'s to rounding.
+2. **In distribution** (the point; `run.py sweep`, `run.py tables`): 64 seeds per arm. Each year 2000–2020 (and 1990–1999 shown): population, PLHIV, diagnosed, on ART, suppressed (stocks at the end of the year); new infections, sexual transmissions, HIV deaths (each year); PLHIV by place in care × CD4 band; and the Figure 3A shares (D8) of sexual transmissions by the source's status. Per year: the difference of means with its Welch SE, z and p, and the ratio of SDs with an F test. The seeds aren't paired (the draws differ), so this is an unpaired comparison. Bit-identity isn't expected. Pass: about 5% of years at p < 0.05 for each output, no output with a run of systematic z of one sign beyond what the year-to-year correlation explains, SDs alike. A difference beyond noise is a finding to explain or fix, not to tune away.
+3. **ODE:** both agent arms against the ODE, to `acceptance.py`'s 2% standard, where the agent noise allows (analysis 20 found the declared agents within 0.65% on means at 100k, with gaps up to 4.6–6.5% in 2020 flows from Optima's target-driven ART rules).
+4. **Runner:** `build(D, T, H, S, C = optima)` equals `components.make_sim()` exactly (`run.py runner`, and a test).
+5. **Unchanged:** the repo suite (`tests/`, `common/swaps/tests`, `models/emod/v4/test_adapters.py`), with analysis 24's C-only hybrid unchanged in behaviour (`make_C` now also takes H's model's host).
+
+**Expected differences** (by construction, small): the declared engine draws each agent's demographic, transmission and natural-history moves in one competing draw a step; the modules draw D's, then T's, then H's, each among those still there, which differs by order dt² per step (well under 0.5% of any rate at dt 0.02). Arrivals under the forcing copy a resident's whole state (including treatment history), where the declared engine's arrivals are new agents in a state; this can only move the Figure 3A split between "diagnosed, never treated" and "interrupted", by at most the arrivals into lost (a few hundred people over 1990–2020 in the ODE).
