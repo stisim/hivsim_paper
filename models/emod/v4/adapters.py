@@ -58,7 +58,7 @@ def sti_demography(n_agents, start=1985, location='malawi', datafolder=DATADIR):
     """ STIsim's demography for a location, as `sti.Sim(demographics=location, datafolder=...)` builds it, as modules
     (so other demographic modules can follow them): returns `demographics`, `people` and `total_pop` for the sim """
     columns = dict(year='Time', age='AgeStart', value='Value')
-    preg = ss.Pregnancy(fertility_rate=stidata.get_rates(location, 'asfr', datafolder), columns=columns)
+    preg = ss.Pregnancy(fertility_rate=stidata.get_rates(location, 'asfr', datafolder), rate_per=1000, columns=columns)
     deaths = ss.Deaths(death_rate=stidata.get_rates(location, 'death', datafolder), rate_per=1, columns=dict(year='Time', sex='Sex', age='AgeStart', value='Value'))
     age = stidata.get_age_distribution(location, year=start, datafolder=datafolder)
     total_pop = int(age.value.sum())

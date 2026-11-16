@@ -9,7 +9,7 @@ def pars(pid):
 
 
 def make_D(p, ctx):
-    return dict(n_agents=500, start=2000, dt=1/12, demographics=[ss.Births(birth_rate=20), ss.Deaths(death_rate=15)])
+    return dict(n_agents=500, start=2000, dt=1/12, demographics=[ss.Births(birth_rate=20, rate_per=1000), ss.Deaths(death_rate=15, rate_per=1000)])
 
 
 def make_N(p, ctx):
