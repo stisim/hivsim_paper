@@ -58,7 +58,7 @@ class OptimaTracker(ss.Intervention):
     """ What the host needs and the states don't keep: see the module docstring """
     def __init__(self, name='optima_host', seed=None, **kwargs):
         super().__init__(name=name, **kwargs)
-        self.define_states(ss.BoolArr('ever_treated', default=False), ss.BoolArr('symptomatic', default=False),
+        self.define_states(ss.BoolArr('ever_treated', default=False, result=False), ss.BoolArr('symptomatic', default=False, result=False),
                            ss.FloatArr('lowest_cd4', default=np.inf), ss.IntArr('last_pop', default=-1))
         self.seed = seed
         return

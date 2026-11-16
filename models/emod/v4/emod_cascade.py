@@ -77,7 +77,7 @@ class EmodCascade(ss.Intervention):
         for k, li in enumerate(self.listeners):
             for t in li['triggers']:
                 self.by_trigger.setdefault(t, []).append(k)
-        self.define_states(ss.BoolArr('vmmc_given', default=False)) # Holds the programme's MaleCircumcision (named Any_MC)
+        self.define_states(ss.BoolArr('vmmc_given', default=False, result=False)) # Holds the programme's MaleCircumcision (named Any_MC)
         self.choosers_state = [NChooser(c, self) for c in self.choosers]
         return
 
@@ -94,7 +94,7 @@ class EmodCascade(ss.Intervention):
         assert not {'anc', 'pmtct'} & set(getattr(self.inp, 'fixes', ())), 'the anc and pmtct fixes are in the condensed cascade only'
         self.istatus = sim.people.add_state(ss.IntArr('istatus', default=0))
         self.artstatus = sim.people.add_state(ss.IntArr('artstatus', default=0))
-        self.onprep = sim.people.add_state(ss.BoolArr('onprep', default=False))
+        self.onprep = sim.people.add_state(ss.BoolArr('onprep', default=False, result=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 6)
         self.items = dict(uid=np.zeros(0, np.int64), tid=np.zeros(0, np.int64), left=np.zeros(0)) # Interventions waiting (delays, PMTCT)
         self.muxers = {}

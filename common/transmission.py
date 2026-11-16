@@ -89,7 +89,7 @@ if ss is not None:
         def __init__(self, host, pairs, name='transmissionlog', **kwargs):
             super().__init__(name=name, **kwargs)
             self.host_class, self.pairs = host, pairs
-            self.define_states(ss.BoolArr('on', default=False), ss.IntArr('n_starts', default=0), ss.FloatArr('t_start'), ss.FloatArr('t_stop'))
+            self.define_states(ss.BoolArr('on', default=False, result=False), ss.IntArr('n_starts', default=0), ss.FloatArr('t_start'), ss.FloatArr('t_stop'))
             self.rows = []
             return
 

@@ -79,7 +79,7 @@ class EmodPeople(ss.Demographics):
     def __init__(self, inp, preg='pregnancy', risk_net=None, warm=None, name='emoddemog', **kwargs):
         super().__init__(name=name, **kwargs)
         self.inp, self.pregname, self.risk_net, self.warm = inp, preg, risk_net, warm
-        self.define_states(ss.BoolArr('sti_drawn', default=False))
+        self.define_states(ss.BoolArr('sti_drawn', default=False, result=False))
         self.born = self.mothers = self.twelve_weeks = self.new_debuts = ss.uids()
         return
 
@@ -89,7 +89,7 @@ class EmodPeople(ss.Demographics):
         self.emod_age = sim.people.add_state(ss.FloatArr('emod_age', default=0.0))
         if self.risk_net:
             self.risk = sim.people.add_state(ss.IntArr('risk', default=-1))
-            self.sti = sim.people.add_state(ss.BoolArr('sti', default=False))
+            self.sti = sim.people.add_state(ss.BoolArr('sti', default=False, result=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 6)
         self.dt_years = float(self.t.dt_year)
         return

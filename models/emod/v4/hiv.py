@@ -56,15 +56,15 @@ class EmodHIV(ss.Disease):
         self.inp, self.netname, self.record, self.seeding = inp, net, record, seeding
         F = ss.FloatArr
         self.define_states(
-            ss.BoolState('infected', label='Infected'),
+            ss.BoolArr('infected', label='Infected'),
             F('days'), F('prognosis'), F('acute_days'), F('aids_start'), # Days since infection (or ART start); days to death; stage ends
             ss.IntArr('stage', default=-1), F('year_infected'), ss.IntArr('n_infections', default=0),
             F('sqrt_cd4'), F('cd4_rate'),                          # √CD4 and its change per day off ART
-            F('symp_days'), ss.BoolArr('symptomatic', default=False), # Days before death of becoming symptomatic
+            F('symp_days'), ss.BoolArr('symptomatic', default=False, result=False), # Days before death of becoming symptomatic
             F('who1'), F('who2'), F('who3'),                       # Shares of the prognosis in WHO stages 1-3
             ss.IntArr('art', default=OFF), F('art_mult'), F('supp_timer'), F('fail_timer'), F('art_days', default=-1.0), F('cd4_at_art'),
-            ss.BoolArr('ever_tested', default=False), ss.BoolArr('diagnosed', default=False), F('last_test'), F('lowest_cd4', default=np.inf),
-            ss.BoolArr('ever_art', default=False), F('pmtct', default=0.0), F('pmtct_until', default=np.inf), F('prep_until', default=-np.inf), F('prep_eff', default=0.0),
+            ss.BoolArr('ever_tested', default=False, result=False), ss.BoolArr('diagnosed', default=False, result=False), F('last_test'), F('lowest_cd4', default=np.inf),
+            ss.BoolArr('ever_art', default=False, result=False), F('pmtct', default=0.0), F('pmtct_until', default=np.inf), F('prep_until', default=-np.inf), F('prep_eff', default=0.0),
             F('p_act'), ss.IntArr('stage0', default=-1), F('days0'), # Per-act infectiousness, stage and days since infection at the start of the step
         )
         self.infections, self.deaths = [], []
@@ -75,8 +75,8 @@ class EmodHIV(ss.Disease):
     def init_pre(self, sim):
         super().init_pre(sim)
         self.node = sim.people.add_state(ss.IntArr('node', default=0))
-        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False))
-        self.circumcised = sim.people.add_state(ss.BoolArr('circumcised', default=False))
+        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False, result=False))
+        self.circumcised = sim.people.add_state(ss.BoolArr('circumcised', default=False, result=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 5)
         self.dt_days = self.t.dt_year*365 # The step in days (EMOD's Simulation_Timestep)
         h = self.inp.hiv

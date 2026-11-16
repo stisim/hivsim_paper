@@ -30,7 +30,7 @@ class EmodRisk(ss.Intervention):
         super().__init__(name=name, **kwargs)
         self.inp, self.netname = inp, net
         self.define_states(
-            ss.BoolArr('debuted', default=False),
+            ss.BoolArr('debuted', default=False, result=False),
             ss.FloatArr('t_uptake'),  # Year their Risk becomes HIGH
             ss.FloatArr('t_dropout'), # Year it becomes MEDIUM again
         )
@@ -40,7 +40,7 @@ class EmodRisk(ss.Intervention):
         super().init_pre(sim)
         self.node = sim.people.add_state(ss.IntArr('node', default=0))
         self.risk = sim.people.add_state(ss.IntArr('risk', default=-1))
-        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False))
+        self.sti = sim.people.add_state(ss.BoolArr('sti', default=False, result=False))
         self.rng = np.random.default_rng(sim.pars.rand_seed + 3)
         self.new_debuts = ss.uids()
         return

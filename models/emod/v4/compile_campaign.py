@@ -142,7 +142,7 @@ class CompiledCampaign(EmodCascade):
 
     def init_pre(self, sim):
         super().init_pre(sim)
-        self.dying = sim.people.add_state(ss.BoolArr('dying_hiv', default=False))
+        self.dying = sim.people.add_state(ss.BoolArr('dying_hiv', default=False, result=False))
         self.prev_twelve = ss.uids()
         return
 

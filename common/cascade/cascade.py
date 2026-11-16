@@ -71,9 +71,9 @@ class Holder(ss.Intervention):
     def init_pre(self, sim):
         super().init_pre(sim)
         self.care = sim.people.add_state(ss.IntArr('care', default=NONE))
-        self.cx_dying = sim.people.add_state(ss.BoolArr('cx_dying', default=False))
-        self.cx_postdebut = sim.people.add_state(ss.BoolArr('cx_postdebut', default=False))
-        self.vmmc = sim.people.add_state(ss.BoolArr('cx_circ', default=False)) # Circumcised by the programme
+        self.cx_dying = sim.people.add_state(ss.BoolArr('cx_dying', default=False, result=False))
+        self.cx_postdebut = sim.people.add_state(ss.BoolArr('cx_postdebut', default=False, result=False))
+        self.vmmc = sim.people.add_state(ss.BoolArr('cx_circ', default=False, result=False)) # Circumcised by the programme
         self.arm = sim.people.add_state(ss.IntArr('arm', default=0))
         self.host = self.host_class(sim)
         self.rng = np.random.default_rng(sim.pars.rand_seed + 7)
