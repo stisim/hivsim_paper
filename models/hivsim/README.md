@@ -8,10 +8,10 @@
 | `swap.py` | `make_sim(variant, seed)`: HIVsim Malawi with its own care (`own`), or with the condensed cascade and EMOD's Malawi table (`condensed`); `BEST` is hivsim_malawi experiment 03's best run |
 | `reference/` | Where the finalized HIVsim Malawi will go |
 
-Needs Starsim 4.0.0rc3 with PR #1573 (env `hp_rc3`, branch `v4-rs-nov09` at f1273734) and STIsim with ART as its own declared module (`sti.ART`, PR #612) and the host's methods (`HIV.who_stage()`, `HIV.new_symptoms()`, `HIV.start_pmtct()`, `ART.start_art(effective=)`, PrEP courses ended by HIV), plus the condom fix: branch `rs-v4-art-mortality` (PR #613, at ebbc8e7; `envs/starsim.yml`), until it is merged. Mortality on ART is on by default (`art_death_table=sti.ART.emod_death_table`; `make_sim(..., art_mortality=False)` turns it off); `dur_reengage` is off. The states of treatment are read on `sim.interventions.art`, not through HIV:
+Needs Starsim v4 with PR #1614 (env `hp_rc3`, branch `rs-nov16` at 6c92fa7b) and STIsim with ART as its own declared module (`sti.ART`, PR #612) and the host's methods (`HIV.who_stage()`, `HIV.new_symptoms()`, `HIV.start_pmtct()`, `ART.start_art(effective=)`, PrEP courses ended by HIV), plus the condom fix: branch `rs-v4-art-mortality` (PR #613, at 085c3f6; `envs/starsim.yml`), until it is merged. Mortality on ART is on by default (`art_death_table=sti.ART.emod_death_table`; `make_sim(..., art_mortality=False)` turns it off); `dur_reengage` is off. The states of treatment are read on `sim.interventions.art`, not through HIV:
 
 ```bash
-PYTHONPATH=<STIsim rs-v4-art-mortality>:<Starsim v4-rs-nov09> python -c "import swap; swap.make_sim('condensed').run()"
+PYTHONPATH=<STIsim rs-v4-art-mortality>:<Starsim rs-nov16> python -c "import swap; swap.make_sim('condensed').run()"
 ```
 
 On rc3 the only change to the model's code was `ss.MaternalNet` → `ss.PrenatalNet` (the same network: prenatal only). `analyses/11_slot_factories/` compares it with the version before.

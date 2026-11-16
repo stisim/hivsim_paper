@@ -256,7 +256,7 @@ Compute doesn't constrain this design; adapters do.
 
 **What has to be true:**
 - HIVsim has reference parameter sets in `models/hivsim/reference/` (provisional ones are fine: endpoint identity doesn't depend on fit).
-- One Starsim and STIsim pin runs both models. EMOD′'s condensed cascade needs Starsim after 4.0.0rc1 (ebd52c1a, with #1538), but `envs/starsim.yml` pins 4.0.0rc1.
+- One Starsim and STIsim pin runs both models. EMOD′'s condensed cascade needs Starsim after 4.0.0rc1 (ebd52c1a, with #1538); `envs/starsim.yml` pins Starsim #1614 (on 4.0.0rc4).
 - Both models are built from slot factories, and `build(all HIVsim)` and `build(all EMOD′)` equal their own `make_sim` exactly.
 - The five hybrids of the path run, and the outputs analyzer gives every output in 2.2 except the ranking.
 

@@ -20,7 +20,7 @@ Planned: HIVsim calibrated to the stopping rule; P4 drafted; a CRN test; EMOD re
 - **The references moved.** Daniel's two fixes (PR #4: the dropout trap and background mortality) make the EMOD binary reproduce the published Figure 3A shares within 5 points (analysis 18; EMOD′-fixed agrees, analysis 17), but its total is ~35–40% high. Our Optima (2022 project) is not the calibration MIHPSA published (analysis 19).
 - **HIVsim calibration: not done.** Exp 04 (testing for advanced HIV, EMOD's mortality on ART): 2 of 600 runs meet the stopping rule, PLHIV before 2010 too low. A provisional reference set is in `models/hivsim/reference/` (endpoint identity doesn't depend on fit). Along the way two STIsim bugs were found and fixed: declared STIsim ignored condoms (prevalence 19% → 8%) and HIVsim's mortality on ART was 5–10× too low (analysis 13).
 - **CRN decided:** pairing helps stocks a lot, flows a little, cascade shares not at all (analysis 14); a Starsim engine leak fixed (starsim#1574). Use pairing and more seeds.
-- **Starsim / STIsim:** pin is Starsim 4.0.0rc3 + #1573 (under Cliff's review) and STIsim #613 (on #612); #607 and #609 closed. Five more Starsim frictions fixed on a local branch (not pushed).
+- **Starsim / STIsim:** pin is Starsim v4 with #1614 (`rs-nov16`, 6c92fa7b; #1573 and #1574 merged) and STIsim #613 (`rs-v4-art-mortality`, 085c3f6, on #612); #607 and #609 closed. Five more Starsim frictions fixed on a local branch (not pushed).
 - **Not done:** P4 sign-off by all three (the slot boundaries in `swap_design.md`, figure in this sprint's readout); Optima′ sign-off; Daniel's P0 (we reran the binary ourselves, analyses 01, 09, 18); the compensated (tier 2) refit in the runner.
 
 ## Sprint 2 review (27 Oct–2 Nov)
@@ -68,7 +68,7 @@ These are left for January:
 | Tests and runs slow the loop (the test suite takes ~35 min serially) | short horizons in tests (to 1995, `swap_design.md` §3), parallel runs; full horizon once per milestone |
 | ~~Common random numbers don't reduce variance across swaps~~ Checked (analysis 14): they help stocks, not cascade shares | more seeds (cheap); engine leak fixed (starsim#1574) |
 | ~~The EMOD′ rebuild can't reach tolerance~~ Done: EMOD′ reproduces EMOD within noise (analyses 02–06, 09) | |
-| v4 API changes mid-rebuild | pinned to 4.0.0rc1; re-pin deliberately and rerun the endpoint test |
+| v4 API changes mid-rebuild | pinned to Starsim #1614 (6c92fa7b, on 4.0.0rc4) and STIsim #613 (085c3f6), `envs/starsim.yml`; re-pin deliberately and rerun the endpoint test |
 | HIVsim calibration runs on (a calibration can always be improved) | the stopping rule in `experiments/03_testing_art/SUMMARY.md` in hivsim_malawi; whatever meets it by 9 Nov goes forward |
 | HIVsim's low mortality on ART is a model gap, not a parameter | fix it in STIsim before the swaps, since deaths on ART are a paper output |
 | ~~MIHPSA Optima turns out to be legacy Optima HIV, not Atomica~~ Confirmed 28 Oct: legacy Optima HIV ([optimamodel/optima](https://github.com/optimamodel/optima)) | hand rebuild (declared, for its ODE form); Malawi files from Rowan |
