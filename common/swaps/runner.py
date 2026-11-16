@@ -21,7 +21,7 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[2]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
-ORDER = ['D', 'R', 'N', 'RN', 'V', 'T', 'H', 'S', 'C', 'M'] # The canonical order of slots (modules are added in it)
+ORDER = ['D', 'R', 'N', 'RN', 'V', 'S', 'T', 'H', 'C', 'M'] # The canonical order of slots (modules are added in it; S before T and H, as seeding steps before them)
 LISTS = ['demographics', 'networks', 'diseases', 'interventions', 'connectors', 'analyzers'] # Sim keywords whose lists are joined
 MODELS = dict(emod='models/emod/v4/components.py', hivsim='models/hivsim/components.py') # Default factory files, from the repo
 OUT = REPO / 'raw_results' / 'swaps'
