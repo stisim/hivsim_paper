@@ -3555,6 +3555,26 @@
             }
         },
         {
+            "Event_Name": "OnART: switch InterventionStatus off so people can reenroll",
+            "class": "CampaignEventByYear",
+            "Nodeset_Config": { "class": "NodeSetAll" },
+            "Start_Year": 1990,
+            "Event_Coordinator_Config": {
+                "class": "StandardInterventionDistributionEventCoordinator",
+                "Intervention_Config":{
+                    "class":"NodeLevelHealthTriggeredIV",
+                    "Trigger_Condition_List": [
+                        "OnART3"
+                    ],
+                    "Actual_IndividualIntervention_Config": {
+                        "class": "PropertyValueChanger",
+                        "Target_Property_Key":"InterventionStatus",
+                        "Target_Property_Value":"None"
+                    }
+                }
+            }
+        },
+        {
             "Event_Name": "OnART: switch ARTStatus off",
             "class": "CampaignEventByYear",
             "Nodeset_Config": { "class": "NodeSetAll" },

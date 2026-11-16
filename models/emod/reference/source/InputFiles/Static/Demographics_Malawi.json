@@ -1089,7 +1089,7 @@
                         2062.5
                     ]
                 ],
-                "ResultScaleFactor": 2.7397260273972604e-06,
+                "ResultScaleFactor": 2.7397260273972604e-03,
                 "ResultUnits": "annual deaths per capita",
                 "ResultValues": [
                     [
@@ -2233,7 +2233,7 @@
                         2062.5
                     ]
                 ],
-                "ResultScaleFactor": 2.7397260273972604e-06,
+                "ResultScaleFactor": 2.7397260273972604e-03,
                 "ResultUnits": "annual deaths per capita",
                 "ResultValues": [
                     [
