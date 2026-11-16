@@ -96,3 +96,9 @@ The sim class is D's model's (`sti.Sim` for HIVsim's D). With EMOD's V it change
 Not built (other paths): HIVsim's C, V or RN on EMOD′'s D, and EMOD′'s V on EMOD′'s D with HIVsim's RN (`make_H` raises).
 
 **Burn-in.** If D's model has `BURNIN` (EMOD′: 1985), `run_one` runs each hybrid and cell to the step before it once, saves `<hybrid id>/<cell>.burnin.sim`, and resumes from it on later calls (`runner.start()`). Resumed equals continuous exactly (`tests/test_resume.py`), so it changes no result, only saves EMOD′'s 1960.5–1985 (10 s) on reruns. It is per hybrid: sharing one burn-in between hybrids would need their slots to be swapped in at 1985 (§1.4), which the EMOD′ → HIVsim path will need.
+
+## Optima′'s factories (analysis 26)
+
+`models/optima/v4/components.py` (not in `MODELS`, so a config gives it under `models:`) builds Optima′ as agent modules: D is `OptimaDR` (with R), T `OptimaT`, H `OptimaH`, S `OptimaS` and C the table cascade. `make_R`, `make_N` and `make_RN` give nothing, since Optima's R is in its populations (D) and it has no network (its T is the force of infection by population pair, D12). So the hybrid `D=optima,T=optima,H=optima,S=optima,C=optima` is `components.make_sim()` exactly (`tests/test_optima_modules.py`).
+
+The core path's NT and DR steps (§2.3a: X, C, H, S, NT, DR) swap two canonical slots at once. The runner's `slots` take canonical names only, so a config for them gives `hybrids` outright. A composite slot name in `slots` (`'NT'`, expanded to N and T; `'DR'`, to D and R) would make the sequential path and the lattice work as for one slot (EMOD′'s factories have `make_R` and `make_N` apart already).

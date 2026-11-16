@@ -168,6 +168,13 @@ So H can't be swapped as Optima′ is built. Two ways forward:
 
 T reads H only through `infectiousness()`, and C reads it only through the host. So a hybrid's T and C never need to know whose H it is.
 
+**What Optima's modules needed beyond the table** (analysis 26, `models/optima/v4/modules.py`). Each is optional, with a default that changes nothing for another model's modules:
+- **Optima's products** (death first, then every other move among those who survive the 0.2-year step): H gives `hiv_survival(uids)` and D gives `bg_survival(uids)`. D's background death is scaled by H's, H's moves and T's infections by D's, and the host's `rate_scale()` is their product. The default is 1.
+- **T reads each source's place in care and CD4 band through the host** (`care_place()`, `cd4_band()`), as well as `infectiousness()`. Optima's force of infection adds over states, so sources are grouped by place × band, and `effdx` is T's.
+- **`infect(uids, source)` gets `source=None` from Optima's T.** Optima has no pairs: T draws each infection's source after the step, from the parts of its force (as `host.OptimaTracker` did), for measurement only.
+- **S seeds into a band** with H's `seed(uids, band)` where H has it, else `infect()`, and places people in care through the host.
+- **D creates infected people:** MTCT at birth (`infect()`, then the host's `test()` for a diagnosed mother), and the forcing's arrivals, which copy a resident's arrays.
+
 **Order of work:**
 1. **Split `EmodHIV` into `EmodT`, `EmodH` and `EmodS`** behind the interface (`make_T`, `make_H` and `make_S` exist and would then return real modules). Check: EMOD′ is bit-identical to before, for every cascade form and with the fixes.
 2. **Optima′ as modules on agents:** Optima's H, T, D and R as modules, with C as now.
